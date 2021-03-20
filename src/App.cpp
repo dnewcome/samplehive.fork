@@ -26,7 +26,7 @@ bool App::OnInit()
     wxBitmap bitmap;
     wxSplashScreen* splash;
 
-    if (bitmap.LoadFile("../assets/Logo/logo-hive_768x432.png", wxBITMAP_TYPE_PNG))
+    if (bitmap.LoadFile("../assets/logo/logo-hive_768x432.png", wxBITMAP_TYPE_PNG))
     {
         splash = new wxSplashScreen(bitmap,
                                     wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_TIMEOUT,

@@ -17,7 +17,7 @@ MainFrame::MainFrame(): wxFrame(NULL, wxID_ANY, "Sample Hive", wxDefaultPosition
     this->SetSize(width, height);
     this->Center(wxBOTH);
     this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon("../assets/Icons/icon-hive_24x24.png", wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetIcon(wxIcon("../assets/icons/icon-hive_24x24.png", wxICON_DEFAULT_TYPE, -1, -1));
 
     m_Browser = new Browser(this);
 }
