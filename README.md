@@ -21,13 +21,13 @@ On Arch based distributions,
 sudo pacman -S wxgtk3 wxsvg sqlite taglib yaml-cpp
 ```
 
-On Ubuntu and Ubuntu based systems,
+On Ubuntu and Ubuntu based distributions,
 
 ```
-sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libwxsvg-dev libwxsvg3 libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0
+sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libwxsvg-dev libwxsvg3 libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0 libexif-dev
 ```
 
-You might also need to install `git`, `meson` and `g++` as well, if you don't already have them installed in order to compile SampleBrowser.
+You might also need to install `git`, `meson` and `g++` as well, if you don't already have them installed in order to compile Sample Hive.
 
 ## How to build Sample Hive?
 
