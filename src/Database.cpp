@@ -5,6 +5,7 @@
 #include <wx/string.h>
 
 #include "Database.hpp"
+#include "SettingsDialog.hpp"
 
 Database::Database(wxInfoBar& infoBar)
     : m_InfoBar(infoBar)
@@ -13,6 +14,7 @@ Database::Database(wxInfoBar& infoBar)
     std::string sample = "CREATE TABLE IF NOT EXISTS SAMPLES("
         "FAVORITE       INT     NOT NULL,"
         "FILENAME       TEXT    NOT NULL,"
+        "EXTENSION      TEXT    NOT NULL,"
         "SAMPLEPACK     TEXT    NOT NULL,"
         "TYPE           TEXT    NOT NULL,"
         "CHANNELS       INT     NOT NULL,"
@@ -52,31 +54,33 @@ Database::~Database()
 }
 
 void Database::InsertSample(int favorite, std::string filename,
-                            std::string samplePack, std::string type,
-                            int channels, int length, int sampleRate,
-                            int bitrate, std::string path, int trashed)
+                            std::string fileExtension, std::string samplePack,
+                            std::string type, int channels, int length,
+                            int sampleRate, int bitrate, std::string path,
+                            int trashed)
 {
     try
     {
         rc = sqlite3_open("Samples.db", &m_Database);
 
         std::string insert = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
-                              SAMPLEPACK, TYPE, CHANNELS, LENGTH, SAMPLERATE, \
-                              BITRATE, PATH, TRASHED) \
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                              EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
+                              SAMPLERATE, BITRATE, PATH, TRASHED) \
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
 
         rc = sqlite3_bind_int(m_Stmt, 1, favorite);
         rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_text(m_Stmt, 3, samplePack.c_str(), samplePack.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_text(m_Stmt, 4, type.c_str(), type.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_int(m_Stmt, 5, channels);
-        rc = sqlite3_bind_int(m_Stmt, 6, length);
-        rc = sqlite3_bind_int(m_Stmt, 7, sampleRate);
-        rc = sqlite3_bind_int(m_Stmt, 8, bitrate);
-        rc = sqlite3_bind_text(m_Stmt, 9, path.c_str(), path.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_int(m_Stmt, 10, trashed);
+        rc = sqlite3_bind_text(m_Stmt, 3, fileExtension.c_str(), fileExtension.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 4, samplePack.c_str(), samplePack.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 5, type.c_str(), type.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_int(m_Stmt, 6, channels);
+        rc = sqlite3_bind_int(m_Stmt, 7, length);
+        rc = sqlite3_bind_int(m_Stmt, 8, sampleRate);
+        rc = sqlite3_bind_int(m_Stmt, 9, bitrate);
+        rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(), path.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_int(m_Stmt, 11, trashed);
 
         if (sqlite3_step(m_Stmt) != SQLITE_DONE)
         {
@@ -429,7 +433,54 @@ std::string Database::GetSamplePathByFilename(std::string filename)
     return path;
 }
 
-wxVector<wxVector<wxVariant>> Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet, wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item, wxTreeCtrl& trash_tree, wxTreeItemId& trash_item)
+std::string Database::GetSampleFileExtension(std::string filename)
+{
+    std::string extension;
+
+    try
+    {
+        rc = sqlite3_open("Samples.db", &m_Database);
+
+        std::string select = "SELECT EXTENSION FROM SAMPLES WHERE FILENAME = ?;";
+
+        rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
+
+        rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+
+        if (sqlite3_step(m_Stmt) == SQLITE_ROW)
+        {
+            wxLogInfo("Record found, fetching..");
+            extension = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
+        }
+
+        rc = sqlite3_finalize(m_Stmt);
+
+        if (rc != SQLITE_OK)
+        {
+            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot select sample path from table.", "Error", wxOK | wxICON_ERROR);
+            msgDialog->ShowModal();
+            sqlite3_free(m_ErrMsg);
+        }
+        else
+        {
+            wxLogInfo("Selected data from table successfully.");
+        }
+
+        sqlite3_close(m_Database);
+    }
+    catch (const std::exception &exception)
+    {
+        wxLogDebug(exception.what());
+    }
+
+    return extension;
+}
+
+wxVector<wxVector<wxVariant>>
+Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
+                       wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+                       wxTreeCtrl& trash_tree, wxTreeItemId& trash_item,
+                       bool show_extension)
 {
     try
     {
@@ -439,9 +490,9 @@ wxVector<wxVector<wxVariant>> Database::LoadDatabase(wxVector<wxVector<wxVariant
             throw sqlite3_errmsg(m_Database);
         }
 
-        std::string load = "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                            CHANNELS, LENGTH, SAMPLERATE, BITRATE, TRASHED \
-                            FROM SAMPLES;";
+        std::string load = "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
+                            TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                            TRASHED FROM SAMPLES;";
 
         rc = sqlite3_prepare_v2(m_Database, load.c_str(), load.size(), &m_Stmt, NULL);
 
@@ -454,14 +505,16 @@ wxVector<wxVector<wxVariant>> Database::LoadDatabase(wxVector<wxVector<wxVariant
                 wxLogDebug("Record found, fetching..");
 
                 int favorite = sqlite3_column_int(m_Stmt, 0);
-                wxString filename = wxString(std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 1))));
-                wxString sample_pack = wxString(std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 2))));
-                wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(m_Stmt, 3)));
-                int channels = sqlite3_column_int(m_Stmt, 4);
-                int length = sqlite3_column_int(m_Stmt, 5);
-                int sample_rate = sqlite3_column_int(m_Stmt, 6);
-                int bitrate = sqlite3_column_int(m_Stmt, 7);
-                int trashed = sqlite3_column_int(m_Stmt, 8);
+                wxString filename = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1)));
+                wxString file_extension = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2)));
+                wxString sample_pack = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 3)));
+                wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(m_Stmt, 4)));
+                int channels = sqlite3_column_int(m_Stmt, 5);
+                int length = sqlite3_column_int(m_Stmt, 6);
+                int sample_rate = sqlite3_column_int(m_Stmt, 7);
+                int bitrate = sqlite3_column_int(m_Stmt, 8);
+                wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 9)));
+                int trashed = sqlite3_column_int(m_Stmt, 10);
 
                 wxVector<wxVariant> vec;
 
@@ -478,7 +531,17 @@ wxVector<wxVector<wxVariant>> Database::LoadDatabase(wxVector<wxVector<wxVariant
                     else
                         vec.push_back(false);
 
-                    vec.push_back(filename);
+                    if (show_extension)
+                    {
+                        vec.push_back(path.AfterLast('/'));
+                        wxLogDebug("With extension..");
+                    }
+                    else
+                    {
+                        vec.push_back(path.AfterLast('/').BeforeLast('.'));
+                        wxLogDebug("Without extension..");
+                    }
+
                     vec.push_back(sample_pack);
                     vec.push_back(sample_type);
                     vec.push_back(wxString::Format("%d", channels));
@@ -522,8 +585,8 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
         }
 
         std::string filter = "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                            CHANNELS, LENGTH, SAMPLERATE, BITRATE \
-                            FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%';";
+                              CHANNELS, LENGTH, SAMPLERATE, BITRATE     \
+                              FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%';";
 
         rc = sqlite3_prepare_v2(m_Database, filter.c_str(), filter.size(), &m_Stmt, NULL);
 

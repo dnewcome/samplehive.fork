@@ -29,9 +29,10 @@ class Database
         // -------------------------------------------------------------------
         // Insert into database
         void InsertSample(int favorite, std::string filename,
-                          std::string samplePack, std::string type,
-                          int channels, int length, int sampleRate, int bitrate,
-                          std::string path, int trashed);
+                          std::string fileExtension, std::string samplePack,
+                          std::string type, int channels, int length,
+                          int sampleRate, int bitrate, std::string path,
+                          int trashed);
 
         // -------------------------------------------------------------------
         // Update database
@@ -47,6 +48,7 @@ class Database
         std::string GetSampleType(std::string filename);
         int GetFavoriteColumnValueByFilename(std::string filename);
         std::string GetSamplePathByFilename(std::string filename);
+        std::string GetSampleFileExtension(std::string filename);
 
         // -------------------------------------------------------------------
         // Check database
@@ -61,7 +63,7 @@ class Database
         wxVector<wxVector<wxVariant>>
         LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
                      wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
-                     wxTreeCtrl& trash_tree, wxTreeItemId& trash_item);
+                     wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,
                                    std::string sampleName);

@@ -63,6 +63,11 @@ class Serializer
         ImportDirInfo DeserializeAutoImportSettings() const;
 
         // -------------------------------------------------------------------
+        // Show file extension
+        void SerializeShowFileExtensionSetting(wxCheckBox& checkBox);
+        bool DeserializeShowFileExtensionSetting() const;
+
+        // -------------------------------------------------------------------
         // Favorite samples
         void SerializeDataViewTreeCtrlItems(wxTreeCtrl& tree, wxTreeItemId& item);
         bool DeserializeDataViewTreeCtrlItems(YAML::Emitter& out, wxDataViewItem item) const;

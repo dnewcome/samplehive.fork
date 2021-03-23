@@ -6,6 +6,6 @@
 
 (projectile-project-name . "SampleHive")
 
-(projectile-project-run-cmd . "~/repos/sample-hive/run.sh")
+(projectile-project-run-cmd . "~/repos/sample-hive/build/SampleHive")
 
 (projectile-project-test-cmd . "./test.sh"))))

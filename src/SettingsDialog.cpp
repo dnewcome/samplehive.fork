@@ -39,7 +39,8 @@ Settings::Settings(wxWindow* window, std::string& configFilepath, std::string& d
     m_CollectionSettingPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
     m_CollectionTopSizer = new wxBoxSizer(wxVERTICAL);
-    m_CollectionImportDirSizer = new wxBoxSizer(wxVERTICAL);
+    m_CollectionImportDirSizer = new wxBoxSizer(wxHORIZONTAL);
+    m_ShowFileExtensionSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxString defaultDir = wxStandardPaths::Get().GetDocumentsDir();
 
@@ -48,6 +49,7 @@ Settings::Settings(wxWindow* window, std::string& configFilepath, std::string& d
     m_ImportDirLocation->Disable();
     m_BrowseAutoImportDirButton = new wxButton(m_CollectionSettingPanel, SD_BrowseAutoImportDir, "Browse", wxDefaultPosition, wxDefaultSize, 0);
     m_BrowseAutoImportDirButton->Disable();
+    m_ShowFileExtensionCheck = new wxCheckBox(m_CollectionSettingPanel, SD_ShowFileExtension, "Show file extension", wxDefaultPosition, wxDefaultSize, 0);
 
     m_ConfigurationSettingPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -74,6 +76,7 @@ Settings::Settings(wxWindow* window, std::string& configFilepath, std::string& d
 
     // Bind events
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckAutoImport, this, SD_AutoImport);
+    Bind(wxEVT_CHECKBOX, &Settings::OnCheckShowFileExtension, this, SD_ShowFileExtension);
     Bind(wxEVT_SPINCTRL, &Settings::OnChangeFontSize, this, SD_FontSize);
     Bind(wxEVT_BUTTON, &Settings::OnSelectFont, this, SD_FontBrowseButton);
     Bind(wxEVT_BUTTON, &Settings::OnClickBrowseAutoImportDir, this, SD_BrowseAutoImportDir);
@@ -98,11 +101,14 @@ Settings::Settings(wxWindow* window, std::string& configFilepath, std::string& d
 
     m_DisplayTopSizer->Add(m_DisplayFontSizer, 1, wxALL | wxEXPAND, 2);
 
-    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL, 2);
-    m_CollectionImportDirSizer->Add(m_ImportDirLocation, 0, wxALL | wxEXPAND, 2);
-    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL, 2);
+    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_LEFT, 2);
+    m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL, 2);
+    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_RIGHT, 2);
 
-    m_CollectionTopSizer->Add(m_CollectionImportDirSizer, 1, wxALL | wxEXPAND, 2);
+    m_ShowFileExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL | wxALIGN_LEFT, 2);
+
+    m_CollectionTopSizer->Add(m_CollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionTopSizer->Add(m_ShowFileExtensionSizer, 0, wxALL | wxEXPAND, 2);
 
     m_ButtonSizer->Add(m_OkButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_ButtonSizer->Add(m_CancelButton, 0, wxALL | wxALIGN_BOTTOM, 2);
@@ -200,6 +206,22 @@ void Settings::OnCheckAutoImport(wxCommandEvent& event)
         m_BrowseAutoImportDirButton->Enable();
 
         serializer.SerializeAutoImportSettings(*m_ImportDirLocation, *m_AutoImportCheck);
+    }
+}
+
+void Settings::OnCheckShowFileExtension(wxCommandEvent& event)
+{
+    Serializer serialize(m_ConfigFilepath);
+
+    if (!m_ShowFileExtensionCheck->GetValue())
+    {
+        bShowExtension = false;
+        serialize.SerializeShowFileExtensionSetting(*m_ShowFileExtensionCheck);
+    }
+    else
+    {
+        bShowExtension = true;
+        serialize.SerializeShowFileExtensionSetting(*m_ShowFileExtensionCheck);
     }
 }
 
@@ -318,13 +340,15 @@ void Settings::LoadDefaultConfig()
     m_FontSize->SetValue(font_size);
     SetCustomFont();
 
-    bool import_check = serializer.DeserializeAutoImportSettings().auto_import;
+    bAutoImport = serializer.DeserializeAutoImportSettings().auto_import;
     wxString location = serializer.DeserializeAutoImportSettings().import_dir;
+    bShowExtension = serializer.DeserializeShowFileExtensionSetting();
 
-    m_AutoImportCheck->SetValue(import_check);
+    m_AutoImportCheck->SetValue(bAutoImport);
     m_ImportDirLocation->SetValue(location);
+    m_ShowFileExtensionCheck->SetValue(bShowExtension);
 
-    if (import_check)
+    if (bAutoImport)
     {
         m_ImportDirLocation->Enable();
         m_BrowseAutoImportDirButton->Enable();

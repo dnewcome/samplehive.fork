@@ -409,8 +409,16 @@ wxString TagLibTowx(const TagLib::String& in)
 
 void Browser::AddSamples(wxString file)
 {
+    Settings settings(this, configFilepath, databaseFilepath);
+
     std::string path = file.ToStdString();
-    std::string filename = file.AfterLast('/').BeforeLast('.').ToStdString();
+
+    std::string filename_with_extension = file.AfterLast('/').ToStdString();
+    std::string filename_without_extension = file.AfterLast('/').BeforeLast('.').ToStdString();
+    std::string extension = file.AfterLast('.').ToStdString();
+
+    std::string filename = settings.IsShowFileExtension() ?
+        filename_with_extension : filename_without_extension;
 
     Tags tags(path);
 
@@ -435,12 +443,14 @@ void Browser::AddSamples(wxString file)
         data.push_back(wxString::Format("%d", sample_rate));
         data.push_back(wxString::Format("%d", bitrate));
 
-        if (!db.HasSample(filename))
+        wxLogDebug("Adding file: %s :: Extension: %s", filename, extension);
+
+        if (!db.HasSample(filename_without_extension))
         {
             m_SampleListView->AppendItem(data);
 
-            db.InsertSample(0, filename, artist, "", channels, length,
-                            sample_rate, bitrate, path, 0);
+            db.InsertSample(0, filename_without_extension, extension, artist, "", channels,
+                            length, sample_rate, bitrate, path, 0);
         }
         else
         {
@@ -705,6 +715,8 @@ void Browser::OnSlideVolume(wxScrollEvent& event)
 
 void Browser::OnClickSampleView(wxDataViewEvent& event)
 {
+    Settings settings(this, configFilepath, databaseFilepath);
+
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
     if (selected_row < 0)
@@ -712,11 +724,16 @@ void Browser::OnClickSampleView(wxDataViewEvent& event)
         return;
     }
 
-    std::string selection = m_SampleListView->GetTextValue(selected_row, 1).ToStdString();
-    std::string sample = db.GetSamplePathByFilename(selection);
+    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    wxLogInfo("Selected: %s", selection);
-    wxLogInfo("Sample path: %s", sample);
+    wxString sample = selection.Contains('.') ? sample_with_extension : sample_without_extension;
+
+    wxLogDebug("Selected: %s", selection);
+    wxLogDebug("Sample path: %s", sample);
+    wxLogDebug("Sample with ext: %s", sample_with_extension);
+    wxLogDebug("Sample without ext: %s", sample_without_extension);
 
     m_MediaCtrl->Load(sample);
 
@@ -854,11 +871,13 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
 void Browser::RestoreDatabase()
 {
+    Settings settings(this, configFilepath, databaseFilepath);
+
     try
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.LoadDatabase(dataset, *m_CollectionView, rootNode, *m_TrashedItems, trash_root_node).empty())
+        if (db.LoadDatabase(dataset, *m_CollectionView, rootNode, *m_TrashedItems, trash_root_node, settings.IsShowFileExtension()).empty())
         {
             wxLogDebug("Error! Database is empty.");
         }

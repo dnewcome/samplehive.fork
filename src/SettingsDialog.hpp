@@ -21,6 +21,8 @@ class Settings : public wxDialog
 {
     public:
         Settings(wxWindow* window, std::string& configFilepath, std::string& databaseFilepath);
+        Settings();
+
         ~Settings();
 
     private:
@@ -67,7 +69,9 @@ class Settings : public wxDialog
         // Collection page
         wxBoxSizer* m_CollectionTopSizer;
         wxBoxSizer* m_CollectionImportDirSizer;
+        wxBoxSizer* m_ShowFileExtensionSizer;
         wxCheckBox* m_AutoImportCheck;
+        wxCheckBox* m_ShowFileExtensionCheck;
         wxTextCtrl* m_ImportDirLocation;
         wxButton* m_BrowseAutoImportDirButton;
         wxDirDialog* m_DirDialog;
@@ -94,12 +98,14 @@ class Settings : public wxDialog
     private:
         // -------------------------------------------------------------------
         bool bAutoImport = false;
+        bool bShowExtension = true;
 
     private:
         // -------------------------------------------------------------------
         void OnClickConfigBrowse(wxCommandEvent& event);
         void OnClickDatabaseBrowse(wxCommandEvent& event);
         void OnCheckAutoImport(wxCommandEvent& event);
+        void OnCheckShowFileExtension(wxCommandEvent& event);
         void OnClickBrowseAutoImportDir(wxCommandEvent& event);
         void OnChangeFontSize(wxSpinEvent& event);
         void OnSelectFont(wxCommandEvent& event);
@@ -118,4 +124,5 @@ class Settings : public wxDialog
 
         inline wxFont GetFontType() { return m_Font; };
         inline bool IsAutoImport() { return bAutoImport; };
+        inline bool IsShowFileExtension() { return bShowExtension; };
 };

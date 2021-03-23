@@ -4,6 +4,9 @@
 #include <wx/log.h>
 #include <wx/stdpaths.h>
 
+#include <yaml-cpp/emittermanip.h>
+#include <yaml-cpp/node/parse.h>
+
 #include "Serialize.hpp"
 
 Serializer::Serializer(const std::string& filepath)
@@ -19,12 +22,9 @@ Serializer::Serializer(const std::string& filepath)
 
     if (!ifstrm)
     {
-        m_Emitter << YAML::Comment("Hello");
-        m_Emitter << YAML::BeginDoc;
-        m_Emitter << "This is the configuration file for the Sample Browser,"
-                << YAML::Newline;
-        m_Emitter << "feel free to edit this file as needed";
-        m_Emitter << YAML::EndDoc;
+        m_Emitter << YAML::Comment("This is the configuration file for the Sample Browser,"
+                                   "feel free to edit this file as needed");
+        m_Emitter << YAML::Newline;
 
         m_Emitter << YAML::BeginMap;
 
@@ -50,10 +50,11 @@ Serializer::Serializer(const std::string& filepath)
         m_Emitter << YAML::EndMap;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
-        m_Emitter << YAML::Newline << YAML::Key << "Import_dir";
+        m_Emitter << YAML::Newline << YAML::Key << "Collection";
         m_Emitter << YAML::BeginMap;
         m_Emitter << YAML::Key << "AutoImport" << YAML::Value << false;
         m_Emitter << YAML::Key << "Directory" << YAML::Value << dir;
+        m_Emitter << YAML::Key << "ShowFileExtension" << YAML::Value << true;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
         m_Emitter << YAML::EndMap;
@@ -78,7 +79,7 @@ int Serializer::DeserializeWinSize(std::string key, int size) const
 
     try
     {
-        YAML::Node data = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node data = YAML::LoadFile(m_Filepath);
 
         if (!data["Window"])
         {
@@ -116,7 +117,7 @@ bool Serializer::DeserializeBrowserControls(std::string key, bool control) const
 
     try
     {
-        YAML::Node config = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
         if (auto media = config["Media"])
         {
@@ -162,11 +163,10 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
 
     try
     {
-        auto docs = YAML::LoadAllFromFile(m_Filepath);
-        out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
+        // auto docs = YAML::LoadFile(m_Filepath);
+        // out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
 
-        YAML::Node config = docs[1];
-        // YAML::Node config = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
         auto display = config["Display"];
 
@@ -202,7 +202,7 @@ FontType Serializer::DeserializeDisplaySettings() const
 
     try
     {
-        YAML::Node config = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
         auto display = config["Display"];
 
@@ -224,7 +224,8 @@ FontType Serializer::DeserializeDisplaySettings() const
     return { face, size };
 }
 
-void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& checkBox)
+void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl,
+                                             wxCheckBox& checkBox)
 {
     YAML::Emitter out;
 
@@ -233,16 +234,15 @@ void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& c
 
     try
     {
-        auto docs = YAML::LoadAllFromFile(m_Filepath);
-        out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
+        // auto docs = ;
+        // out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
 
-        YAML::Node config = docs[1];
-        // YAML::Node config = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
-        if (auto importInfo = config["Import_dir"])
+        if (auto autoImportInfo = config["Collection"])
         {
-            importInfo["AutoImport"] = auto_import;
-            importInfo["Directory"] = import_dir;
+            autoImportInfo["AutoImport"] = auto_import;
+            autoImportInfo["Directory"] = import_dir;
 
             out << config;
 
@@ -267,12 +267,12 @@ ImportDirInfo Serializer::DeserializeAutoImportSettings() const
 
     try
     {
-        YAML::Node config = YAML::LoadAllFromFile(m_Filepath)[1];
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
-        if (auto importInfo = config["Import_dir"])
+        if (auto autoImportInfo = config["Collection"])
         {
-            auto_import = importInfo["AutoImport"].as<bool>();
-            dir = importInfo["Directory"].as<std::string>();
+            auto_import = autoImportInfo["AutoImport"].as<bool>();
+            dir = autoImportInfo["Directory"].as<std::string>();
         }
         else
         {
@@ -284,7 +284,65 @@ ImportDirInfo Serializer::DeserializeAutoImportSettings() const
         std::cout << ex.what() << std::endl;
     }
 
-    return { auto_import, dir };
+    return { auto_import, dir};
+}
+
+void Serializer::SerializeShowFileExtensionSetting(wxCheckBox& checkBox)
+{
+    YAML::Emitter out;
+
+    bool show_extension = checkBox.GetValue();
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto fileExtensionInfo = config["Collection"])
+        {
+            fileExtensionInfo["ShowFileExtension"] = show_extension;
+
+            out << config;
+
+            wxLogDebug("Changin show file extension value.");
+
+            std::ofstream ofstrm(m_Filepath);
+            ofstrm << out.c_str();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot store import dir values.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+}
+
+bool Serializer::DeserializeShowFileExtensionSetting() const
+{
+    bool show_extension = false;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto fileExtensionInfo = config["Collection"])
+        {
+            show_extension = fileExtensionInfo["ShowFileExtension"].as<bool>();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot fetch import dir values.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+    return show_extension;
 }
 
 void Serializer::SerializeDataViewTreeCtrlItems(wxTreeCtrl& tree, wxTreeItemId& item)

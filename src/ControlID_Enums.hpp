@@ -34,6 +34,7 @@ enum ControlIDs
     SD_BrowseConfigDir,
     SD_BrowseDatabaseDir,
     SD_AutoImport,
+    SD_ShowFileExtension,
     SD_BrowseAutoImportDir,
     SD_FontType,
     SD_FontSize,
