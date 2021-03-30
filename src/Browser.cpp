@@ -21,21 +21,21 @@
 #include <wx/vector.h>
 #include <wx/utils.h>
 
+#include "Browser.hpp"
 #include "ControlID_Enums.hpp"
+#include "Database.hpp"
 #include "SettingsDialog.hpp"
 #include "TagEditorDialog.hpp"
+#include "Tags.hpp"
 // #include "TreeItemDialog.hpp"
-#include "Browser.hpp"
-#include "src/Tags.hpp"
+#include "Serialize.hpp"
+
+#include <wx/fswatcher.h>
 
 Browser::Browser(wxWindow* window)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize),
-      serialize(configFilepath), db(*m_InfoBar)
+      m_ConfigFilepath("config.yaml"), m_DatabaseFilepath("sample.hive")
 {
-    // Generate a yaml file if it does not exist
-    configFilepath = "config.yaml";
-    databaseFilepath = "Samples.db";
-
     // Load default yaml config file.
     LoadConfigFile();
 
@@ -59,71 +59,51 @@ Browser::Browser(wxWindow* window)
     m_TrashItemSizer = new wxBoxSizer(wxVERTICAL);
 
     // Creating top splitter window
-    m_TopSplitter = new wxSplitterWindow(this, wxID_ANY,
-                                         wxDefaultPosition, wxDefaultSize,
-                                         wxSP_BORDER | wxSP_LIVE_UPDATE,
-                                         _T("SPLIT TOP"));
+    m_TopSplitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_BORDER | wxSP_LIVE_UPDATE);
     m_TopSplitter->SetMinimumPaneSize(200);
     m_TopSplitter->SetSashGravity(0);
 
     // Top half of TopSplitter window
-    m_TopPanel = new wxPanel(m_TopSplitter, wxID_ANY, wxDefaultPosition,
-                             wxDefaultSize, wxTAB_TRAVERSAL,
-                             _T("SPLIT TOP RIGHT"));
+    m_TopPanel = new wxPanel(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Bottom half of the TopSsplitter window
-    m_BottomSplitter = new wxSplitterWindow(m_TopSplitter, wxID_ANY,
-                                            wxDefaultPosition, wxDefaultSize,
-                                            wxSP_BORDER | wxSP_LIVE_UPDATE,
-                                            _T("SPLIT BOTTOM"));
-    m_BottomSplitter->SetMinimumPaneSize(100);
+    m_BottomSplitter = new wxSplitterWindow(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_BORDER | wxSP_LIVE_UPDATE);
+    m_BottomSplitter->SetMinimumPaneSize(300);
     m_BottomSplitter->SetSashGravity(0.2);
 
     // Left half of the BottomSplitter window
-    m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY,
-                                    wxDefaultPosition, wxDefaultSize,
-                                    wxTAB_TRAVERSAL, _T("MANAGER"));
+    m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Initializing wxNotebook
-    m_ViewChoice = new wxNotebook(m_BottomLeftPanel, wxID_ANY,
-                                  wxDefaultPosition, wxDefaultSize,
-                                  0, _T("NOTEBOOK"));
+    m_ViewChoice = new wxNotebook(m_BottomLeftPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
 
     // Initializing wxGenericDirCtrl as one of the wxNotebook page.
-    m_DirCtrl = new wxDirCtrl(m_ViewChoice, BC_DirCtrl,
-                              wxDirDialogDefaultFolderStr, wxDefaultPosition,
-                              wxDefaultSize, wxDIRCTRL_3D_INTERNAL |
-                              wxSUNKEN_BORDER, wxEmptyString, 0);
+    m_DirCtrl = new wxDirCtrl(m_ViewChoice, BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
+                              wxDefaultSize, wxDIRCTRL_3D_INTERNAL, wxEmptyString, 0);
 
     wxString path = wxStandardPaths::Get().GetDocumentsDir();
     m_DirCtrl->SetPath(path);
 
     // This panel will hold page 2nd page of wxNotebook
-    m_CollectionViewPanel = new wxPanel(m_ViewChoice, wxID_ANY,
-                                        wxDefaultPosition, wxDefaultSize);
+    m_CollectionViewPanel = new wxPanel(m_ViewChoice, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
-    m_AddTreeItemButton = new wxButton(m_CollectionViewPanel, BC_CollectionViewAdd,
-                                       "+", wxDefaultPosition, wxDefaultSize, 0);
-    m_RemoveTreeItemButton = new wxButton(m_CollectionViewPanel,
-                                          BC_CollectionViewRemove, "-",
-                                          wxDefaultPosition, wxDefaultSize, 0);
-    m_TrashButton = new wxButton(m_CollectionViewPanel, BC_TrashButton,
-                                 "Trash", wxDefaultPosition, wxDefaultSize, 0);
+    m_AddTreeItemButton = new wxButton(m_CollectionViewPanel, BC_CollectionViewAdd, "+", wxDefaultPosition, wxDefaultSize, 0);
+    m_RemoveTreeItemButton = new wxButton(m_CollectionViewPanel, BC_CollectionViewRemove, "-", wxDefaultPosition, wxDefaultSize, 0);
+    // m_TrashButton = new wxButton(m_CollectionViewPanel, BC_TrashButton, "Trash", wxDefaultPosition, wxDefaultSize, 0);
 
     // Initializing wxTreeCtrl as another page of wxNotebook
-    m_CollectionView = new wxTreeCtrl(m_CollectionViewPanel, BC_CollectionView,
-                                      wxDefaultPosition, wxDefaultSize,
+    m_CollectionView = new wxTreeCtrl(m_CollectionViewPanel, BC_CollectionView, wxDefaultPosition, wxDefaultSize,
                                       wxTR_HAS_BUTTONS | wxTR_HIDE_ROOT);
 
-    m_TrashPane = new wxCollapsiblePane(m_CollectionViewPanel, BC_TrashPane,
-                                        "Trash", wxDefaultPosition,
-                                        wxDefaultSize, wxCP_DEFAULT_STYLE);
+    m_TrashPane = new wxCollapsiblePane(m_CollectionViewPanel, BC_TrashPane, "Trash",
+                                        wxDefaultPosition, wxDefaultSize, wxCP_DEFAULT_STYLE);
 
     m_TrashPaneWindow = m_TrashPane->GetPane();
 
-    m_TrashedItems = new wxTreeCtrl(m_TrashPaneWindow, BC_CollectionView,
-                                    wxDefaultPosition, wxDefaultSize,
+    m_TrashedItems = new wxTreeCtrl(m_TrashPaneWindow, BC_CollectionView, wxDefaultPosition, wxDefaultSize,
                                     wxTR_HAS_BUTTONS | wxTR_HIDE_ROOT);
+
+    m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
 
     // Adding root to CollectionView
     rootNode = m_CollectionView->AddRoot("ROOT");
@@ -136,94 +116,54 @@ Browser::Browser(wxWindow* window)
     m_ViewChoice->AddPage(m_CollectionViewPanel, "Collection", false);
 
     // Right half of BottomSlitter window
-    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY,
-                                     wxDefaultPosition, wxDefaultSize, wxSP_3D,
-                                     _T("SPLIT BOTTOM RIGHT"));
+    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D);
 
     // Set split direction
     m_TopSplitter->SplitHorizontally(m_TopPanel, m_BottomSplitter);
     m_BottomSplitter->SplitVertically(m_BottomLeftPanel, m_BottomRightPanel);
 
     // Initializing browser controls on top panel.
-    m_AutoPlayCheck = new wxCheckBox(m_TopPanel, BC_Autoplay, "Autoplay",
-                                     wxDefaultPosition, wxDefaultSize,
-                                     wxCHK_2STATE);
+    m_AutoPlayCheck = new wxCheckBox(m_TopPanel, BC_Autoplay, "Autoplay", wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
     m_AutoPlayCheck->SetToolTip("Autoplay");
-    m_VolumeSlider = new wxSlider(m_TopPanel, BC_Volume, 100, 0, 100,
-                                  wxDefaultPosition, wxDefaultSize,
-                                  wxSL_HORIZONTAL);
+    m_VolumeSlider = new wxSlider(m_TopPanel, BC_Volume, 100, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
     m_VolumeSlider->SetToolTip("Volume");
-    m_SamplePosition = new wxStaticText(m_TopPanel, BC_SamplePosition,
-                                        "--:--/--:--", wxDefaultPosition,
-                                        wxDefaultSize);
+    m_SamplePosition = new wxStaticText(m_TopPanel, BC_SamplePosition, "--:--/--:--", wxDefaultPosition, wxDefaultSize);
 
-    m_WaveformViewer = new wxSVGCtrl(m_TopPanel, wxID_ANY,
-                                     wxDefaultPosition, wxDefaultSize);
+    m_WaveformViewer = new wxSVGCtrl(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_WaveformViewer->Load("../assets/waveform.svg");
     m_WaveformViewer->Show();
 
-    m_PlayButton = new wxButton(m_TopPanel, BC_Play, "Play",
-                                wxDefaultPosition, wxDefaultSize, 0);
+    m_PlayButton = new wxButton(m_TopPanel, BC_Play, "Play", wxDefaultPosition, wxDefaultSize, 0);
     m_PlayButton->SetToolTip("Play");
-    m_LoopButton = new wxToggleButton(m_TopPanel, BC_Loop, "Loop",
-                                      wxDefaultPosition, wxDefaultSize, 0);
+    m_LoopButton = new wxToggleButton(m_TopPanel, BC_Loop, "Loop", wxDefaultPosition, wxDefaultSize, 0);
     m_LoopButton->SetToolTip("Loop");
-    m_StopButton = new wxButton(m_TopPanel, BC_Stop, "Stop",
-                                wxDefaultPosition, wxDefaultSize, 0);
+    m_StopButton = new wxButton(m_TopPanel, BC_Stop, "Stop", wxDefaultPosition, wxDefaultSize, 0);
     m_StopButton->SetToolTip("Stop");
-    m_SettingsButton = new wxButton(m_TopPanel, BC_Settings, "Settings",
-                                    wxDefaultPosition, wxDefaultSize, 0);
+    m_SettingsButton = new wxButton(m_TopPanel, BC_Settings, "Settings", wxDefaultPosition, wxDefaultSize, 0);
     m_SettingsButton->SetToolTip("Settings");
-    m_MuteButton = new wxToggleButton(m_TopPanel, BC_Mute, "Mute",
-                                      wxDefaultPosition, wxDefaultSize, 0);
+    m_MuteButton = new wxToggleButton(m_TopPanel, BC_Mute, "Mute", wxDefaultPosition, wxDefaultSize, 0);
     m_MuteButton->SetToolTip("Mute");
 
     // Initializing wxSearchCtrl on bottom panel.
-    m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search,
-                                   "Search for samples..", wxDefaultPosition,
+    m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, "Search for samples..", wxDefaultPosition,
                                    wxDefaultSize, wxTE_PROCESS_ENTER);
 
+    m_SearchBox->ShowSearchButton(true);
     m_SearchBox->ShowCancelButton(true);
 
     // Initializing wxDataViewListCtrl on bottom panel.
-    m_SampleListView = new wxDataViewListCtrl(m_BottomRightPanel,
-                                              BC_SampleListView,
-                                              wxDefaultPosition, wxDefaultSize,
-                                              wxDV_SINGLE | wxDV_HORIZ_RULES |
-                                              wxDV_VERT_RULES);
+    m_SampleListView = new wxDataViewListCtrl(m_BottomRightPanel, BC_SampleListView, wxDefaultPosition, wxDefaultSize,
+                                              wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
 
     // Adding columns to wxDataViewListCtrl.
-    m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE,
-                                         30, wxALIGN_CENTER,
-                                         wxDATAVIEW_COL_RESIZABLE);
-    m_SampleListView->AppendTextColumn("Filename", wxDATAVIEW_CELL_INERT,
-                                       320, wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Sample Pack", wxDATAVIEW_CELL_INERT,
-                                       200, wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Type", wxDATAVIEW_CELL_INERT,
-                                       120, wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Channels", wxDATAVIEW_CELL_INERT,
-                                       100, wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Length", wxDATAVIEW_CELL_INERT,
-                                       100, wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Sample Rate", wxDATAVIEW_CELL_INERT,
-                                       140, wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Bitrate", wxDATAVIEW_CELL_INERT,
-                                       100, wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
+    m_SampleListView->AppendTextColumn("Filename", wxDATAVIEW_CELL_INERT, 320, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Sample Pack", wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Type", wxDATAVIEW_CELL_INERT, 120, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Channels", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Length", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Sample Rate", wxDATAVIEW_CELL_INERT, 140, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendTextColumn("Bitrate", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
 
     // Enable SampleListView to accept files to be dropped on it
     m_SampleListView->DragAcceptFiles(true);
@@ -232,24 +172,20 @@ Browser::Browser(wxWindow* window)
     m_SampleListView->EnableDragSource(wxDF_FILENAME);
 
     // Restore the data previously added to SampleListView
-    RestoreDatabase();
+    LoadDatabase();
 
     // Initialize wxInfoBar for showing information inside application
     m_InfoBar = new wxInfoBar(m_BottomRightPanel);
 
     // Initializing wxMediaCtrl.
-    m_MediaCtrl = new wxMediaCtrl(this, BC_MediaCtrl, wxEmptyString,
-                                wxDefaultPosition, wxDefaultSize,
-                                0, wxEmptyString);
+    m_MediaCtrl = new wxMediaCtrl(this, BC_MediaCtrl, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxEmptyString);
 
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
     // Binding events.
-    Bind(wxEVT_DIRCTRL_FILEACTIVATED, &Browser::OnClickDirCtrl, this,
-         BC_DirCtrl);
-    Bind(wxEVT_TREE_BEGIN_DRAG, &Browser::OnDragFromDirCtrl, this,
-         m_DirCtrl->GetTreeCtrl()->GetId());
+    Bind(wxEVT_DIRCTRL_FILEACTIVATED, &Browser::OnClickDirCtrl, this, BC_DirCtrl);
+    Bind(wxEVT_TREE_BEGIN_DRAG, &Browser::OnDragFromDirCtrl, this, m_DirCtrl->GetTreeCtrl()->GetId());
 
     Bind(wxEVT_BUTTON, &Browser::OnClickPlay, this, BC_Play);
     Bind(wxEVT_TOGGLEBUTTON, &Browser::OnClickLoop, this, BC_Loop);
@@ -262,21 +198,14 @@ Browser::Browser(wxWindow* window)
 
     Bind(wxEVT_TIMER, &Browser::UpdateElapsedTime, this);
 
-    Bind(wxEVT_BUTTON, &Browser::OnClickTrash, this, BC_TrashButton);
-    Bind(wxEVT_COLLAPSIBLEPANE_CHANGED, &Browser::OnExpandTrash, this,
-         BC_TrashPane);
+    Bind(wxEVT_BUTTON, &Browser::OnClickRestoreTrashItem, this, BC_RestoreTrashedItemButton);
+    Bind(wxEVT_COLLAPSIBLEPANE_CHANGED, &Browser::OnExpandTrash, this, BC_TrashPane);
 
-    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &Browser::OnClickSampleView, this,
-         BC_SampleListView);
-    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &Browser::OnCheckFavorite, this,
-         BC_SampleListView);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &Browser::OnClickSampleView, this, BC_SampleListView);
+    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &Browser::OnCheckFavorite, this, BC_SampleListView);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &Browser::OnDragFromSampleView, this);
-    m_SampleListView->Connect(wxEVT_DROP_FILES,
-                              wxDropFilesEventHandler
-                              (Browser::OnDragAndDropToSampleListView),
-                              NULL, this);
-    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU,
-         &Browser::OnShowSampleListViewContextMenu, this, BC_SampleListView);
+    m_SampleListView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(Browser::OnDragAndDropToSampleListView), NULL, this);
+    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &Browser::OnShowSampleListViewContextMenu, this, BC_SampleListView);
 
     Bind(wxEVT_TEXT, &Browser::OnDoSearch, this, BC_Search);
     Bind(wxEVT_SEARCHCTRL_SEARCH_BTN, &Browser::OnDoSearch, this, BC_Search);
@@ -284,10 +213,8 @@ Browser::Browser(wxWindow* window)
 
     // Bind(wxEVT_TREE_ITEM_ACTIVATED, &Browser::OnClickCollectionView, this,
     //      BC_CollectionView);
-    Bind(wxEVT_BUTTON, &Browser::OnClickCollectionAdd, this,
-         BC_CollectionViewAdd);
-    Bind(wxEVT_BUTTON, &Browser::OnClickCollectionRemove, this,
-         BC_CollectionViewRemove);
+    Bind(wxEVT_BUTTON, &Browser::OnClickCollectionAdd, this, BC_CollectionViewAdd);
+    Bind(wxEVT_BUTTON, &Browser::OnClickCollectionRemove, this, BC_CollectionViewRemove);
 
     // Setting up keybindings
     wxAcceleratorEntry entries[5];
@@ -308,14 +235,11 @@ Browser::Browser(wxWindow* window)
     m_BrowserControlSizer->Add(m_StopButton, 0, wxALL | wxALIGN_LEFT, 2);
     m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_LEFT, 2);
     m_BrowserControlSizer->Add(0,0,10, wxALL | wxEXPAND, 0);
-    m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_RIGHT |
-                               wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(20,0,0, wxALL | wxEXPAND, 0);
     m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_RIGHT, 2);
-    m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_RIGHT |
-                               wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_RIGHT |
-                               wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
 
     m_WaveformDisplaySizer->Add(m_WaveformViewer, 1, wxALL | wxEXPAND, 2);
 
@@ -330,14 +254,14 @@ Browser::Browser(wxWindow* window)
 
     m_CollectionViewButtonSizer->Add(m_AddTreeItemButton, 1, wxALL | wxEXPAND, 2);
     m_CollectionViewButtonSizer->Add(m_RemoveTreeItemButton, 1, wxALL | wxEXPAND, 2);
-    m_CollectionViewButtonSizer->Add(m_TrashButton, 1, wxALL | wxEXPAND, 2);
+    // m_CollectionViewButtonSizer->Add(m_TrashButton, 1, wxALL | wxEXPAND, 2);
 
     m_CollectionViewMainSizer->Add(m_CollectionViewFavoritesSizer, 1, wxALL | wxEXPAND, 2);
-    m_CollectionViewTrashSizerItem = m_CollectionViewMainSizer->Add(
-        m_CollectionViewTrashSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionViewTrashSizerItem = m_CollectionViewMainSizer->Add(m_CollectionViewTrashSizer, 0, wxALL | wxEXPAND, 2);
     m_CollectionViewMainSizer->Add(m_CollectionViewButtonSizer, 0, wxALL | wxEXPAND, 2);
 
     m_TrashItemSizer->Add(m_TrashedItems, 1, wxALL | wxEXPAND, 2);
+    m_TrashItemSizer->Add(m_RestoreTrashedItemButton, 0, wxALL | wxEXPAND, 2);
 
     // SearchBoxSizer->Add(SearchBox, 1, wxALL | wxEXPAND, 0);
     // ListCtrlSizer->Add(SampleListView, 1, wxALL | wxEXPAND, 0);
@@ -385,17 +309,18 @@ Browser::Browser(wxWindow* window)
 
 void Browser::OnClickSettings(wxCommandEvent& event)
 {
-    Settings* settings = new Settings(this, configFilepath, databaseFilepath);
+    Settings* settings = new Settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     switch (settings->ShowModal())
     {
         case wxID_OK:
-            wxLogDebug("OK");
             if (settings->IsAutoImport())
+            {
                 OnAutoImportDir();
+                RefreshDatabase();
+            }
             break;
         case wxID_CANCEL:
-            wxLogDebug("Cancel");
             break;
         default:
             return;
@@ -409,7 +334,8 @@ wxString TagLibTowx(const TagLib::String& in)
 
 void Browser::AddSamples(wxString file)
 {
-    Settings settings(this, configFilepath, databaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
 
     std::string path = file.ToStdString();
 
@@ -449,18 +375,19 @@ void Browser::AddSamples(wxString file)
         {
             m_SampleListView->AppendItem(data);
 
-            db.InsertSample(0, filename_without_extension, extension, artist, "", channels,
-                            length, sample_rate, bitrate, path, 0);
+            db.InsertSample(0, filename_without_extension, extension, artist,
+                            "", channels, length, sample_rate, bitrate,
+                            path, 0);
         }
         else
         {
-            wxString msg = wxString::Format("%s already exists. Skipping..", file.AfterLast('/'));
+            wxString msg = wxString::Format("%s already exists.", file.AfterLast('/'));
             m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
         }
     }
     else
     {
-        wxString msg = wxString::Format("Error! Cannot open %s, invalid file type.", filename);
+        wxString msg = wxString::Format("Error! Cannot open %s, Invalid file type.", filename);
         m_InfoBar->ShowMessage(msg, wxICON_ERROR);
     }
 }
@@ -514,13 +441,13 @@ void Browser::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
 
 void Browser::OnAutoImportDir()
 {
-    Settings* settings = new Settings(this, configFilepath, databaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
     wxBusyInfo busy_info("Adding files, please wait...", this);
 
-    wxString dir = settings->GetImportDirPath();
+    wxString dir = settings.GetImportDirPath();
     wxString name;
     wxArrayString files;
 
@@ -574,15 +501,23 @@ void Browser::OnDragFromDirCtrl(wxTreeEvent& event)
 
 void Browser::OnDragFromSampleView(wxDataViewEvent& event)
 {
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
+
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
-    if (selected_row < 0)
-    {
-        return;
-    }
+    if (selected_row < 0) return;
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
-    wxString sample = db.GetSamplePathByFilename(std::string(selection));
+    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+
+    std::string extension = settings.IsShowFileExtension() ?
+        db.GetSampleFileExtension(selection.ToStdString()) :
+        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+
+    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+        sample_with_extension : sample_without_extension;
 
     wxFileDataObject* data = new wxFileDataObject();
 
@@ -596,18 +531,23 @@ void Browser::OnClickPlay(wxCommandEvent& event)
 {
     bStopped = false;
 
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
+
     int selected_row = m_SampleListView->GetSelectedRow();
 
-    if (selected_row < 0)
-    {
-        return;
-    }
+    if (selected_row < 0) return;
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
-    wxString sample = db.GetSamplePathByFilename(std::string(selection));
+    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    wxLogInfo("Selected: %s", selection);
-    wxLogInfo("Sample path: %s", sample);
+    std::string extension = settings.IsShowFileExtension() ?
+        db.GetSampleFileExtension(selection.ToStdString()) :
+        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+
+    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+        sample_with_extension : sample_without_extension;
 
     m_MediaCtrl->Load(sample);
     m_MediaCtrl->Play();
@@ -707,33 +647,29 @@ void Browser::OnSlideVolume(wxScrollEvent& event)
 {
     float get_volume = m_MediaCtrl->GetVolume() * 100.0;
 
-    wxLogInfo("wxMediaCtrl Vol: %d", get_volume);
-    wxLogInfo("Slider Vol: %d", m_VolumeSlider->GetValue());
-
     m_MediaCtrl->SetVolume(float(m_VolumeSlider->GetValue()) / 100);
 }
 
 void Browser::OnClickSampleView(wxDataViewEvent& event)
 {
-    Settings settings(this, configFilepath, databaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
-    if (selected_row < 0)
-    {
-        return;
-    }
+    if (selected_row < 0) return;
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+
     wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    wxString sample = selection.Contains('.') ? sample_with_extension : sample_without_extension;
+    std::string extension = settings.IsShowFileExtension() ?
+        db.GetSampleFileExtension(selection.ToStdString()) :
+        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
-    wxLogDebug("Selected: %s", selection);
-    wxLogDebug("Sample path: %s", sample);
-    wxLogDebug("Sample with ext: %s", sample_with_extension);
-    wxLogDebug("Sample without ext: %s", sample_without_extension);
+    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+        sample_with_extension : sample_without_extension;
 
     m_MediaCtrl->Load(sample);
 
@@ -746,9 +682,9 @@ void Browser::OnClickSampleView(wxDataViewEvent& event)
 
 void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 {
-    wxLogDebug("Click popup menu");
-
     TagEditor* tagEditor;
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
 
     wxString msg;
 
@@ -760,8 +696,17 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     else
         return;
 
-    std::string selection = m_SampleListView->GetTextValue(selected_row, 1).ToStdString();
-    std::string sample = db.GetSamplePathByFilename(selection);
+    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+
+    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+
+    std::string extension = settings.IsShowFileExtension() ?
+        db.GetSampleFileExtension(selection.ToStdString()) :
+        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+
+    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+        sample_with_extension : sample_without_extension;
 
     wxMenu menu;
 
@@ -774,8 +719,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     menu.Append(MN_TrashSample, "Trash");
     menu.Append(MN_EditTagSample, "Edit tags");
 
-    switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu,
-                                                            event.GetPosition()))
+    switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
         case MN_FavoriteSample:
             if (m_SampleListView->GetToggleValue(selected_row, 0))
@@ -791,37 +735,34 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             break;
         case MN_DeleteSample:
         {
-            wxMessageDialog* msgDialog;
-            msgDialog = new wxMessageDialog(this,
-                                            wxString::Format(
-                                                "Are you sure you want to delete "
-                                                "%s from database? "
-                                                "Warning this change is "
-                                                "permanent, and cannot be "
-                                                "undone.", selection),
-                                            wxMessageBoxCaptionStr,
-                                            wxYES_NO | wxNO_DEFAULT |
-                                            wxICON_QUESTION | wxSTAY_ON_TOP |
-                                            wxCENTER);
-            switch (msgDialog->ShowModal())
+            wxMessageDialog msgDialog(this, wxString::Format(
+                                          "Are you sure you want to delete "
+                                          "%s from database? "
+                                          "Warning this change is "
+                                          "permanent, and cannot be "
+                                          "undone.", selection),
+                                      wxMessageBoxCaptionStr,
+                                      wxYES_NO | wxNO_DEFAULT |
+                                      wxICON_QUESTION | wxSTAY_ON_TOP |
+                                      wxCENTER);
+            switch (msgDialog.ShowModal())
             {
                 case wxID_YES:
-                    msg = wxString::Format("Selected row: %d :: Sample: %s",
-                                           selected_row, selection);
-                    db.RemoveSampleFromDatabase(selection);
+                    msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, selection);
+                    db.RemoveSampleFromDatabase(selection.ToStdString());
                     m_SampleListView->DeleteItem(selected_row);
                     break;
                 case wxID_NO:
-                    msg = ("No delete");
+                    msg = "Cancel delete";
                     break;
                 default:
-                    wxLogError(wxT("Unexpected wxMessageDialog return code!"));
+                    msg = "Unexpected wxMessageDialog return code!";
             }
         }
             break;
         case MN_TrashSample:
         {
-            if (db.IsTrashed(selection))
+            if (db.IsTrashed(selection.BeforeLast('.').ToStdString()))
                 msg = "Already trashed..";
             else
             {
@@ -829,9 +770,9 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 if (m_SampleListView->GetToggleValue(selected_row, 0))
                 {
                     m_SampleListView->SetToggleValue(false, selected_row, 0);
-                    db.UpdateFavoriteColumn(selection, 0);
+                    db.UpdateFavoriteColumn(selection.BeforeLast('.').ToStdString(), 0);
                 }
-                db.UpdateTrashColumn(selection, 1);
+                db.UpdateTrashColumn(selection.BeforeLast('.').ToStdString(), 1);
                 m_TrashedItems->AppendItem(trash_root_node, selection);
                 m_SampleListView->DeleteItem(selected_row);
             }
@@ -839,45 +780,45 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             break;
         case MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, sample, *m_InfoBar);
+            tagEditor = new TagEditor(this, (std::string&)sample, *m_InfoBar);
 
             switch (tagEditor->ShowModal())
             {
                 case wxID_OK:
-                    msg = wxString::Format("tags dialog ok "
-                                           "Return code: %d", tagEditor->GetReturnCode());
+                    msg = wxString::Format("tags dialog ok, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 case wxID_APPLY:
-                    msg = wxString::Format("tags dialog apply "
-                                           "Return code: %d", tagEditor->GetReturnCode());
+                    msg = wxString::Format("tags dialog apply, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 case wxID_CANCEL:
-                    msg = wxString::Format("tags dialog cancel "
-                                           "Return code: %d", tagEditor->GetReturnCode());
+                    msg = wxString::Format("tags dialog cancel, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 default:
-                    msg = ("tags dialog default");
+                    msg = "Unexpected TagEditor return code!";
             }
         }
         break;
         case wxID_NONE:
             return;
         default:
-            msg = "Unknown item";
+            msg = "Unexpected wxMenu return code!";
     }
 
     wxLogDebug(msg);
 }
 
-void Browser::RestoreDatabase()
+void Browser::LoadDatabase()
 {
-    Settings settings(this, configFilepath, databaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
 
     try
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.LoadDatabase(dataset, *m_CollectionView, rootNode, *m_TrashedItems, trash_root_node, settings.IsShowFileExtension()).empty())
+        if (db.LoadDatabase(dataset, *m_CollectionView, rootNode,
+                            *m_TrashedItems, trash_root_node,
+                            settings.IsShowFileExtension()).empty())
         {
             wxLogDebug("Error! Database is empty.");
         }
@@ -897,11 +838,14 @@ void Browser::RestoreDatabase()
 
 void Browser::OnCheckFavorite(wxDataViewEvent& event)
 {
+    Database db(*m_InfoBar);
+    Serializer serialize(m_ConfigFilepath);
+
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
     if (selected_row < 0) return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
 
     std::deque<wxTreeItemId> nodes;
     nodes.push_back(m_CollectionView->GetRootItem());
@@ -910,8 +854,6 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
 
     if (m_SampleListView->GetToggleValue(selected_row, 0))
     {
-        wxLogDebug("Toggle on");
-
         while(!nodes.empty())
         {
             wxTreeItemId current_item = nodes.front();
@@ -921,14 +863,11 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
             {
                 found_item = current_item;
                 wxLogDebug(m_CollectionView->GetItemText(current_item));
-                wxLogDebug("Toggle selection: %s", m_CollectionView->GetItemText(m_CollectionView->GetSelection()));
                 break;
             }
 
             wxTreeItemIdValue cookie;
             wxTreeItemId child = m_CollectionView->GetFirstChild(current_item, cookie);
-
-            wxLogDebug("Selection: %s", m_CollectionView->GetItemText(m_CollectionView->GetSelection()));
 
             while ( child.IsOk() )
             {
@@ -941,9 +880,9 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
 
         if (found_item.IsOk())
         {
-            wxString msg = wxString::Format("%s already added as favorite. Skipping..", selection);
-            wxMessageDialog *msgDialog = new wxMessageDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
-            msgDialog->ShowModal();
+            wxString msg = wxString::Format("%s already added as favorite.", selection);
+            wxMessageDialog msgDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
+            msgDialog.ShowModal();
         }
         else
         {
@@ -951,8 +890,6 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
 
             wxTreeItemId selected = m_CollectionView->GetSelection();
             wxString folder = m_CollectionView->GetItemText(selected);
-
-            wxLogDebug("Selected: %s", folder);
 
             m_CollectionView->AppendItem(rootNode, selection);
 
@@ -964,8 +901,6 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
     }
     else
     {
-        wxLogDebug("Toggle off");
-
         while(!nodes.empty())
         {
             wxTreeItemId current_item = nodes.front();
@@ -997,9 +932,9 @@ void Browser::OnCheckFavorite(wxDataViewEvent& event)
         }
         else
         {
-            wxString msg = wxString::Format("%s not added as favorite. Cannot delete. Skipping..", selection);
-            wxMessageDialog *msgDialog = new wxMessageDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
-            msgDialog->ShowModal();
+            wxString msg = wxString::Format("%s not added as favorite, cannot delete.", selection);
+            wxMessageDialog msgDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
+            msgDialog.ShowModal();
         }
     }
 }
@@ -1027,13 +962,15 @@ void Browser::OnClickCollectionRemove(wxCommandEvent& event)
     wxMessageBox("// TODO", "Remove item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
 }
 
-void Browser::OnClickTrash(wxCommandEvent& event)
+void Browser::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
     wxMessageBox("// TODO", "Trash bin", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
 }
 
 void Browser::OnDoSearch(wxCommandEvent& event)
 {
+    Database db(*m_InfoBar);
+
     std::string search = m_SearchBox->GetValue().ToStdString();
 
     try
@@ -1069,7 +1006,8 @@ void Browser::OnCancelSearch(wxCommandEvent& event)
 
 void Browser::LoadConfigFile()
 {
-    Settings settings(this, configFilepath, databaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serialize(m_ConfigFilepath);
 
     wxString font_face = serialize.DeserializeDisplaySettings().font_face;
     int font_size = serialize.DeserializeDisplaySettings().font_size;
@@ -1083,5 +1021,31 @@ void Browser::LoadConfigFile()
 
     this->SetFont(settings.GetFontType());
 }
+
+void Browser::RefreshDatabase()
+{
+    m_SampleListView->DeleteAllItems();
+    LoadDatabase();
+}
+
+// bool Browser::CreateWatcherIfNecessary()
+// {
+//     if (m_FsWatcher)
+//         return false;
+
+//     CreateWatcher();
+//     Connect(wxEVT_FSWATCHER,
+//             wxFileSystemWatcherEventHandler(Browser::OnFileSystemEvent));
+
+//     return true;
+// }
+
+// void Browser::CreateWatcher()
+// {
+//     wxCHECK_RET(!m_FsWatcher, "Watcher already initialized");
+
+//     m_FsWatcher = new wxFileSystemWatcher();
+//     m_FsWatcher->SetOwner(this);
+// }
 
 Browser::~Browser(){}

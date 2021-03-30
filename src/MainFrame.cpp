@@ -3,6 +3,7 @@
 #include "wx/icon.h"
 
 #include "MainFrame.hpp"
+#include "Serialize.hpp"
 
 MainFrame::MainFrame(): wxFrame(NULL, wxID_ANY, "Sample Hive", wxDefaultPosition)
 {

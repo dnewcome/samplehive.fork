@@ -25,7 +25,7 @@ enum ControlIDs
     BC_Search,
     BC_MediaCtrl,
     BC_TrashPane,
-    BC_TrashButton,
+    BC_RestoreTrashedItemButton,
     BC_CollectionViewAdd,
     BC_CollectionViewRemove,
 

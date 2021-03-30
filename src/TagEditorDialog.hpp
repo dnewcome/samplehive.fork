@@ -40,8 +40,8 @@ class TagEditor : public wxDialog
         wxFlexGridSizer* m_EditTagSizer;
         wxFlexGridSizer* m_SampleTypeSizer;
         wxBoxSizer* m_ButtonSizer;
-        // wxStaticBoxSizer* m_StaticEditTagSizer;
-        // wxStaticBoxSizer* m_StaticSampleTypeSizer;
+        wxStaticBoxSizer* m_StaticEditTagSizer;
+        wxStaticBoxSizer* m_StaticSampleTypeSizer;
 
         // -------------------------------------------------------------------
         // Dialog controls

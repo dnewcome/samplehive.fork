@@ -20,7 +20,7 @@
 class Settings : public wxDialog
 {
     public:
-        Settings(wxWindow* window, std::string& configFilepath, std::string& databaseFilepath);
+        Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath);
         Settings();
 
         ~Settings();
@@ -29,8 +29,8 @@ class Settings : public wxDialog
         // -------------------------------------------------------------------
         wxWindow* m_Window;
 
-        std::string& m_ConfigFilepath;
-        std::string& m_DatabaseFilepath;
+        const std::string& m_ConfigFilepath;
+        const std::string& m_DatabaseFilepath;
 
     private:
         // -------------------------------------------------------------------

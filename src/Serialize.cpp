@@ -163,9 +163,6 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
 
     try
     {
-        // auto docs = YAML::LoadFile(m_Filepath);
-        // out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
-
         YAML::Node config = YAML::LoadFile(m_Filepath);
 
         auto display = config["Display"];
@@ -224,8 +221,7 @@ FontType Serializer::DeserializeDisplaySettings() const
     return { face, size };
 }
 
-void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl,
-                                             wxCheckBox& checkBox)
+void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& checkBox)
 {
     YAML::Emitter out;
 
@@ -234,9 +230,6 @@ void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl,
 
     try
     {
-        // auto docs = ;
-        // out << YAML::Comment("Hello") << YAML::BeginDoc << docs[0] << YAML::EndDoc;
-
         YAML::Node config = YAML::LoadFile(m_Filepath);
 
         if (auto autoImportInfo = config["Collection"])
@@ -303,7 +296,7 @@ void Serializer::SerializeShowFileExtensionSetting(wxCheckBox& checkBox)
 
             out << config;
 
-            wxLogDebug("Changin show file extension value.");
+            wxLogDebug("Changing show file extension value.");
 
             std::ofstream ofstrm(m_Filepath);
             ofstrm << out.c_str();

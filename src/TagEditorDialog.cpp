@@ -11,7 +11,7 @@
 
 TagEditor::TagEditor(wxWindow* window, std::string& filename, wxInfoBar& info_bar)
     : wxDialog(window, wxID_ANY, "Edit tags", wxDefaultPosition,
-               wxSize(640, 320), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
+               wxSize(640, 360), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
       m_Window(window), m_Filename(filename), m_InfoBar(info_bar), tags(filename)
 {
     m_Panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
@@ -26,8 +26,8 @@ TagEditor::TagEditor(wxWindow* window, std::string& filename, wxInfoBar& info_ba
     m_SampleTypeSizer->AddGrowableCol(1);
     m_SampleTypeSizer->SetFlexibleDirection(wxBOTH);
     m_SampleTypeSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
-    // m_StaticEditTagSizer = new wxStaticBoxSizer(wxVERTICAL, m_Panel, "Edit tags");
-    // m_StaticSampleTypeSizer = new wxStaticBoxSizer(wxVERTICAL, m_Panel, "Sample type");
+    m_StaticEditTagSizer = new wxStaticBoxSizer(wxVERTICAL, m_Panel, "Edit tags");
+    m_StaticSampleTypeSizer = new wxStaticBoxSizer(wxVERTICAL, m_Panel, "Sample type");
 
     wxString choices[] = {"Kick", "Snare", "Clap", "HiHat", "Cymbal", "Cowbell", "Ride", "Tom", "Shaker", "Percussion"};
 
@@ -89,15 +89,15 @@ TagEditor::TagEditor(wxWindow* window, std::string& filename, wxInfoBar& info_ba
     m_SampleTypeSizer->Add(m_SampleTypeChoice, 1, wxALL | wxALIGN_CENTER_VERTICAL | wxEXPAND, 2);
     m_SampleTypeSizer->Add(m_SampleTypeButton, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
 
-    // m_StaticEditTagSizer->Add(m_EditTagSizer, 1, wxALL | wxEXPAND, 2);
-    // m_StaticSampleTypeSizer->Add(m_SampleTypeSizer, 1, wxALL | wxEXPAND, 2);
+    m_StaticEditTagSizer->Add(m_EditTagSizer, 1, wxALL | wxEXPAND, 2);
+    m_StaticSampleTypeSizer->Add(m_SampleTypeSizer, 1, wxALL | wxEXPAND, 2);
 
     m_ButtonSizer->Add(m_OkButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_ButtonSizer->Add(m_ApplyButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_ButtonSizer->Add(m_CancelButton, 0, wxALL | wxALIGN_BOTTOM, 2);
 
-    m_MainSizer->Add(m_EditTagSizer, 1, wxALL | wxEXPAND, 2);
-    m_MainSizer->Add(m_SampleTypeSizer, 1, wxALL | wxEXPAND, 2);
+    m_MainSizer->Add(m_StaticEditTagSizer, 1, wxALL | wxEXPAND, 2);
+    m_MainSizer->Add(m_StaticSampleTypeSizer, 1, wxALL | wxEXPAND, 2);
     m_MainSizer->Add(m_ButtonSizer, 0, wxALL | wxALIGN_RIGHT, 2);
 
     // Top panel layout

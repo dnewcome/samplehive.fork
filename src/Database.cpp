@@ -26,13 +26,14 @@ Database::Database(wxInfoBar& infoBar)
 
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
         rc = sqlite3_exec(m_Database, sample.c_str(), NULL, 0, &m_ErrMsg);
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot create table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot create table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -61,7 +62,7 @@ void Database::InsertSample(int favorite, std::string filename,
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string insert = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
                               EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
@@ -91,11 +92,10 @@ void Database::InsertSample(int favorite, std::string filename,
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog;
-            msgDialog = new wxMessageDialog(NULL,
+            wxMessageDialog msgDialog(NULL,
                                       "Error! Cannot insert data into table.",
                                       "Error", wxOK | wxICON_ERROR);
-            // msgDialog->ShowModal();
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -115,7 +115,7 @@ void Database::UpdateFolder(std::string folderName)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string update = "UPDATE SAMPLES SET FOLDER = ?;";
 
@@ -132,8 +132,10 @@ void Database::UpdateFolder(std::string folderName)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot insert folder into table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL,
+                                      "Error! Cannot insert folder into table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -153,7 +155,7 @@ void Database::UpdateFavoriteFolderDatabase(std::string filename, std::string fo
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string update = "UPDATE SAMPLES SET FAVORITEFOLDER = ? WHERE FILENAME = ?;";
 
@@ -171,8 +173,8 @@ void Database::UpdateFavoriteFolderDatabase(std::string filename, std::string fo
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -192,7 +194,7 @@ void Database::UpdateFavoriteColumn(std::string filename, int value)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string update = "UPDATE SAMPLES SET FAVORITE = ? WHERE FILENAME = ?;";
 
@@ -210,8 +212,8 @@ void Database::UpdateFavoriteColumn(std::string filename, int value)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -231,7 +233,7 @@ void Database::UpdateSampleType(std::string filename, std::string type)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string update = "UPDATE SAMPLES SET TYPE = ? WHERE FILENAME = ?;";
 
@@ -249,8 +251,8 @@ void Database::UpdateSampleType(std::string filename, std::string type)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -272,7 +274,7 @@ std::string Database::GetSampleType(std::string filename)
 
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT TYPE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -290,8 +292,9 @@ std::string Database::GetSampleType(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot get favorite column value from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot get favorite column value from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -315,7 +318,7 @@ int Database::GetFavoriteColumnValueByFilename(std::string filename)
 
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT FAVORITE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -333,8 +336,9 @@ int Database::GetFavoriteColumnValueByFilename(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot get favorite column value from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot get favorite column value from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -356,7 +360,7 @@ void Database::RemoveSampleFromDatabase(std::string filename)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string remove = "DELETE * FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -373,8 +377,9 @@ void Database::RemoveSampleFromDatabase(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot delete data from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot delete data from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -396,7 +401,7 @@ std::string Database::GetSamplePathByFilename(std::string filename)
 
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT PATH FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -414,8 +419,9 @@ std::string Database::GetSamplePathByFilename(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot select sample path from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot select sample path from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -439,7 +445,7 @@ std::string Database::GetSampleFileExtension(std::string filename)
 
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT EXTENSION FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -457,8 +463,9 @@ std::string Database::GetSampleFileExtension(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot select sample path from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot select sample path from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -484,7 +491,7 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 {
     try
     {
-        if (sqlite3_open("Samples.db", &m_Database) != SQLITE_OK)
+        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -502,8 +509,6 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 
             while (SQLITE_ROW == sqlite3_step(m_Stmt))
             {
-                wxLogDebug("Record found, fetching..");
-
                 int favorite = sqlite3_column_int(m_Stmt, 0);
                 wxString filename = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1)));
                 wxString file_extension = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2)));
@@ -534,12 +539,10 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                     if (show_extension)
                     {
                         vec.push_back(path.AfterLast('/'));
-                        wxLogDebug("With extension..");
                     }
                     else
                     {
                         vec.push_back(path.AfterLast('/').BeforeLast('.'));
-                        wxLogDebug("Without extension..");
                     }
 
                     vec.push_back(sample_pack);
@@ -557,8 +560,9 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
         }
         else
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot load data from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot load data from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
 
@@ -578,7 +582,7 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
 {
     try
     {
-        if (sqlite3_open("Samples.db", &m_Database) != SQLITE_OK)
+        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -630,8 +634,9 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
         }
         else
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot filter data from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot filter data from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
 
@@ -652,7 +657,7 @@ bool Database::HasSample(std::string filename)
     std::string sample;
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT * FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -671,8 +676,9 @@ bool Database::HasSample(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot find data in table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot find data in table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -694,7 +700,7 @@ bool Database::IsTrashed(std::string filename)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT TRASHED FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -714,8 +720,9 @@ bool Database::IsTrashed(std::string filename)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot select sample path from table.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot select sample path from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
@@ -737,7 +744,7 @@ void Database::UpdateTrashColumn(std::string filename, int value)
 {
     try
     {
-        rc = sqlite3_open("Samples.db", &m_Database);
+        rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string update = "UPDATE SAMPLES SET TRASHED = ? WHERE FILENAME = ?;";
 
@@ -755,8 +762,9 @@ void Database::UpdateTrashColumn(std::string filename, int value)
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog* msgDialog = new wxMessageDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
-            msgDialog->ShowModal();
+            wxMessageDialog msgDialog(NULL, "Error! Cannot update record.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else

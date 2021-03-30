@@ -9,6 +9,7 @@
 #include <wx/dirctrl.h>
 #include <wx/dirdlg.h>
 #include <wx/event.h>
+#include <wx/fswatcher.h>
 #include <wx/infobar.h>
 #include <wx/listctrl.h>
 #include <wx/mediactrl.h>
@@ -34,9 +35,6 @@
 #include <taglib/taglib.h>
 #include <taglib/fileref.h>
 #include <taglib/tstring.h>
-
-#include "Database.hpp"
-#include "Serialize.hpp"
 
 class Browser : public wxPanel
 {
@@ -88,7 +86,7 @@ class Browser : public wxPanel
         wxTreeCtrl* m_TrashedItems;
         wxButton* m_AddTreeItemButton;
         wxButton* m_RemoveTreeItemButton;
-        wxButton* m_TrashButton;
+        wxButton* m_RestoreTrashedItemButton;
 
         // -------------------------------------------------------------------
         // Right panel controls
@@ -108,6 +106,10 @@ class Browser : public wxPanel
         // Timer
         wxTimer* m_Timer;
 
+        // -------------------------------------------------------------------
+        // FileSystemWatcher
+        wxFileSystemWatcher* m_FsWatcher;
+
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
@@ -116,13 +118,8 @@ class Browser : public wxPanel
         bool bStopped = false;
 
         // -------------------------------------------------------------------
-        std::string configFilepath;
-        std::string databaseFilepath;
-
-    private:
-        // -------------------------------------------------------------------
-        Serializer serialize;
-        Database db;
+        const std::string m_ConfigFilepath;
+        const std::string m_DatabaseFilepath;
 
     private:
         // -------------------------------------------------------------------
@@ -144,7 +141,7 @@ class Browser : public wxPanel
         // -------------------------------------------------------------------
         // TrashPane event handlers
         void OnExpandTrash(wxCollapsiblePaneEvent& event);
-        void OnClickTrash(wxCommandEvent& event);
+        void OnClickRestoreTrashItem(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // CollectionViewPanel button event handlers
@@ -175,8 +172,13 @@ class Browser : public wxPanel
         void OnAutoImportDir();
 
         // -------------------------------------------------------------------
-        void RestoreDatabase();
+        void LoadDatabase();
+        void RefreshDatabase();
         void LoadConfigFile();
+
+        // -------------------------------------------------------------------
+        bool CreateWatcherIfNecessary();
+        void CreateWatcher();
 
         // wxString TagLibTowx(const TagLib::String& in);
 };

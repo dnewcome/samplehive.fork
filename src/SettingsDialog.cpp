@@ -8,7 +8,7 @@
 #include "SettingsDialog.hpp"
 #include "Serialize.hpp"
 
-Settings::Settings(wxWindow* window, std::string& configFilepath, std::string& databaseFilepath)
+Settings::Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath)
     : wxDialog(window, wxID_ANY, "Settings", wxDefaultPosition,
                wxSize(720, 270), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
       m_Window(window), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
@@ -241,7 +241,6 @@ void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
     {
         case wxID_OK:
         {
-            wxLogDebug("Import DIR OKAY..");
             wxString path = m_DirDialog->GetPath();
             m_ImportDirLocation->SetValue(path);
 
@@ -377,8 +376,6 @@ void Settings::SetCustomFont()
 
     if ( m_FontType->GetStringSelection() == "System default" )
     {
-        wxLogDebug("Setting default font");
-
         m_Window->SetFont(sys_font);
         this->SetFont(sys_font);
 
@@ -386,8 +383,6 @@ void Settings::SetCustomFont()
     }
     else
     {
-        wxLogDebug("Setting custom font");
-
         m_Window->SetFont(m_Font);
         this->SetFont(m_Font);
 
