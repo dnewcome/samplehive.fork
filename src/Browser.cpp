@@ -29,6 +29,7 @@
 #include "Tags.hpp"
 // #include "TreeItemDialog.hpp"
 #include "Serialize.hpp"
+#include "wx/dataview.h"
 
 #include <wx/fswatcher.h>
 
@@ -153,7 +154,7 @@ Browser::Browser(wxWindow* window)
 
     // Initializing wxDataViewListCtrl on bottom panel.
     m_SampleListView = new wxDataViewListCtrl(m_BottomRightPanel, BC_SampleListView, wxDefaultPosition, wxDefaultSize,
-                                              wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
+                                              wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
 
     // Adding columns to wxDataViewListCtrl.
     m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
@@ -708,6 +709,8 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
         sample_with_extension : sample_without_extension;
 
+    std::string filename = sample.AfterLast('/').BeforeLast('.').ToStdString();
+
     wxMenu menu;
 
     if (m_SampleListView->GetToggleValue(selected_row, 0))
@@ -717,25 +720,56 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
     menu.Append(MN_DeleteSample, "Delete");
     menu.Append(MN_TrashSample, "Trash");
-    menu.Append(MN_EditTagSample, "Edit tags");
+
+    if (m_SampleListView->GetSelectedItemsCount() <= 1)
+        menu.Append(MN_EditTagSample, "Edit tags")->Enable(true);
+    else
+        menu.Append(MN_EditTagSample, "Edit tags")->Enable(false);
 
     switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
         case MN_FavoriteSample:
-            if (m_SampleListView->GetToggleValue(selected_row, 0))
+            if (m_SampleListView->GetSelectedItemsCount() <= 1)
             {
-                m_SampleListView->SetToggleValue(false, selected_row, 0);
-                msg = wxString::Format("Toggle: false");
+                if (m_SampleListView->GetToggleValue(selected_row, 0))
+                {
+                    m_SampleListView->SetToggleValue(false, selected_row, 0);
+                    msg = wxString::Format("Toggle: false");
+                }
+                else
+                {
+                    m_SampleListView->SetToggleValue(true, selected_row, 0);
+                    msg = wxString::Format("Toggle: true");
+                }
             }
             else
             {
-                m_SampleListView->SetToggleValue(true, selected_row, 0);
-                msg = wxString::Format("Toggle: true");
+                wxDataViewItemArray items;
+                int rows = m_SampleListView->GetSelections(items);
+
+                for (int i = 0; i < rows; i++)
+                {
+                    int row = m_SampleListView->ItemToRow(items[i]);
+
+                    if (m_SampleListView->GetToggleValue(row, 0))
+                    {
+                        m_SampleListView->SetToggleValue(false, row, 0);
+                        msg = wxString::Format("Toggle: false");
+                    }
+                    else
+                    {
+                        m_SampleListView->SetToggleValue(true, row, 0);
+                        msg = wxString::Format("Toggle: true");
+                    }
+                }
             }
             break;
         case MN_DeleteSample:
         {
-            wxMessageDialog msgDialog(this, wxString::Format(
+            wxDataViewItemArray items;
+            int rows = m_SampleListView->GetSelections(items);
+
+            wxMessageDialog singleMsgDialog(this, wxString::Format(
                                           "Are you sure you want to delete "
                                           "%s from database? "
                                           "Warning this change is "
@@ -745,42 +779,105 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                       wxYES_NO | wxNO_DEFAULT |
                                       wxICON_QUESTION | wxSTAY_ON_TOP |
                                       wxCENTER);
-            switch (msgDialog.ShowModal())
+
+            wxMessageDialog multipleMsgDialog(this, wxString::Format(
+                                          "Are you sure you want to delete "
+                                          "%d selected samples from database? "
+                                          "Warning this change is "
+                                          "permanent, and cannot be "
+                                          "undone.", rows),
+                                      wxMessageBoxCaptionStr,
+                                      wxYES_NO | wxNO_DEFAULT |
+                                      wxICON_QUESTION | wxSTAY_ON_TOP |
+                                      wxCENTER);
+
+            if (m_SampleListView->GetSelectedItemsCount() <= 1)
             {
-                case wxID_YES:
-                    msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, selection);
-                    db.RemoveSampleFromDatabase(selection.ToStdString());
-                    m_SampleListView->DeleteItem(selected_row);
+                switch (singleMsgDialog.ShowModal())
+                {
+                    case wxID_YES:
+                    {
+                        msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, selection);
+                        db.RemoveSampleFromDatabase(selection.ToStdString());
+                        m_SampleListView->DeleteItem(selected_row);
+                    }
                     break;
-                case wxID_NO:
-                    msg = "Cancel delete";
+                    case wxID_NO:
+                        msg = "Cancel delete";
+                        break;
+                    default:
+                        msg = "Unexpected wxMessageDialog return code!";
+                }
+            }
+            else
+            {
+                switch (multipleMsgDialog.ShowModal())
+                {
+                    case wxID_YES:
+                    {
+                        for (int i = 0; i < rows; i++)
+                        {
+                            int row = m_SampleListView->ItemToRow(items[i]);
+                            wxString sel = m_SampleListView->GetTextValue(row, 1);
+                            db.RemoveSampleFromDatabase(sel.ToStdString());
+                            m_SampleListView->DeleteItem(row);
+                        }
+                    }
                     break;
-                default:
-                    msg = "Unexpected wxMessageDialog return code!";
+                    case wxID_NO:
+                        msg = "Cancel delete";
+                        break;
+                    default:
+                        msg = "Unexpected wxMessageDialog return code!";
+                }
             }
         }
-            break;
+        break;
         case MN_TrashSample:
         {
             if (db.IsTrashed(selection.BeforeLast('.').ToStdString()))
                 msg = "Already trashed..";
             else
             {
-                msg = "Trashing..";
-                if (m_SampleListView->GetToggleValue(selected_row, 0))
+                if (m_SampleListView->GetSelectedItemsCount() <= 1)
                 {
-                    m_SampleListView->SetToggleValue(false, selected_row, 0);
-                    db.UpdateFavoriteColumn(selection.BeforeLast('.').ToStdString(), 0);
+                    msg = "Trashing..";
+                    if (m_SampleListView->GetToggleValue(selected_row, 0))
+                    {
+                        m_SampleListView->SetToggleValue(false, selected_row, 0);
+                        db.UpdateFavoriteColumn(selection.BeforeLast('.').ToStdString(), 0);
+                    }
+                    db.UpdateTrashColumn(selection.BeforeLast('.').ToStdString(), 1);
+                    m_TrashedItems->AppendItem(trash_root_node, selection);
+                    m_SampleListView->DeleteItem(selected_row);
                 }
-                db.UpdateTrashColumn(selection.BeforeLast('.').ToStdString(), 1);
-                m_TrashedItems->AppendItem(trash_root_node, selection);
-                m_SampleListView->DeleteItem(selected_row);
+                else
+                {
+                    wxDataViewItemArray items;
+                    int rows = m_SampleListView->GetSelections(items);
+
+                    for (int i = 0; i < rows; i++)
+                    {
+                        int row = m_SampleListView->ItemToRow(items[i]);
+                        wxString sel = m_SampleListView->GetTextValue(row, 1);
+
+                        if (m_SampleListView->GetToggleValue(row, 0))
+                        {
+                            m_SampleListView->SetToggleValue(false, row, 0);
+                            db.UpdateFavoriteColumn(sel.BeforeLast('.').ToStdString(), 0);
+                        }
+
+                        db.UpdateTrashColumn(sel.BeforeLast('.').ToStdString(), 1);
+                        m_TrashedItems->AppendItem(trash_root_node, sel);
+                        m_SampleListView->DeleteItem(row);
+                    }
+                }
             }
         }
-            break;
+        break;
         case MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, (std::string&)sample, *m_InfoBar);
+            tagEditor = new TagEditor(this, filename, *m_InfoBar);
 
             switch (tagEditor->ShowModal())
             {

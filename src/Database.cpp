@@ -229,6 +229,45 @@ void Database::UpdateFavoriteColumn(std::string filename, int value)
     }
 }
 
+void Database::UpdateSamplePack(std::string filename, std::string samplePack)
+{
+    try
+    {
+        rc = sqlite3_open("sample.hive", &m_Database);
+
+        std::string update = "UPDATE SAMPLES SET SAMPLEPACK = ? WHERE FILENAME = ?;";
+
+        rc = sqlite3_prepare_v2(m_Database, update.c_str(), update.size(), &m_Stmt, NULL);
+
+        rc = sqlite3_bind_text(m_Stmt, 1, samplePack.c_str(), samplePack.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
+
+        if (sqlite3_step(m_Stmt) == SQLITE_ROW)
+        {
+            wxLogDebug("Record found, updating..");
+        }
+
+        rc = sqlite3_finalize(m_Stmt);
+
+        if (rc != SQLITE_OK)
+        {
+            wxMessageDialog msgDialog(NULL, "Error! Cannot update record.", "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
+            sqlite3_free(m_ErrMsg);
+        }
+        else
+        {
+            wxLogDebug("Updated record successfully.");
+        }
+
+        sqlite3_close(m_Database);
+    }
+    catch (const std::exception &exception)
+    {
+        wxLogDebug(exception.what());
+    }
+}
+
 void Database::UpdateSampleType(std::string filename, std::string type)
 {
     try

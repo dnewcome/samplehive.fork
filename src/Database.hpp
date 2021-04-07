@@ -41,6 +41,7 @@ class Database
         void UpdateFavoriteFolderDatabase(std::string filename,
                                           std::string folderName);
         void UpdateTrashColumn(std::string filename, int value);
+        void UpdateSamplePack(std::string filename, std::string samplePack);
         void UpdateSampleType(std::string filename, std::string type);
 
         // -------------------------------------------------------------------

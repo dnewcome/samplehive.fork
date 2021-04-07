@@ -214,9 +214,8 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
     wxString genre = m_GenreText->GetValue();
     wxString comment = m_CommentText->GetValue();
     wxString type = m_SampleTypeChoice->GetStringSelection();
-    wxString filename = wxString(m_Filename).AfterLast('/').BeforeLast('.');
 
-    std::string sampleType = db.GetSampleType(filename.ToStdString());
+    std::string sampleType = db.GetSampleType(m_Filename);
 
     wxString warning_msg = "Are you sure you want save these changes?";
     wxMessageDialog* msgDialog = new wxMessageDialog(this, warning_msg,
@@ -243,6 +242,10 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             {
                 wxLogDebug("Changing artist tag..");
                 tags.SetArtist(artist.ToStdString());
+
+                db.UpdateSamplePack(m_Filename, artist.ToStdString());
+
+                wxLogDebug("SAMPLE FILENAME HERE: %s", m_Filename);
 
                 info_msg = wxString::Format("Successfully changed artist tag to %s", artist);
             }
@@ -274,7 +277,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             if (m_SampleTypeCheck->GetValue() && m_SampleTypeChoice->GetStringSelection() != sampleType)
             {
                 wxLogDebug("Changing type tag..");
-                db.UpdateSampleType(filename.ToStdString(), type.ToStdString());
+                db.UpdateSampleType(m_Filename, type.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed type tag to %s", type);
             }
@@ -282,7 +285,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
         case wxID_NO:
             break;
         default:
-            return;
+            info_msg = "Error, cannot change tag!";
     }
 
     m_InfoBar.ShowMessage(info_msg, wxICON_INFORMATION);
