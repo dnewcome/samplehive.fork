@@ -8,6 +8,12 @@
 #include "SettingsDialog.hpp"
 #include "Serialize.hpp"
 
+Settings::Settings(const std::string& configFilepath, const std::string& databaseFilepath)
+    : m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+{
+
+}
+
 Settings::Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath)
     : wxDialog(window, wxID_ANY, "Settings", wxDefaultPosition,
                wxSize(720, 270), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),

@@ -29,7 +29,6 @@
 #include "Tags.hpp"
 // #include "TreeItemDialog.hpp"
 #include "Serialize.hpp"
-#include "wx/dataview.h"
 
 #include <wx/fswatcher.h>
 
@@ -172,9 +171,6 @@ Browser::Browser(wxWindow* window)
     // Enable dragging a file from SampleListView
     m_SampleListView->EnableDragSource(wxDF_FILENAME);
 
-    // Restore the data previously added to SampleListView
-    LoadDatabase();
-
     // Initialize wxInfoBar for showing information inside application
     m_InfoBar = new wxInfoBar(m_BottomRightPanel);
 
@@ -306,6 +302,13 @@ Browser::Browser(wxWindow* window)
     m_BottomRightPanelMainSizer->Fit(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->SetSizeHints(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->Layout();
+
+    // Initialize the database
+    Database db(*m_InfoBar);
+    db.CreateDatabase();
+
+    // Restore the data previously added to SampleListView
+    LoadDatabase();
 }
 
 void Browser::OnClickSettings(wxCommandEvent& event)
@@ -335,7 +338,7 @@ wxString TagLibTowx(const TagLib::String& in)
 
 void Browser::AddSamples(wxString file)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     std::string path = file.ToStdString();
@@ -442,7 +445,7 @@ void Browser::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
 
 void Browser::OnAutoImportDir()
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
 
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
@@ -502,7 +505,7 @@ void Browser::OnDragFromDirCtrl(wxTreeEvent& event)
 
 void Browser::OnDragFromSampleView(wxDataViewEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
@@ -532,7 +535,7 @@ void Browser::OnClickPlay(wxCommandEvent& event)
 {
     bStopped = false;
 
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->GetSelectedRow();
@@ -653,7 +656,7 @@ void Browser::OnSlideVolume(wxScrollEvent& event)
 
 void Browser::OnClickSampleView(wxDataViewEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
@@ -684,7 +687,7 @@ void Browser::OnClickSampleView(wxDataViewEvent& event)
 void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     wxString msg;
@@ -906,7 +909,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
 void Browser::LoadDatabase()
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     try
@@ -1103,7 +1106,7 @@ void Browser::OnCancelSearch(wxCommandEvent& event)
 
 void Browser::LoadConfigFile()
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Serializer serialize(m_ConfigFilepath);
 
     wxString font_face = serialize.DeserializeDisplaySettings().font_face;

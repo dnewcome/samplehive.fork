@@ -1,3 +1,4 @@
+#include <mutex>
 #include <string>
 
 #include <wx/infobar.h>
@@ -21,11 +22,17 @@ class Database
         char* m_ErrMsg;
         sqlite3_stmt* m_Stmt;
 
+        std::mutex m;
+
     private:
         // -------------------------------------------------------------------
         wxInfoBar& m_InfoBar;
 
     public:
+        // -------------------------------------------------------------------
+        // Create the table
+        void CreateDatabase();
+
         // -------------------------------------------------------------------
         // Insert into database
         void InsertSample(int favorite, std::string filename,

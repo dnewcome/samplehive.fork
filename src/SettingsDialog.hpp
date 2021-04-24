@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/choice.h>
@@ -20,8 +22,8 @@
 class Settings : public wxDialog
 {
     public:
+        Settings(const std::string& configFilepath, const std::string& databaseFilepath);
         Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath);
-        Settings();
 
         ~Settings();
 

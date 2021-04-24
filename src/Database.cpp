@@ -10,6 +10,16 @@
 Database::Database(wxInfoBar& infoBar)
     : m_InfoBar(infoBar)
 {
+
+}
+
+Database::~Database()
+{
+
+}
+
+void Database::CreateDatabase()
+{
     /* Create SQL statement */
     std::string sample = "CREATE TABLE IF NOT EXISTS SAMPLES("
         "FAVORITE       INT     NOT NULL,"
@@ -26,7 +36,16 @@ Database::Database(wxInfoBar& infoBar)
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK && IsOK)
+        {
+            wxLogDebug("Error opening DB");
+            throw sqlite3_errmsg(m_Database);
+        }
+        else
+        {
+            wxLogDebug("Opening DB..");
+        }
+
         rc = sqlite3_exec(m_Database, sample.c_str(), NULL, 0, &m_ErrMsg);
 
         if (rc != SQLITE_OK)
@@ -41,17 +60,17 @@ Database::Database(wxInfoBar& infoBar)
             wxLogDebug("Table created successfully.");
         }
 
-        sqlite3_close(m_Database);
+        rc = sqlite3_close(m_Database);
+
+        if (rc == SQLITE_OK)
+            wxLogDebug("DB Closed..");
+        else
+            wxLogDebug("Error! Cannot close DB, Error code: %d, Error message: %s", rc, m_ErrMsg);
     }
     catch (const std::exception &exception)
     {
         wxLogDebug(exception.what());
     }
-}
-
-Database::~Database()
-{
-
 }
 
 void Database::InsertSample(int favorite, std::string filename,
@@ -62,7 +81,22 @@ void Database::InsertSample(int favorite, std::string filename,
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        // while (!IsOK)
+        // {
+        //     wxLogDebug("Waiting On Previous Transaction");
+        // }
+        m.lock();
+
+        // rc = sqlite3_open("sample.hive", &m_Database);
+        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        {
+            wxLogDebug("Error opening DB");
+            throw sqlite3_errmsg(m_Database);
+        }
+        else
+        {
+            wxLogDebug("Opening DB..");
+        }
 
         std::string insert = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
                               EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
@@ -70,6 +104,8 @@ void Database::InsertSample(int favorite, std::string filename,
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
+        if (rc != SQLITE_OK)
+            wxLogDebug("Cannot prepare sql statement..");
 
         rc = sqlite3_bind_int(m_Stmt, 1, favorite);
         rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
@@ -85,29 +121,54 @@ void Database::InsertSample(int favorite, std::string filename,
 
         if (sqlite3_step(m_Stmt) != SQLITE_DONE)
         {
-            wxLogWarning("No data inserted.");
+            wxLogDebug("No data inserted. Error code: %d", sqlite3_step(m_Stmt));
         }
 
         rc = sqlite3_finalize(m_Stmt);
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog msgDialog(NULL,
-                                      "Error! Cannot insert data into table.",
-                                      "Error", wxOK | wxICON_ERROR);
-            msgDialog.ShowModal();
+            // wxMessageDialog msgDialog(NULL,
+            //                           "Error! Cannot insert data into table.",
+            //                           "Error", wxOK | wxICON_ERROR);
+            // msgDialog.ShowModal();
+            wxLogDebug("Error! Cannot insert data into table. Error code: %d, Error Message: %s", rc, m_ErrMsg);
             sqlite3_free(m_ErrMsg);
         }
         else
         {
-            wxLogInfo("Data inserted successfully. %s", m_ErrMsg);
+            wxLogDebug("Data inserted successfully. %s", m_ErrMsg);
         }
 
+        if (rc == SQLITE_BUSY)
+            wxLogDebug("SQLITE_BUSY");
+        if (rc == SQLITE_ABORT)
+            wxLogDebug("SQLITE_ABORT");
+        if (rc == SQLITE_NOMEM)
+            wxLogDebug("SQLITE_NOMEM");
+        if (rc == SQLITE_LOCKED)
+            wxLogDebug("SQLITE_LOCKED");
+        if (rc == SQLITE_IOERR)
+            wxLogDebug("SQLITE_IOERR");
+        if (rc == SQLITE_CORRUPT)
+            wxLogDebug("SQLITE_CORRUPT");
+        if (rc == SQLITE_READONLY)
+            wxLogDebug("SQLITE_READONLY");
+        if (rc == SQLITE_ERROR)
+            wxLogDebug("SQLITE_ERROR");
+        if (rc == SQLITE_PERM)
+            wxLogDebug("SQLITE_PERM");
+        if (rc == SQLITE_INTERNAL)
+            wxLogDebug("SQLITE_INTERNAL");
+
         sqlite3_close(m_Database);
+        // IsOK = true;
+        m.unlock();
     }
     catch (const std::exception &exception)
     {
         wxLogDebug(exception.what());
+        m.unlock();
     }
 }
 
