@@ -21,9 +21,6 @@ class Database
         int rc;
         char* m_ErrMsg;
         sqlite3_stmt* m_Stmt;
-
-        std::mutex m;
-
     private:
         // -------------------------------------------------------------------
         wxInfoBar& m_InfoBar;
