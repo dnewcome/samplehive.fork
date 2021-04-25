@@ -116,7 +116,7 @@ void Database::InsertSample(int favorite, std::string filename,
 		
         if (rc != SQLITE_DONE)
         {
-            wxLogDebug("No data inserted. Error code: %d", rc);
+            wxLogDebug("No data inserted. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));
         }
 
         rc = sqlite3_finalize(m_Stmt);
@@ -127,7 +127,7 @@ void Database::InsertSample(int favorite, std::string filename,
             //                           "Error! Cannot insert data into table.",
             //                           "Error", wxOK | wxICON_ERROR);
             // msgDialog.ShowModal();
-            wxLogDebug("Error! Cannot insert data into table. Error code: %d", rc);
+            wxLogDebug("Error! Cannot insert data into table. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));
         }
         else
         {
@@ -746,6 +746,7 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
 bool Database::HasSample(std::string filename)
 {
     std::string sample;
+    bool haveSample = false;
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
@@ -760,7 +761,7 @@ bool Database::HasSample(std::string filename)
         {
             wxLogInfo("Record found, fetching..");
             sample = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
-            return true;
+            haveSample = true;
         }
 
         rc = sqlite3_finalize(m_Stmt);
@@ -778,6 +779,8 @@ bool Database::HasSample(std::string filename)
         }
 
         sqlite3_close(m_Database);
+        
+        return haveSample;
     }
     catch (const std::exception &exception)
     {
