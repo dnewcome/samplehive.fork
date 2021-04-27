@@ -409,20 +409,18 @@ void Browser::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
     {
         wxString* dropped = event.GetFiles();
         wxASSERT(dropped);
-
+        
         wxBusyCursor busy_cursor;
         wxWindowDisabler window_disabler;
-        wxBusyInfo busy_info("Adding files, please wait...", this);
-
+        
         wxString name;
         wxArrayString files;
-
-        // wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
-        //                                                         event.GetNumberOfFiles(), this,
-        //                                                         wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
-        //                                                         wxPD_CAN_SKIP);
-        // progressDialog->CenterOnParent(wxBOTH);
-
+        wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
+                                                                event.GetNumberOfFiles(), this,
+                                                                wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
+                                                                wxPD_AUTO_HIDE);
+        progressDialog->CenterOnParent(wxBOTH);
+        
         for (int i = 0; i < event.GetNumberOfFiles(); i++)
         {
             name = dropped[i];
@@ -434,29 +432,40 @@ void Browser::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
             {
                 wxDir::GetAllFiles(name, &files);
             }
+            progressDialog->Pulse("Reading Samples",NULL);
         }
-
+        
+        progressDialog->SetRange(files.size());
         for (size_t i = 0; i < files.size(); i++)
         {
             Browser::AddSamples(files[i]);
+            progressDialog->Update(i, wxString::Format("Adding %s", files[i].AfterLast('/')));
+            
+            if(progressDialog->WasCancelled())
+                break;
         }
+        progressDialog->Destroy();
     }
 }
 
 void Browser::OnAutoImportDir()
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(this,m_ConfigFilepath, m_DatabaseFilepath);
 
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
-    wxBusyInfo busy_info("Adding files, please wait...", this);
-
+    
     wxString dir = settings.GetImportDirPath();
     wxString name;
     wxArrayString files;
 
     size_t number_of_files = wxDir::GetAllFiles(dir, &files, wxEmptyString, wxDIR_DEFAULT);
-
+    
+    wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
+                                                            (int)number_of_files, this,
+                                                            wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
+                                                            wxPD_AUTO_HIDE);
+    progressDialog->CenterOnParent(wxBOTH);
     for ( size_t i = 0; i < number_of_files; i++)
     {
         name = files[i];
@@ -468,12 +477,20 @@ void Browser::OnAutoImportDir()
         {
             wxDir::GetAllFiles(name, &files);
         }
+        progressDialog->Pulse("Reading Samples",NULL);
     }
-
+    
+    progressDialog->SetRange(files.size());
+    
     for (size_t i = 0; i < files.size(); i++)
     {
         Browser::AddSamples(files[i]);
+        progressDialog->Update(i, wxString::Format("Adding %s", files[i].AfterLast('/')));
+            
+        if(progressDialog->WasCancelled())
+            break;
     }
+    progressDialog->Destroy();
 }
 
 void LogDragResult(wxDragResult result)
