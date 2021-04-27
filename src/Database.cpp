@@ -111,9 +111,9 @@ void Database::InsertSample(int favorite, std::string filename,
         rc = sqlite3_bind_int(m_Stmt, 9, bitrate);
         rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(), path.size(), SQLITE_STATIC);
         rc = sqlite3_bind_int(m_Stmt, 11, trashed);
-		
-		rc = sqlite3_step(m_Stmt);
-		
+        
+        rc = sqlite3_step(m_Stmt);
+        
         if (rc != SQLITE_DONE)
         {
             wxLogDebug("No data inserted. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));

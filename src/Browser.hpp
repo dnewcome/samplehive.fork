@@ -15,6 +15,7 @@
 #include <wx/mediactrl.h>
 #include <wx/notebook.h>
 #include <wx/panel.h>
+#include <wx/progdlg.h>
 #include <wx/setup.h>
 #include <wx/srchctrl.h>
 #include <wx/sizer.h>
