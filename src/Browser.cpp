@@ -466,6 +466,7 @@ void Browser::OnAutoImportDir()
                                                             wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                             wxPD_AUTO_HIDE);
     progressDialog->CenterOnParent(wxBOTH);
+
     for ( size_t i = 0; i < number_of_files; i++)
     {
         name = files[i];
@@ -477,6 +478,7 @@ void Browser::OnAutoImportDir()
         {
             wxDir::GetAllFiles(name, &files);
         }
+
         progressDialog->Pulse("Reading Samples",NULL);
     }
     
@@ -485,11 +487,13 @@ void Browser::OnAutoImportDir()
     for (size_t i = 0; i < files.size(); i++)
     {
         Browser::AddSamples(files[i]);
+
         progressDialog->Update(i, wxString::Format("Adding %s", files[i].AfterLast('/')));
             
         if(progressDialog->WasCancelled())
             break;
     }
+
     progressDialog->Destroy();
 }
 
@@ -794,7 +798,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                           "%s from database? "
                                           "Warning this change is "
                                           "permanent, and cannot be "
-                                          "undone.", selection),
+                                          "undone.", sample.AfterLast('/')),
                                       wxMessageBoxCaptionStr,
                                       wxYES_NO | wxNO_DEFAULT |
                                       wxICON_QUESTION | wxSTAY_ON_TOP |
@@ -817,8 +821,8 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 {
                     case wxID_YES:
                     {
-                        msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, selection);
-                        db.RemoveSampleFromDatabase(selection.ToStdString());
+                        msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, filename);
+                        db.RemoveSampleFromDatabase(filename);
                         m_SampleListView->DeleteItem(selected_row);
                     }
                     break;
@@ -838,8 +842,12 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                         for (int i = 0; i < rows; i++)
                         {
                             int row = m_SampleListView->ItemToRow(items[i]);
-                            wxString sel = m_SampleListView->GetTextValue(row, 1);
-                            db.RemoveSampleFromDatabase(sel.ToStdString());
+
+                            wxString text_value = m_SampleListView->GetTextValue(row, 1);
+                            std::string multi_selection = text_value.Contains(wxString::Format(".%s", extension)) ?
+                                text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
+
+                            db.RemoveSampleFromDatabase(multi_selection);
                             m_SampleListView->DeleteItem(row);
                         }
                     }
@@ -865,9 +873,9 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     if (m_SampleListView->GetToggleValue(selected_row, 0))
                     {
                         m_SampleListView->SetToggleValue(false, selected_row, 0);
-                        db.UpdateFavoriteColumn(selection.BeforeLast('.').ToStdString(), 0);
+                        db.UpdateFavoriteColumn(filename, 0);
                     }
-                    db.UpdateTrashColumn(selection.BeforeLast('.').ToStdString(), 1);
+                    db.UpdateTrashColumn(filename, 1);
                     m_TrashedItems->AppendItem(trash_root_node, selection);
                     m_SampleListView->DeleteItem(selected_row);
                 }
@@ -879,16 +887,16 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     for (int i = 0; i < rows; i++)
                     {
                         int row = m_SampleListView->ItemToRow(items[i]);
-                        wxString sel = m_SampleListView->GetTextValue(row, 1);
+                        wxString multi_selection = m_SampleListView->GetTextValue(row, 1);
 
                         if (m_SampleListView->GetToggleValue(row, 0))
                         {
                             m_SampleListView->SetToggleValue(false, row, 0);
-                            db.UpdateFavoriteColumn(sel.BeforeLast('.').ToStdString(), 0);
+                            db.UpdateFavoriteColumn(multi_selection.BeforeLast('.').ToStdString(), 0);
                         }
 
-                        db.UpdateTrashColumn(sel.BeforeLast('.').ToStdString(), 1);
-                        m_TrashedItems->AppendItem(trash_root_node, sel);
+                        db.UpdateTrashColumn(multi_selection.BeforeLast('.').ToStdString(), 1);
+                        m_TrashedItems->AppendItem(trash_root_node, multi_selection);
                         m_SampleListView->DeleteItem(row);
                     }
                 }
@@ -926,7 +934,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
 void Browser::LoadDatabase()
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     try

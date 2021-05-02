@@ -113,7 +113,7 @@ void Database::InsertSample(int favorite, std::string filename,
         rc = sqlite3_bind_int(m_Stmt, 11, trashed);
         
         rc = sqlite3_step(m_Stmt);
-        
+
         if (rc != SQLITE_DONE)
         {
             wxLogDebug("No data inserted. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));
@@ -155,7 +155,13 @@ void Database::InsertSample(int favorite, std::string filename,
         if (rc == SQLITE_INTERNAL)
             wxLogDebug("SQLITE_INTERNAL");
 
-        sqlite3_close(m_Database);
+        rc = sqlite3_close(m_Database);
+
+        if (rc == SQLITE_OK)
+            wxLogDebug("DB Closed..");
+        else
+            wxLogDebug("Error! Cannot close DB, Error code: %d, Error message: %s", rc, m_ErrMsg);
+
     }
     catch (const std::exception &exception)
     {
@@ -453,7 +459,7 @@ void Database::RemoveSampleFromDatabase(std::string filename)
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string remove = "DELETE * FROM SAMPLES WHERE FILENAME = ?;";
+        std::string remove = "DELETE FROM SAMPLES WHERE FILENAME = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, remove.c_str(), remove.size(), &m_Stmt, NULL);
 
