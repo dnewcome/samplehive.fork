@@ -18,15 +18,24 @@ src = [
 
   ]
 
-wx = dependency('wxwidgets', modules : ['media', 'std'])
+wxconfig = find_program (['wx-config-gtk3', 'wx-config'])
+wx_modules = ['media', 'std']
+wx_cxx_flags = []
+wx_libs = []
+
+foreach module : wx_modules
+  wx_cxx_flags += run_command (wxconfig, '--cxxflags', module).stdout ().strip ().split()
+  wx_libs += run_command (wxconfig, '--libs', module).stdout ().strip ().split()
+endforeach
+
+wx = dependency('wxwidgets', version: '>=3.0.5')
 wxsvg = dependency('libwxsvg')
-taglib = dependency('taglib')
+taglib = dependency('taglib', version: '>=1.12')
 sqlite3 = dependency('sqlite3')
 yaml = dependency('yaml-cpp')
 
-wx_inc = include_directories('/usr/include/wx-3.0')
-
 executable('SampleHive',
            sources : src,
-           dependencies : [wx, wxsvg, taglib, sqlite3, yaml],
-           include_directories : wx_inc)
+           cpp_args: [wx_cxx_flags],
+           link_args: [wx_libs],
+           dependencies : [wx, wxsvg, taglib, sqlite3, yaml])
