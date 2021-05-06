@@ -338,7 +338,7 @@ wxString TagLibTowx(const TagLib::String& in)
 
 void Browser::AddSamples(wxString file)
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     std::string path = file.ToStdString();
@@ -887,15 +887,18 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     for (int i = 0; i < rows; i++)
                     {
                         int row = m_SampleListView->ItemToRow(items[i]);
-                        wxString multi_selection = m_SampleListView->GetTextValue(row, 1);
+
+                        wxString text_value = m_SampleListView->GetTextValue(row, 1);
+                        std::string multi_selection = text_value.Contains(wxString::Format(".%s", extension)) ?
+                            text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
                         if (m_SampleListView->GetToggleValue(row, 0))
                         {
                             m_SampleListView->SetToggleValue(false, row, 0);
-                            db.UpdateFavoriteColumn(multi_selection.BeforeLast('.').ToStdString(), 0);
+                            db.UpdateFavoriteColumn(multi_selection, 0);
                         }
 
-                        db.UpdateTrashColumn(multi_selection.BeforeLast('.').ToStdString(), 1);
+                        db.UpdateTrashColumn(multi_selection, 1);
                         m_TrashedItems->AppendItem(trash_root_node, multi_selection);
                         m_SampleListView->DeleteItem(row);
                     }
@@ -905,7 +908,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         break;
         case MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, filename, *m_InfoBar);
+            tagEditor = new TagEditor(this, (std::string&)sample, *m_InfoBar);
 
             switch (tagEditor->ShowModal())
             {
