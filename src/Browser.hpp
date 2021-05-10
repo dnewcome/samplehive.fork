@@ -37,6 +37,13 @@
 #include <taglib/fileref.h>
 #include <taglib/tstring.h>
 
+struct FileInfo
+{
+    wxString Path;
+    std::string Extension;
+    std::string Filename;
+};
+
 class Browser : public wxPanel
 {
     public:
@@ -178,6 +185,12 @@ class Browser : public wxPanel
         void LoadConfigFile();
 
         // -------------------------------------------------------------------
+        // Getters
+        FileInfo GetFileNamePathAndExtension(const wxString& selected,
+                                             bool checkExtension = true, bool doGetFilename = true);
+
+        // -------------------------------------------------------------------
+        // Directory watchers
         bool CreateWatcherIfNecessary();
         void CreateWatcher();
 

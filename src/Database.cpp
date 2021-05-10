@@ -169,7 +169,7 @@ void Database::InsertSample(int favorite, std::string filename,
     }
 }
 
-void Database::UpdateFolder(std::string folderName)
+void Database::UpdateFolder(const std::string& folderName)
 {
     try
     {
@@ -209,7 +209,7 @@ void Database::UpdateFolder(std::string folderName)
     }
 }
 
-void Database::UpdateFavoriteFolderDatabase(std::string filename, std::string folderName)
+void Database::UpdateFavoriteFolderDatabase(const std::string& filename, const std::string& folderName)
 {
     try
     {
@@ -248,7 +248,7 @@ void Database::UpdateFavoriteFolderDatabase(std::string filename, std::string fo
     }
 }
 
-void Database::UpdateFavoriteColumn(std::string filename, int value)
+void Database::UpdateFavoriteColumn(const std::string& filename, int value)
 {
     try
     {
@@ -287,7 +287,7 @@ void Database::UpdateFavoriteColumn(std::string filename, int value)
     }
 }
 
-void Database::UpdateSamplePack(std::string filename, std::string samplePack)
+void Database::UpdateSamplePack(const std::string& filename, const std::string& samplePack)
 {
     try
     {
@@ -326,7 +326,7 @@ void Database::UpdateSamplePack(std::string filename, std::string samplePack)
     }
 }
 
-void Database::UpdateSampleType(std::string filename, std::string type)
+void Database::UpdateSampleType(const std::string& filename, const std::string& type)
 {
     try
     {
@@ -365,7 +365,7 @@ void Database::UpdateSampleType(std::string filename, std::string type)
     }
 }
 
-std::string Database::GetSampleType(std::string filename)
+std::string Database::GetSampleType(const std::string& filename)
 {
     std::string type;
 
@@ -382,14 +382,15 @@ std::string Database::GetSampleType(std::string filename)
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
             wxLogInfo("Record found, fetching..");
-            type = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
+
+            type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
         rc = sqlite3_finalize(m_Stmt);
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog msgDialog(NULL, "Error! Cannot get favorite column value from table.",
+            wxMessageDialog msgDialog(NULL, "Error! Cannot get sample type column value from table.",
                                       "Error", wxOK | wxICON_ERROR);
             msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
@@ -409,7 +410,7 @@ std::string Database::GetSampleType(std::string filename)
     return type;
 }
 
-int Database::GetFavoriteColumnValueByFilename(std::string filename)
+int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
 {
     int value = 0;
 
@@ -453,7 +454,7 @@ int Database::GetFavoriteColumnValueByFilename(std::string filename)
     return value;
 }
 
-void Database::RemoveSampleFromDatabase(std::string filename)
+void Database::RemoveSampleFromDatabase(const std::string& filename)
 {
     try
     {
@@ -492,7 +493,7 @@ void Database::RemoveSampleFromDatabase(std::string filename)
     }
 }
 
-std::string Database::GetSamplePathByFilename(std::string filename)
+std::string Database::GetSamplePathByFilename(const std::string& filename)
 {
     std::string path;
 
@@ -509,7 +510,7 @@ std::string Database::GetSamplePathByFilename(std::string filename)
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
             wxLogInfo("Record found, fetching..");
-            path = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
+            path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
         rc = sqlite3_finalize(m_Stmt);
@@ -536,7 +537,7 @@ std::string Database::GetSamplePathByFilename(std::string filename)
     return path;
 }
 
-std::string Database::GetSampleFileExtension(std::string filename)
+std::string Database::GetSampleFileExtension(const std::string& filename)
 {
     std::string extension;
 
@@ -553,7 +554,7 @@ std::string Database::GetSampleFileExtension(std::string filename)
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
             wxLogInfo("Record found, fetching..");
-            extension = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
+            extension = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
         rc = sqlite3_finalize(m_Stmt);
@@ -675,7 +676,8 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
     return vecSet;
 }
 
-wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, std::string sampleName)
+wxVector<wxVector<wxVariant>>
+Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, const std::string& sampleName)
 {
     try
     {
@@ -701,8 +703,8 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
             {
                 wxLogInfo("Record found, fetching..");
                 int favorite = sqlite3_column_int(m_Stmt, 0);
-                wxString filename = wxString(std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 1))));
-                wxString sample_pack = wxString(std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 2))));
+                wxString filename = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1))));
+                wxString sample_pack = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2))));
                 wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(m_Stmt, 3)));
                 int channels = sqlite3_column_int(m_Stmt, 4);
                 int length = sqlite3_column_int(m_Stmt, 5);
@@ -749,7 +751,7 @@ wxVector<wxVector<wxVariant>> Database::FilterDatabaseBySampleName(wxVector<wxVe
     return sampleVec;
 }
 
-bool Database::HasSample(std::string filename)
+bool Database::HasSample(const std::string& filename)
 {
     std::string sample;
     bool haveSample = false;
@@ -766,7 +768,7 @@ bool Database::HasSample(std::string filename)
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
             wxLogInfo("Record found, fetching..");
-            sample = std::string(reinterpret_cast< const char* >(sqlite3_column_text(m_Stmt, 0)));
+            sample = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
             haveSample = true;
         }
 
@@ -796,7 +798,7 @@ bool Database::HasSample(std::string filename)
     return false;
 }
 
-bool Database::IsTrashed(std::string filename)
+bool Database::IsTrashed(const std::string& filename)
 {
     try
     {
@@ -840,7 +842,7 @@ bool Database::IsTrashed(std::string filename)
     return false;
 }
 
-void Database::UpdateTrashColumn(std::string filename, int value)
+void Database::UpdateTrashColumn(const std::string& filename, int value)
 {
     try
     {

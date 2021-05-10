@@ -413,37 +413,42 @@ void Browser::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
         wxBusyCursor busy_cursor;
         wxWindowDisabler window_disabler;
         
-        wxString name;
-        wxArrayString files;
+        wxString filepath;
+        wxArrayString filepath_array;
         wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
                                                                 event.GetNumberOfFiles(), this,
                                                                 wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                                 wxPD_AUTO_HIDE);
+
         progressDialog->CenterOnParent(wxBOTH);
         
         for (int i = 0; i < event.GetNumberOfFiles(); i++)
         {
-            name = dropped[i];
-            if (wxFileExists(name))
+            filepath = dropped[i];
+
+            if (wxFileExists(filepath))
             {
-                files.push_back(name);
+                filepath_array.push_back(filepath);
             }
-            else if (wxDirExists(name))
+            else if (wxDirExists(filepath))
             {
-                wxDir::GetAllFiles(name, &files);
+                wxDir::GetAllFiles(filepath, &filepath_array);
             }
+
             progressDialog->Pulse("Reading Samples",NULL);
         }
         
-        progressDialog->SetRange(files.size());
-        for (size_t i = 0; i < files.size(); i++)
+        progressDialog->SetRange(filepath_array.size());
+
+        for (size_t i = 0; i < filepath_array.size(); i++)
         {
-            Browser::AddSamples(files[i]);
-            progressDialog->Update(i, wxString::Format("Adding %s", files[i].AfterLast('/')));
+            Browser::AddSamples(filepath_array[i]);
+            progressDialog->Update(i, wxString::Format("Adding %s", filepath_array[i].AfterLast('/')));
             
             if(progressDialog->WasCancelled())
                 break;
         }
+
         progressDialog->Destroy();
     }
 }
@@ -455,40 +460,42 @@ void Browser::OnAutoImportDir()
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
     
-    wxString dir = settings.GetImportDirPath();
-    wxString name;
-    wxArrayString files;
+    wxString dir_path = settings.GetImportDirPath();
+    wxString filepath;
+    wxArrayString filepath_array;
 
-    size_t number_of_files = wxDir::GetAllFiles(dir, &files, wxEmptyString, wxDIR_DEFAULT);
+    size_t number_of_files = wxDir::GetAllFiles(dir_path, &filepath_array, wxEmptyString, wxDIR_DEFAULT);
     
     wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
                                                             (int)number_of_files, this,
                                                             wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                             wxPD_AUTO_HIDE);
+
     progressDialog->CenterOnParent(wxBOTH);
 
     for ( size_t i = 0; i < number_of_files; i++)
     {
-        name = files[i];
-        if (wxFileExists(name))
+        filepath = filepath_array[i];
+
+        if (wxFileExists(filepath))
         {
-            files.push_back(name);
+            filepath_array.push_back(filepath);
         }
-        else if (wxDirExists(name))
+        else if (wxDirExists(filepath))
         {
-            wxDir::GetAllFiles(name, &files);
+            wxDir::GetAllFiles(filepath, &filepath_array);
         }
 
         progressDialog->Pulse("Reading Samples",NULL);
     }
     
-    progressDialog->SetRange(files.size());
+    progressDialog->SetRange(filepath_array.size());
     
-    for (size_t i = 0; i < files.size(); i++)
+    for (size_t i = 0; i < filepath_array.size(); i++)
     {
-        Browser::AddSamples(files[i]);
+        Browser::AddSamples(filepath_array[i]);
 
-        progressDialog->Update(i, wxString::Format("Adding %s", files[i].AfterLast('/')));
+        progressDialog->Update(i, wxString::Format("Adding %s", filepath_array[i].AfterLast('/')));
             
         if(progressDialog->WasCancelled())
             break;
@@ -515,66 +522,72 @@ void LogDragResult(wxDragResult result)
 
 void Browser::OnDragFromDirCtrl(wxTreeEvent& event)
 {
-    wxFileDataObject data;
-    data.AddFile(m_DirCtrl->GetPath(event.GetItem()));
+    wxFileDataObject file_data;
+    file_data.AddFile(m_DirCtrl->GetPath(event.GetItem()));
 
-    wxDropSource drag_source(this);
-    drag_source.SetData(data);
+    wxDropSource drop_source(this);
+    drop_source.SetData(file_data);
 
-    LogDragResult(drag_source.DoDragDrop());
+    LogDragResult(drop_source.DoDragDrop());
 }
 
 void Browser::OnDragFromSampleView(wxDataViewEvent& event)
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
+    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    // Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
     if (selected_row < 0) return;
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
-    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = settings.IsShowFileExtension() ?
-        db.GetSampleFileExtension(selection.ToStdString()) :
-        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-        sample_with_extension : sample_without_extension;
+    // std::string extension = settings.IsShowFileExtension() ?
+    //     db.GetSampleFileExtension(selection.ToStdString()) :
+    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
-    wxFileDataObject* data = new wxFileDataObject();
+    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+    //     sample_with_extension : sample_without_extension;
 
-    data->AddFile(sample);
-    event.SetDataObject(data);
+    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
 
-    wxLogDebug("Started dragging '%s'.", sample);
+    wxFileDataObject* fileData = new wxFileDataObject();
+
+    fileData->AddFile(sample_path);
+    event.SetDataObject(fileData);
+
+    wxLogDebug("Started dragging '%s'.", sample_path);
 }
 
 void Browser::OnClickPlay(wxCommandEvent& event)
 {
     bStopped = false;
 
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
+    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    // Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->GetSelectedRow();
 
     if (selected_row < 0) return;
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
-    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = settings.IsShowFileExtension() ?
-        db.GetSampleFileExtension(selection.ToStdString()) :
-        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-        sample_with_extension : sample_without_extension;
+    // std::string extension = settings.IsShowFileExtension() ?
+    //     db.GetSampleFileExtension(selection.ToStdString()) :
+    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
-    m_MediaCtrl->Load(sample);
+    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+    //     sample_with_extension : sample_without_extension;
+
+    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
+
+    m_MediaCtrl->Load(sample_path);
     m_MediaCtrl->Play();
 
     m_Timer->Start(100, wxTIMER_CONTINUOUS);
@@ -677,8 +690,8 @@ void Browser::OnSlideVolume(wxScrollEvent& event)
 
 void Browser::OnClickSampleView(wxDataViewEvent& event)
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
+    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    // Database db(*m_InfoBar);
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
@@ -686,17 +699,21 @@ void Browser::OnClickSampleView(wxDataViewEvent& event)
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
 
-    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = settings.IsShowFileExtension() ?
-        db.GetSampleFileExtension(selection.ToStdString()) :
-        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    // std::string extension = settings.IsShowFileExtension() ?
+    //     db.GetSampleFileExtension(selection.ToStdString()) :
+    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
-    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-        sample_with_extension : sample_without_extension;
+    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+    //     sample_with_extension : sample_without_extension;
 
-    m_MediaCtrl->Load(sample);
+    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
+    // std::string filename = GetFilePathAndName(selection).Filename;
+    // std::string extension = GetFilePathAndName(selection).Extension;
+
+    m_MediaCtrl->Load(sample_path);
 
     if (bAutoplay)
     {
@@ -708,7 +725,7 @@ void Browser::OnClickSampleView(wxDataViewEvent& event)
 void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
     wxString msg;
@@ -723,17 +740,21 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
 
-    wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = settings.IsShowFileExtension() ?
-        db.GetSampleFileExtension(selection.ToStdString()) :
-        db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    // std::string extension = settings.IsShowFileExtension() ?
+    //     db.GetSampleFileExtension(selection.ToStdString()) :
+    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
-    wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-        sample_with_extension : sample_without_extension;
+    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
+    //     sample_with_extension : sample_without_extension;
 
-    std::string filename = sample.AfterLast('/').BeforeLast('.').ToStdString();
+    // std::string filename = sample.AfterLast('/').BeforeLast('.').ToStdString();
+
+    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
+    std::string filename = GetFileNamePathAndExtension(selection).Filename;
+    std::string extension = GetFileNamePathAndExtension(selection).Extension;
 
     wxMenu menu;
 
@@ -798,7 +819,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                           "%s from database? "
                                           "Warning this change is "
                                           "permanent, and cannot be "
-                                          "undone.", sample.AfterLast('/')),
+                                          "undone.", sample_path.AfterLast('/')),
                                       wxMessageBoxCaptionStr,
                                       wxYES_NO | wxNO_DEFAULT |
                                       wxICON_QUESTION | wxSTAY_ON_TOP |
@@ -908,7 +929,7 @@ void Browser::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         break;
         case MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, (std::string&)sample, *m_InfoBar);
+            tagEditor = new TagEditor(this, static_cast<std::string>(sample_path), *m_InfoBar);
 
             switch (tagEditor->ShowModal())
             {
@@ -1092,7 +1113,21 @@ void Browser::OnClickCollectionRemove(wxCommandEvent& event)
 
 void Browser::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
-    wxMessageBox("// TODO", "Trash bin", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+    Database db(*m_InfoBar);
+
+    wxTreeItemId selection_id = m_TrashedItems->GetSelection();
+    wxString selection = m_TrashedItems->GetItemText(selection_id);
+
+    wxString path = GetFileNamePathAndExtension(selection).Path;
+    std::string extension = GetFileNamePathAndExtension(selection).Extension;
+    std::string filename = GetFileNamePathAndExtension(selection).Filename;
+
+    db.UpdateTrashColumn(filename, 0);
+
+    RefreshDatabase();
+
+    // TODO: Don't let other trashed items re-added again
+    m_TrashedItems->Delete(selection_id);
 }
 
 void Browser::OnDoSearch(wxCommandEvent& event)
@@ -1175,5 +1210,32 @@ void Browser::RefreshDatabase()
 //     m_FsWatcher = new wxFileSystemWatcher();
 //     m_FsWatcher->SetOwner(this);
 // }
+
+FileInfo Browser::GetFileNamePathAndExtension(const wxString& selected, bool checkExtension, bool doGetFilename)
+{
+    Database db(*m_InfoBar);
+    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+
+    wxString path;
+    std::string extension, filename;
+
+    wxString filename_with_extension = db.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    wxString filename_without_extension = db.GetSamplePathByFilename(selected.ToStdString());
+
+    if (checkExtension)
+    {
+        extension = settings.IsShowFileExtension() ?
+            db.GetSampleFileExtension(selected.ToStdString()) :
+            db.GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
+    }
+
+    path = selected.Contains(wxString::Format(".%s", extension)) ?
+        filename_with_extension : filename_without_extension;
+
+    if (doGetFilename)
+        filename = path.AfterLast('/').BeforeLast('.').ToStdString();
+
+    return { path, extension, filename };
+}
 
 Browser::~Browser(){}

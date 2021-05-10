@@ -40,29 +40,29 @@ class Database
 
         // -------------------------------------------------------------------
         // Update database
-        void UpdateFavoriteColumn(std::string filename, int value);
-        void UpdateFolder(std::string folderName);
-        void UpdateFavoriteFolderDatabase(std::string filename,
-                                          std::string folderName);
-        void UpdateTrashColumn(std::string filename, int value);
-        void UpdateSamplePack(std::string filename, std::string samplePack);
-        void UpdateSampleType(std::string filename, std::string type);
+        void UpdateFavoriteColumn(const std::string& filename, int value);
+        void UpdateFolder(const std::string& folderName);
+        void UpdateFavoriteFolderDatabase(const std::string& filename,
+                                          const std::string& folderName);
+        void UpdateTrashColumn(const std::string& filename, int value);
+        void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
+        void UpdateSampleType(const std::string& filename, const std::string& type);
 
         // -------------------------------------------------------------------
         // Get from database
-        std::string GetSampleType(std::string filename);
-        int GetFavoriteColumnValueByFilename(std::string filename);
-        std::string GetSamplePathByFilename(std::string filename);
-        std::string GetSampleFileExtension(std::string filename);
+        std::string GetSampleType(const std::string& filename);
+        int GetFavoriteColumnValueByFilename(const std::string& filename);
+        std::string GetSamplePathByFilename(const std::string& filename);
+        std::string GetSampleFileExtension(const std::string& filename);
 
         // -------------------------------------------------------------------
         // Check database
-        bool HasSample(std::string filename);
-        bool IsTrashed(std::string filename);
+        bool HasSample(const std::string& filename);
+        bool IsTrashed(const std::string& filename);
 
         // -------------------------------------------------------------------
         // Remove from database
-        void RemoveSampleFromDatabase(std::string filename);
+        void RemoveSampleFromDatabase(const std::string& filename);
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
@@ -71,5 +71,5 @@ class Database
                      wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,
-                                   std::string sampleName);
+                                   const std::string& sampleName);
 };

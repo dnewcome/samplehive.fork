@@ -9,7 +9,7 @@
 #include "Database.hpp"
 #include "TagEditorDialog.hpp"
 
-TagEditor::TagEditor(wxWindow* window, std::string& filename, wxInfoBar& info_bar)
+TagEditor::TagEditor(wxWindow* window, const std::string& filename, wxInfoBar& info_bar)
     : wxDialog(window, wxID_ANY, "Edit tags", wxDefaultPosition,
                wxSize(640, 360), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
       m_Window(window), m_Filename(filename), m_InfoBar(info_bar), tags(filename)
@@ -217,6 +217,8 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
 
     std::string sampleType = db.GetSampleType(m_Filename);
 
+    std::string filename = wxString(m_Filename).AfterLast('/').BeforeLast('.').ToStdString();
+
     wxString warning_msg = "Are you sure you want save these changes?";
     wxMessageDialog* msgDialog = new wxMessageDialog(this, warning_msg,
                                                      "Edit tags", wxCENTRE |
@@ -277,7 +279,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             if (m_SampleTypeCheck->GetValue() && m_SampleTypeChoice->GetStringSelection() != sampleType)
             {
                 wxLogDebug("Changing type tag..");
-                db.UpdateSampleType(m_Filename, type.ToStdString());
+                db.UpdateSampleType(filename, type.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed type tag to %s", type);
             }
