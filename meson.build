@@ -8,7 +8,6 @@ src = [
 
   'src/App.cpp',
   'src/MainFrame.cpp',
-  'src/Browser.cpp',
   'src/SettingsDialog.cpp',
   'src/TagEditorDialog.cpp',
   'src/Database.cpp',
