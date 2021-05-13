@@ -53,13 +53,13 @@ cd build
 
 There are few pre-defined keybindings for SampleHive that you can use, such as
 
-| KEYBIND | ACTION                   |
-|---------+--------------------------|
-| P       | Play the selected sample |
-| L       | Toggle loop on/off       |
-| M       | Toggle mute on/off       |
-| S       | Stop the playing sample  |
-| O       | Open the settings dialog |
+| KEYBIND | ACTION |
+| :--- | :--- |
+| `P` | Play the selected sample |
+| `L` | Toggle loop on/off |
+| `M` | Toggle mute on/off |
+| `S` | Stop the playing sample |
+| `O` | Open the settings dialog |
 
 ## Can I configure SampleHive?
 
