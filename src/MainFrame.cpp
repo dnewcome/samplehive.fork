@@ -224,16 +224,16 @@ MainFrame::MainFrame()
     Bind(wxEVT_BUTTON, &MainFrame::OnClickCollectionAdd, this, BC_CollectionViewAdd);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickCollectionRemove, this, BC_CollectionViewRemove);
 
-    // Setting up keybindings
-    wxAcceleratorEntry entries[5];
-    entries[0].Set(wxACCEL_NORMAL, (int) 'P', BC_Play);
-    entries[1].Set(wxACCEL_NORMAL, (int) 'L', BC_Loop);
-    entries[2].Set(wxACCEL_NORMAL, (int) 'S', BC_Stop);
-    entries[3].Set(wxACCEL_NORMAL, (int) 'M', BC_Mute);
-    entries[4].Set(wxACCEL_NORMAL, (int) 'O', BC_Settings);
+    // // Setting up keybindings
+    // wxAcceleratorEntry entries[5];
+    // entries[0].Set(wxACCEL_NORMAL, (int) 'P', BC_Play);
+    // entries[1].Set(wxACCEL_NORMAL, (int) 'L', BC_Loop);
+    // entries[2].Set(wxACCEL_NORMAL, (int) 'S', BC_Stop);
+    // entries[3].Set(wxACCEL_NORMAL, (int) 'M', BC_Mute);
+    // entries[4].Set(wxACCEL_NORMAL, (int) 'O', BC_Settings);
 
-    wxAcceleratorTable accel(5, entries);
-    this->SetAcceleratorTable(accel);
+    // wxAcceleratorTable accel(5, entries);
+    // this->SetAcceleratorTable(accel);
 
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);

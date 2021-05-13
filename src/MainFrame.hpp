@@ -202,4 +202,6 @@ class MainFrame : public wxFrame
         void CreateWatcher();
 
         // wxString TagLibTowx(const TagLib::String& in);
+
+        friend class App;
 };

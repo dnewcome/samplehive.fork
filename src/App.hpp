@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wx/app.h>
+#include <wx/event.h>
 
 #include "MainFrame.hpp"
 
@@ -13,6 +14,9 @@ class App : public wxApp
     private:
         MainFrame* m_Frame = nullptr;
 
-    public:
+    private:
         virtual bool OnInit();
+
+    private:
+        int FilterEvent(wxEvent& event);
 };
