@@ -189,7 +189,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         void LoadDatabase();
         void RefreshDatabase();
-        void LoadConfigFile(int& height, int& width);
+        void LoadConfigFile();
 
         // -------------------------------------------------------------------
         // Getters

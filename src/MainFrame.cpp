@@ -36,14 +36,8 @@ MainFrame::MainFrame()
     : wxFrame(NULL, wxID_ANY, "Sample Hive", wxDefaultPosition),
       m_ConfigFilepath("config.yaml"), m_DatabaseFilepath("sample.hive")
 {
-    int height = 600, width = 800;
-
     // Load default yaml config file.
-    LoadConfigFile(height, width);
-
-    this->SetSize(width, height);
-    this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon("../assets/icons/icon-hive_24x24.png", wxICON_DEFAULT_TYPE, -1, -1));
+    LoadConfigFile();
 
     // Initializing BoxSizers
     m_MainSizer = new wxBoxSizer(wxVERTICAL);
@@ -282,9 +276,8 @@ MainFrame::MainFrame()
 
     // Sizer for the frame
     this->SetSizer(m_MainSizer);
-    m_MainSizer->Fit(this);
-    m_MainSizer->SetSizeHints(this);
-    m_MainSizer->Layout();
+    this->Layout();
+    this->Center(wxBOTH);
 
     // Sizer for the main panel
     m_MainPanel->SetSizer(m_TopSizer);
@@ -1186,8 +1179,10 @@ void MainFrame::OnCancelSearch(wxCommandEvent& event)
     m_SearchBox->Clear();
 }
 
-void MainFrame::LoadConfigFile(int& height, int& width)
+void MainFrame::LoadConfigFile()
 {
+    int height = 600, width = 800;
+
     Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Serializer serialize(m_ConfigFilepath);
 
@@ -1198,13 +1193,16 @@ void MainFrame::LoadConfigFile(int& height, int& width)
     serialize.DeserializeBrowserControls("loop", bLoop);
     serialize.DeserializeBrowserControls("muted", bMuted);
 
-    serialize.DeserializeWinSize("Height", height);
-    serialize.DeserializeWinSize("Width", width);
+    height = serialize.DeserializeWinSize("Height", height);
+    width = serialize.DeserializeWinSize("Width", width);
 
     settings.GetFontType().SetFaceName(font_face);
     settings.GetFontType().SetPointSize(font_size);
 
     this->SetFont(settings.GetFontType());
+    this->SetSize(width, height);
+    this->CenterOnScreen(wxBOTH);
+    this->SetIcon(wxIcon("../assets/icons/icon-hive_24x24.png", wxICON_DEFAULT_TYPE, -1, -1));
 }
 
 void MainFrame::RefreshDatabase()
