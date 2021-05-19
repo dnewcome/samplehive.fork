@@ -73,13 +73,9 @@ void Database::CreateDatabase()
     }
 }
 
-void Database::InsertSample(int favorite, std::string filename,
-                            std::string fileExtension, std::string samplePack,
-                            std::string type, int channels, int length,
-                            int sampleRate, int bitrate, std::string path,
-                            int trashed)
-{
-    try
+///Loops through a Sample array and adds them to the database
+void Database::InsertSamples(std::vector<Sample> samples) {
+     try
     {
         if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
         {
@@ -97,36 +93,53 @@ void Database::InsertSample(int favorite, std::string filename,
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
+        
+        rc = sqlite3_exec(m_Database, "BEGIN TRANSACTION", NULL, NULL, &m_ErrMsg);
+        
         if (rc != SQLITE_OK)
             wxLogDebug("Cannot prepare sql statement..");
-
-        rc = sqlite3_bind_int(m_Stmt, 1, favorite);
-        rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_text(m_Stmt, 3, fileExtension.c_str(), fileExtension.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_text(m_Stmt, 4, samplePack.c_str(), samplePack.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_text(m_Stmt, 5, type.c_str(), type.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_int(m_Stmt, 6, channels);
-        rc = sqlite3_bind_int(m_Stmt, 7, length);
-        rc = sqlite3_bind_int(m_Stmt, 8, sampleRate);
-        rc = sqlite3_bind_int(m_Stmt, 9, bitrate);
-        rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(), path.size(), SQLITE_STATIC);
-        rc = sqlite3_bind_int(m_Stmt, 11, trashed);
         
-        rc = sqlite3_step(m_Stmt);
-
-        if (rc != SQLITE_DONE)
+        Sample sample_object;
+        
+        std::string filename;
+        std::string file_extension;
+        std::string sample_pack;
+        std::string type;
+        std::string path;
+        
+        for(unsigned int i = 0; i < samples.size(); i++) 
         {
-            wxLogDebug("No data inserted. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));
+            sample_object = samples[i];
+
+            filename = sample_object.GetFilename();
+            file_extension = sample_object.GetFileExtension();
+            sample_pack = sample_object.GetSamplePack();
+            type = sample_object.GetType();
+            path = sample_object.GetPath();
+            
+            rc = sqlite3_bind_int(m_Stmt, 1, sample_object.GetFavorite());
+            rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_text(m_Stmt, 3, file_extension.c_str(), file_extension.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_text(m_Stmt, 4, sample_pack.c_str(), sample_pack.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_text(m_Stmt, 5, type.c_str(), type.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_int(m_Stmt, 6, sample_object.GetChannels());
+            rc = sqlite3_bind_int(m_Stmt, 7, sample_object.GetLength());
+            rc = sqlite3_bind_int(m_Stmt, 8, sample_object.GetSampleRate());
+            rc = sqlite3_bind_int(m_Stmt, 9, sample_object.GetBitrate());
+            rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(),path.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_int(m_Stmt, 11, sample_object.GetTrashed());
+        
+            rc = sqlite3_step(m_Stmt);
+            rc = sqlite3_clear_bindings(m_Stmt);
+            rc = sqlite3_reset(m_Stmt);
         }
+
+        rc = sqlite3_exec(m_Database, "END TRANSACTION", NULL, NULL, &m_ErrMsg);
 
         rc = sqlite3_finalize(m_Stmt);
 
         if (rc != SQLITE_OK)
         {
-            // wxMessageDialog msgDialog(NULL,
-            //                           "Error! Cannot insert data into table.",
-            //                           "Error", wxOK | wxICON_ERROR);
-            // msgDialog.ShowModal();
             wxLogDebug("Error! Cannot insert data into table. Error code: %d: Msg: %s", rc , sqlite3_errmsg(m_Database));
         }
         else
@@ -155,13 +168,7 @@ void Database::InsertSample(int favorite, std::string filename,
         if (rc == SQLITE_INTERNAL)
             wxLogDebug("SQLITE_INTERNAL");
 
-        rc = sqlite3_close(m_Database);
-
-        if (rc == SQLITE_OK)
-            wxLogDebug("DB Closed..");
-        else
-            wxLogDebug("Error! Cannot close DB, Error code: %d, Error message: %s", rc, m_ErrMsg);
-
+        sqlite3_close(m_Database);
     }
     catch (const std::exception &exception)
     {
@@ -751,51 +758,43 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
     return sampleVec;
 }
 
-bool Database::HasSample(const std::string& filename)
+//Compares the input array with the database and removes duplicates.
+wxArrayString Database::CheckDuplicates(wxArrayString files) 
 {
+    wxArrayString sorted_files;
+
+    std::string filename;
     std::string sample;
-    bool haveSample = false;
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT * FROM SAMPLES WHERE FILENAME = ?;";
-
         rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
-
-        rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
-
-        if (sqlite3_step(m_Stmt) == SQLITE_ROW)
-        {
-            wxLogInfo("Record found, fetching..");
-            sample = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
-            haveSample = true;
-        }
-
-        rc = sqlite3_finalize(m_Stmt);
-
-        if (rc != SQLITE_OK)
-        {
-            wxMessageDialog msgDialog(NULL, "Error! Cannot find data in table.",
-                                      "Error", wxOK | wxICON_ERROR);
-            msgDialog.ShowModal();
-            sqlite3_free(m_ErrMsg);
-        }
-        else
-        {
-            wxLogInfo("Selected data from table successfully.");
-        }
-
-        sqlite3_close(m_Database);
         
-        return haveSample;
+        for(unsigned int i = 0; i < files.size(); i++) 
+        {
+            filename = files[i].AfterLast('/').BeforeLast('.').ToStdString();
+            rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+            
+            if (sqlite3_step(m_Stmt) != SQLITE_ROW)
+            {
+                sorted_files.push_back(files[i]);
+            }
+            
+            rc = sqlite3_clear_bindings(m_Stmt);
+            rc = sqlite3_reset(m_Stmt);
+        }
+        
+        sqlite3_finalize(m_Stmt);
+        sqlite3_close(m_Database);
     }
     catch (const std::exception &exception)
     {
         wxLogDebug(exception.what());
     }
 
-    return false;
+    return sorted_files; 
 }
 
 bool Database::IsTrashed(const std::string& filename)

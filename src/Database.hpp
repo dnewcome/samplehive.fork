@@ -1,5 +1,6 @@
-#include <mutex>
 #include <string>
+#include <vector>
+#include <iostream>
 
 #include <wx/infobar.h>
 #include <wx/treebase.h>
@@ -8,6 +9,8 @@
 #include <wx/variant.h>
 
 #include <sqlite3.h>
+
+#include "Sample.hpp"
 
 class Database
 {
@@ -32,12 +35,8 @@ class Database
 
         // -------------------------------------------------------------------
         // Insert into database
-        void InsertSample(int favorite, std::string filename,
-                          std::string fileExtension, std::string samplePack,
-                          std::string type, int channels, int length,
-                          int sampleRate, int bitrate, std::string path,
-                          int trashed);
-
+        void InsertSamples(std::vector<Sample>);
+        
         // -------------------------------------------------------------------
         // Update database
         void UpdateFavoriteColumn(const std::string& filename, int value);
@@ -57,8 +56,8 @@ class Database
 
         // -------------------------------------------------------------------
         // Check database
-        bool HasSample(const std::string& filename);
         bool IsTrashed(const std::string& filename);
+        wxArrayString CheckDuplicates(wxArrayString files);
 
         // -------------------------------------------------------------------
         // Remove from database

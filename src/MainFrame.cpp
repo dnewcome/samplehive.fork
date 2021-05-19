@@ -29,6 +29,7 @@
 #include "Tags.hpp"
 // #include "TreeItemDialog.hpp"
 #include "Serialize.hpp"
+#include "Sample.hpp"
 
 #include <wx/fswatcher.h>
 
@@ -348,75 +349,119 @@ wxString TagLibTowx(const TagLib::String& in)
     return wxString::FromUTF8(in.toCString(true));
 }
 
-void MainFrame::AddSamples(wxString file)
+// Adds multiple samples to the database.
+void MainFrame::AddSamples(wxArrayString files)
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+
     Database db(*m_InfoBar);
+    
+    wxBusyCursor busy_cursor;
+    wxWindowDisabler window_disabler;
+    wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
+                                                                (int)files.size(), this,
+                                                                wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
+                                                                wxPD_AUTO_HIDE);
+    progressDialog->CenterOnParent(wxBOTH);
+    
+    std::vector<Sample> sample_array;
+    std::string path;
+    std::string artist;
+    std::string filename_with_extension; 
+    std::string filename_without_extension;
+    std::string extension;
+    std::string filename;
+    
+    //Check All Files At Once
+    wxArrayString sorted_files; 
+    sorted_files = db.CheckDuplicates(files);
+    files = sorted_files;
+    
+    if(files.size() < 1) {
+        progressDialog->Destroy();
+        return;
+    }
 
-    std::string path = file.ToStdString();
-
-    std::string filename_with_extension = file.AfterLast('/').ToStdString();
-    std::string filename_without_extension = file.AfterLast('/').BeforeLast('.').ToStdString();
-    std::string extension = file.AfterLast('.').ToStdString();
-
-    std::string filename = settings.IsShowFileExtension() ?
-        filename_with_extension : filename_without_extension;
-
-    Tags tags(path);
-
-    std::string artist = tags.GetAudioInfo().artist.ToStdString();
-
-    int channels = tags.GetAudioInfo().channels;
-    int length = tags.GetAudioInfo().length;
-    int sample_rate = tags.GetAudioInfo().sample_rate;
-    int bitrate = tags.GetAudioInfo().bitrate;
-
-    wxVector<wxVariant> data;
-
-    if (tags.IsFileValid())
+    progressDialog->SetRange(files.size());    
+    for(unsigned int i = 0; i < files.size(); i++) 
     {
-        data.clear();
-        data.push_back(false);
-        data.push_back(filename);
-        data.push_back(artist);
-        data.push_back("");
-        data.push_back(wxString::Format("%d", channels));
-        data.push_back(wxString::Format("%d", length));
-        data.push_back(wxString::Format("%d", sample_rate));
-        data.push_back(wxString::Format("%d", bitrate));
+        progressDialog->Update(i, wxString::Format("Getting Data For %s", files[i].AfterLast('/')));
 
-        wxLogDebug("Adding file: %s :: Extension: %s", filename, extension);
-
-        if (!db.HasSample(filename_without_extension))
+        if(progressDialog->WasCancelled()) 
         {
-            m_SampleListView->AppendItem(data);
+            progressDialog->Destroy();
+            return;
+        }
 
-            db.InsertSample(0, filename_without_extension, extension, artist,
-                            "", channels, length, sample_rate, bitrate,
-                            path, 0);
+        path = files[i].ToStdString();
+        filename_with_extension = files[i].AfterLast('/').ToStdString();
+        filename = files[i].AfterLast('/').BeforeLast('.').ToStdString();
+        extension = files[i].AfterLast('.').ToStdString();
+        
+        Sample sample_object;
+        sample_object.SetPath(path);
+
+        sample_object.SetFilename(filename);
+        sample_object.SetFileExtension(extension);
+        
+        Tags tags(path);
+        artist = tags.GetAudioInfo().artist.ToStdString();
+
+        sample_object.SetSamplePack(artist);
+        sample_object.SetChannels(tags.GetAudioInfo().channels);
+        sample_object.SetLength(tags.GetAudioInfo().length);
+        sample_object.SetSampleRate(tags.GetAudioInfo().sample_rate);
+        sample_object.SetBitrate(tags.GetAudioInfo().bitrate);
+    
+        wxVector<wxVariant> data;
+    
+        if (tags.IsFileValid())
+        {
+            data.clear();
+            data.push_back(false);
+            
+            if(settings.IsShowFileExtension())
+                data.push_back(filename_with_extension);
+            else
+                data.push_back(filename);
+                
+            data.push_back(sample_object.GetSamplePack());
+            data.push_back("");
+            data.push_back(wxString::Format("%d", sample_object.GetChannels()));
+            data.push_back(wxString::Format("%d", sample_object.GetLength()));
+            data.push_back(wxString::Format("%d", sample_object.GetSampleRate()));
+            data.push_back(wxString::Format("%d", sample_object.GetBitrate()));
+    
+            wxLogDebug("Will Add file: %s :: Extension: %s", sample_object.GetFilename(), sample_object.GetFileExtension());
+    
+            m_SampleListView->AppendItem(data);
+            sample_array.push_back(sample_object);
         }
         else
         {
-            wxString msg = wxString::Format("%s already exists.", file.AfterLast('/'));
-            m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+            wxString msg = wxString::Format("Error! Cannot open %s, Invalid file type.", sample_object.GetFilename());
+            m_InfoBar->ShowMessage(msg, wxICON_ERROR);
         }
     }
-    else
-    {
-        wxString msg = wxString::Format("Error! Cannot open %s, Invalid file type.", filename);
-        m_InfoBar->ShowMessage(msg, wxICON_ERROR);
-    }
+    progressDialog->Pulse("Updating Database",NULL);
+    db.InsertSamples(sample_array);
+    
+    progressDialog->Destroy();
 }
 
 void MainFrame::OnClickDirCtrl(wxCommandEvent& event)
 {
-    wxString path = m_DirCtrl->GetFilePath();
-
-    MainFrame::AddSamples(path);
+    wxArrayString path;
+    path.push_back(m_DirCtrl->GetFilePath());
+    
+    AddSamples(path);
 }
 
 void MainFrame::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
 {
+    //Log Start
+    wxLogDebug("Start Inserting Samples");
+    
     if (event.GetNumberOfFiles() > 0)
     {
         wxString* dropped = event.GetFiles();
@@ -425,14 +470,17 @@ void MainFrame::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
         wxBusyCursor busy_cursor;
         wxWindowDisabler window_disabler;
 
+        wxString name;
         wxString filepath;
         wxArrayString filepath_array;
-        wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
+        wxProgressDialog* progressDialog = new wxProgressDialog("Reading files..", "Reading files, please wait...",
                                                                 event.GetNumberOfFiles(), this,
                                                                 wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                                 wxPD_AUTO_HIDE);
 
         progressDialog->CenterOnParent(wxBOTH);
+
+        wxYield();
 
         for (int i = 0; i < event.GetNumberOfFiles(); i++)
         {
@@ -446,27 +494,20 @@ void MainFrame::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
             {
                 wxDir::GetAllFiles(filepath, &filepath_array);
             }
-
             progressDialog->Pulse("Reading Samples",NULL);
         }
 
-        progressDialog->SetRange(filepath_array.size());
-
-        for (size_t i = 0; i < filepath_array.size(); i++)
-        {
-            MainFrame::AddSamples(filepath_array[i]);
-            progressDialog->Update(i, wxString::Format("Adding %s", filepath_array[i].AfterLast('/')));
-
-            if(progressDialog->WasCancelled())
-                break;
-        }
-
         progressDialog->Destroy();
+        AddSamples(filepath_array);
+        
+        wxLogDebug("Done Inserting Samples:");
     }
 }
 
 void MainFrame::OnAutoImportDir()
 {
+    wxLogDebug("Start Importing Samples:");
+    
     Settings settings(this,m_ConfigFilepath, m_DatabaseFilepath);
 
     wxBusyCursor busy_cursor;
@@ -501,19 +542,10 @@ void MainFrame::OnAutoImportDir()
         progressDialog->Pulse("Reading Samples",NULL);
     }
 
-    progressDialog->SetRange(filepath_array.size());
-
-    for (size_t i = 0; i < filepath_array.size(); i++)
-    {
-        MainFrame::AddSamples(filepath_array[i]);
-
-        progressDialog->Update(i, wxString::Format("Adding %s", filepath_array[i].AfterLast('/')));
-
-        if(progressDialog->WasCancelled())
-            break;
-    }
-
     progressDialog->Destroy();
+    AddSamples(filepath_array);
+        
+    wxLogDebug("Done Importing Samples:");
 }
 
 void LogDragResult(wxDragResult result)
