@@ -14,7 +14,7 @@ src = [
   'src/Serialize.cpp',
   'src/TreeItemDialog.cpp',
   'src/Tags.cpp',
-
+  'src/Sample.cpp',
   ]
 
 wxconfig = find_program (['wx-config-gtk3', 'wx-config'])

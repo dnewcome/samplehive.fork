@@ -183,9 +183,8 @@ class MainFrame : public wxFrame
         void UpdateElapsedTime(wxTimerEvent& event);
 
         // -------------------------------------------------------------------
-        void AddSamples(wxString file);
         void OnAutoImportDir();
-
+        void AddSamples(wxArrayString files);
         // -------------------------------------------------------------------
         void LoadDatabase();
         void RefreshDatabase();
