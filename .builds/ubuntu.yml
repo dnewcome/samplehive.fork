@@ -12,6 +12,8 @@ packages:
   - libtag1-dev
   - libtagc0
   - libexif-dev
+  - libpango1.0-dev
+  - pkg-config
   - git
   - meson
   - g++

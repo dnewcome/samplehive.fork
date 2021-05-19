@@ -29,7 +29,7 @@ endforeach
 
 wx = dependency('wxwidgets', version: '>=3.0.4')
 wxsvg = dependency('libwxsvg')
-taglib = dependency('taglib', version: '>=1.12')
+taglib = dependency('taglib', version: '>=1.11')
 sqlite3 = dependency('sqlite3')
 yaml = dependency('yaml-cpp')
 
