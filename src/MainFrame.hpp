@@ -16,7 +16,6 @@
 #include <wx/mediactrl.h>
 #include <wx/notebook.h>
 #include <wx/panel.h>
-#include <wx/progdlg.h>
 #include <wx/setup.h>
 #include <wx/srchctrl.h>
 #include <wx/sizer.h>
@@ -183,8 +182,9 @@ class MainFrame : public wxFrame
         void UpdateElapsedTime(wxTimerEvent& event);
 
         // -------------------------------------------------------------------
+        void AddSamples(wxArrayString& files);
         void OnAutoImportDir();
-        void AddSamples(wxArrayString files);
+
         // -------------------------------------------------------------------
         void LoadDatabase();
         void RefreshDatabase();
@@ -193,7 +193,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Getters
         FileInfo GetFileNamePathAndExtension(const wxString& selected,
-                                             bool checkExtension = true, bool doGetFilename = true);
+                                             bool checkExtension = true, bool doGetFilename = true) const;
 
         // -------------------------------------------------------------------
         // Directory watchers
@@ -202,5 +202,6 @@ class MainFrame : public wxFrame
 
         // wxString TagLibTowx(const TagLib::String& in);
 
+        // -------------------------------------------------------------------
         friend class App;
 };

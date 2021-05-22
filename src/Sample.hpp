@@ -11,66 +11,94 @@
 
 #include <string>
 
-
 /**
  * @class Sample
  * @brief This class holds data for one sample.
  */
 
-class Sample {
-    private:  
-        int sFavorite = 0;
-        std::string sFilename = "";
-        std::string sFileExtension = "";
-        std::string sSamplePack = "";
-        std::string sType  = "";
-        int sChannels = 0;
-        int sLength = 0;
-        int sSampleRate  = 0;
-        int sBitrate  = 0;
-        std::string sPath = "";
-        int sTrashed = 0;
+class Sample
+{
     public:
         Sample();
-    
-        Sample(int favorite, std::string filename,
-               std::string fileExtension, std::string samplePack,
-               std::string type, int channels, int length,
-               int sampleRate, int bitrate, std::string path,
-               int trashed);
-        
+
+        Sample(int favorite, const std::string& filename, const std::string& fileExtension,
+               const std::string& samplePack, const std::string& type, int channels, int length,
+               int sampleRate, int bitrate, const std::string& path, int trashed);
+
+    private:
+        // -------------------------------------------------------------------
+        int m_Favorite = 0;
+        int m_Channels = 0;
+        int m_Length = 0;
+        int m_SampleRate = 0;
+        int m_Bitrate = 0;
+        int m_Trashed = 0;
+        std::string m_Filename;
+        std::string m_FileExtension;
+        std::string m_SamplePack;
+        std::string m_Type;
+        std::string m_Path;
+
+    public:
+        // -------------------------------------------------------------------
+        // Getters
+        // int GetFavorite();
+        // int GetChannels();
+        // int GetLength();
+        // int GetSampleRate();
+        // int GetBitrate();
+        // int GetTrashed ();
+        // std::string GetFilename();
+        // std::string GetFileExtension();
+        // std::string GetSamplePack();
+        // std::string GetType();
+        // std::string GetPath();
+
+        int GetFavorite() const { return m_Favorite; }
+        int GetChannels() const { return m_Channels; }
+        int GetLength() const { return m_Length; }
+        int GetSampleRate() const { return m_SampleRate; }
+        int GetBitrate() const { return m_Bitrate; }
+        int GetTrashed() const { return m_Trashed; }
+        std::string GetFilename() const { return m_Filename; }
+        std::string GetFileExtension() const { return m_FileExtension; }
+        std::string GetSamplePack() const { return m_SamplePack; }
+        std::string GetType() const { return m_Type; }
+        std::string GetPath() const { return m_Path; }
+
+        // -------------------------------------------------------------------
+        // Clear sample data
         void Clear();
-        
-        int GetFavorite();
-        std::string GetFilename();
-        std::string GetFileExtension(); 
-        std::string GetSamplePack();
-        std::string GetType(); 
-        int GetChannels(); 
-        int GetLength();
-        int GetSampleRate(); 
-        int GetBitrate(); 
-        std::string GetPath();
-        int GetTrashed ();
-        
-        void Set(int favorite, std::string filename,
-               std::string fileExtension, std::string samplePack,
-               std::string type, int channels, int length,
-               int sampleRate, int bitrate, std::string path,
-               int trashed);
-        
-        void SetFavorite(int favorite);
-        void SetFilename(std::string filename);
-        void SetFileExtension(std::string fileExtension); 
-        void SetSamplePack(std::string samplePack);
-        void SetType(std::string type); 
-        void SetChannels(int channels); 
-        void SetLength(int length);
-        void SetSampleRate(int sampleRate); 
-        void SetBitrate(int bitrate); 
-        void SetPath(std::string path);
-        void SetTrashed ( int trashed);
-    
+
+        // -------------------------------------------------------------------
+        // Setters
+        void Set(int favorite, const std::string& filename, const std::string& fileExtension,
+                 const std::string& samplePack, const std::string& type, int channels, int length,
+                 int sampleRate, int bitrate, const std::string& path, int trashed);
+
+        // void SetFavorite(int favorite);
+        // void SetChannels(int channels);
+        // void SetLength(int length);
+        // void SetSampleRate(int sampleRate);
+        // void SetBitrate(int bitrate);
+        // void SetTrashed(int trashed);
+        // void SetFilename(std::string filename);
+        // void SetFileExtension(std::string fileExtension);
+        // void SetSamplePack(std::string samplePack);
+        // void SetType(std::string type);
+        // void SetPath(std::string path);
+
+        void SetFavorite(int favorite) { m_Favorite = favorite; }
+        void SetChannels(int channels) { m_Channels = channels; }
+        void SetLength(int length) { m_Length = length; }
+        void SetSampleRate(int sampleRate) { m_SampleRate = sampleRate; }
+        void SetBitrate(int bitrate) { m_Bitrate = bitrate; }
+        void SetTrashed(int trashed) { m_Trashed = trashed; }
+        void SetFilename(const std::string& filename) { m_Filename = filename; }
+        void SetFileExtension(const std::string& fileExtension) { m_FileExtension = fileExtension; }
+        void SetSamplePack(const std::string& samplePack) { m_SamplePack = samplePack; }
+        void SetType(const std::string& type) { m_Type = type; }
+        void SetPath(const std::string& path) { m_Path = path; }
 };
 
 #endif

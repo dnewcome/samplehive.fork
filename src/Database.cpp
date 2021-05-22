@@ -73,9 +73,10 @@ void Database::CreateDatabase()
     }
 }
 
-///Loops through a Sample array and adds them to the database
-void Database::InsertSamples(std::vector<Sample> samples) {
-     try
+//Loops through a Sample array and adds them to the database
+void Database::InsertSamples(std::vector<Sample> samples)
+{
+    try
     {
         if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
         {
@@ -99,7 +100,7 @@ void Database::InsertSamples(std::vector<Sample> samples) {
         if (rc != SQLITE_OK)
             wxLogDebug("Cannot prepare sql statement..");
         
-        Sample sample_object;
+        Sample sample;
         
         std::string filename;
         std::string file_extension;
@@ -109,25 +110,25 @@ void Database::InsertSamples(std::vector<Sample> samples) {
         
         for(unsigned int i = 0; i < samples.size(); i++) 
         {
-            sample_object = samples[i];
+            sample = samples[i];
 
-            filename = sample_object.GetFilename();
-            file_extension = sample_object.GetFileExtension();
-            sample_pack = sample_object.GetSamplePack();
-            type = sample_object.GetType();
-            path = sample_object.GetPath();
-            
-            rc = sqlite3_bind_int(m_Stmt, 1, sample_object.GetFavorite());
+            filename = sample.GetFilename();
+            file_extension = sample.GetFileExtension();
+            sample_pack = sample.GetSamplePack();
+            type = sample.GetType();
+            path = sample.GetPath();
+
+            rc = sqlite3_bind_int(m_Stmt, 1, sample.GetFavorite());
             rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
             rc = sqlite3_bind_text(m_Stmt, 3, file_extension.c_str(), file_extension.size(), SQLITE_STATIC);
             rc = sqlite3_bind_text(m_Stmt, 4, sample_pack.c_str(), sample_pack.size(), SQLITE_STATIC);
             rc = sqlite3_bind_text(m_Stmt, 5, type.c_str(), type.size(), SQLITE_STATIC);
-            rc = sqlite3_bind_int(m_Stmt, 6, sample_object.GetChannels());
-            rc = sqlite3_bind_int(m_Stmt, 7, sample_object.GetLength());
-            rc = sqlite3_bind_int(m_Stmt, 8, sample_object.GetSampleRate());
-            rc = sqlite3_bind_int(m_Stmt, 9, sample_object.GetBitrate());
+            rc = sqlite3_bind_int(m_Stmt, 6, sample.GetChannels());
+            rc = sqlite3_bind_int(m_Stmt, 7, sample.GetLength());
+            rc = sqlite3_bind_int(m_Stmt, 8, sample.GetSampleRate());
+            rc = sqlite3_bind_int(m_Stmt, 9, sample.GetBitrate());
             rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(),path.size(), SQLITE_STATIC);
-            rc = sqlite3_bind_int(m_Stmt, 11, sample_object.GetTrashed());
+            rc = sqlite3_bind_int(m_Stmt, 11, sample.GetTrashed());
         
             rc = sqlite3_step(m_Stmt);
             rc = sqlite3_clear_bindings(m_Stmt);
@@ -168,7 +169,12 @@ void Database::InsertSamples(std::vector<Sample> samples) {
         if (rc == SQLITE_INTERNAL)
             wxLogDebug("SQLITE_INTERNAL");
 
-        sqlite3_close(m_Database);
+        rc = sqlite3_close(m_Database);
+
+        if (rc == SQLITE_OK)
+            wxLogDebug("DB Closed..");
+        else
+            wxLogDebug("Error! Cannot close DB, Error code: %d, Error message: %s", rc, m_ErrMsg);
     }
     catch (const std::exception &exception)
     {
@@ -759,29 +765,32 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
 }
 
 //Compares the input array with the database and removes duplicates.
-wxArrayString Database::CheckDuplicates(wxArrayString files) 
+wxArrayString Database::CheckDuplicates(const wxArrayString& files)
 {
     wxArrayString sorted_files;
 
     std::string filename;
     std::string sample;
+
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
         std::string select = "SELECT * FROM SAMPLES WHERE FILENAME = ?;";
+
         rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
         
         for(unsigned int i = 0; i < files.size(); i++) 
         {
             filename = files[i].AfterLast('/').BeforeLast('.').ToStdString();
+
             rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
             
             if (sqlite3_step(m_Stmt) != SQLITE_ROW)
-            {
                 sorted_files.push_back(files[i]);
-            }
-            
+            else
+                wxLogDebug("Already added: %s. Skipping..", files[i]);
+
             rc = sqlite3_clear_bindings(m_Stmt);
             rc = sqlite3_reset(m_Stmt);
         }

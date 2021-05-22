@@ -57,7 +57,7 @@ class Database
         // -------------------------------------------------------------------
         // Check database
         bool IsTrashed(const std::string& filename);
-        wxArrayString CheckDuplicates(wxArrayString files);
+        wxArrayString CheckDuplicates(const wxArrayString& files);
 
         // -------------------------------------------------------------------
         // Remove from database
