@@ -93,8 +93,8 @@ class MainFrame : public wxFrame
         wxBoxSizer* m_TrashItemSizer;
         wxSizerItem *m_CollectionViewTrashSizerItem;
         wxDirCtrl* m_DirCtrl;
-        wxTreeCtrl* m_CollectionView;
-        wxTreeItemId rootNode;
+        wxDataViewTreeCtrl* m_CollectionView;
+        wxDataViewItem root_node;
         wxTreeItemId trash_root_node;
         wxCollapsiblePane* m_TrashPane;
         wxTreeCtrl* m_TrashedItems;

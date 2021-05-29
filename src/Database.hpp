@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 
+#include <wx/dataview.h>
 #include <wx/infobar.h>
 #include <wx/treebase.h>
 #include <wx/treectrl.h>
@@ -41,18 +42,19 @@ class Database
         // Update database
         void UpdateFavoriteColumn(const std::string& filename, int value);
         void UpdateFolder(const std::string& folderName);
-        void UpdateFavoriteFolderDatabase(const std::string& filename,
-                                          const std::string& folderName);
+        void UpdateFavoriteFolder(const std::string& filename,
+                                  const std::string& folderName);
         void UpdateTrashColumn(const std::string& filename, int value);
         void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
         void UpdateSampleType(const std::string& filename, const std::string& type);
 
         // -------------------------------------------------------------------
         // Get from database
-        std::string GetSampleType(const std::string& filename);
         int GetFavoriteColumnValueByFilename(const std::string& filename);
+        std::string GetFavoriteFolderByFilename(const std::string& filename);
         std::string GetSamplePathByFilename(const std::string& filename);
         std::string GetSampleFileExtension(const std::string& filename);
+        std::string GetSampleType(const std::string& filename);
 
         // -------------------------------------------------------------------
         // Check database
@@ -65,8 +67,11 @@ class Database
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
+        // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
+        //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+        //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
-                     wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+                     wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                      wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,

@@ -32,7 +32,8 @@ void Database::CreateDatabase()
         "SAMPLERATE     INT     NOT NULL,"
         "BITRATE        INT     NOT NULL,"
         "PATH           TEXT    NOT NULL,"
-        "TRASHED        INT     NOT NULL);";
+        "TRASHED        INT     NOT NULL,"
+        "FOLDER         TEXT    NOT NULL);";
 
     try
     {
@@ -90,8 +91,8 @@ void Database::InsertSamples(std::vector<Sample> samples)
 
         std::string insert = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
                               EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
-                              SAMPLERATE, BITRATE, PATH, TRASHED) \
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                              SAMPLERATE, BITRATE, PATH, TRASHED, FOLDER) \
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
         
@@ -118,6 +119,8 @@ void Database::InsertSamples(std::vector<Sample> samples)
             type = sample.GetType();
             path = sample.GetPath();
 
+            std::string folder;
+
             rc = sqlite3_bind_int(m_Stmt, 1, sample.GetFavorite());
             rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
             rc = sqlite3_bind_text(m_Stmt, 3, file_extension.c_str(), file_extension.size(), SQLITE_STATIC);
@@ -127,8 +130,9 @@ void Database::InsertSamples(std::vector<Sample> samples)
             rc = sqlite3_bind_int(m_Stmt, 7, sample.GetLength());
             rc = sqlite3_bind_int(m_Stmt, 8, sample.GetSampleRate());
             rc = sqlite3_bind_int(m_Stmt, 9, sample.GetBitrate());
-            rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(),path.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(), path.size(), SQLITE_STATIC);
             rc = sqlite3_bind_int(m_Stmt, 11, sample.GetTrashed());
+            rc = sqlite3_bind_text(m_Stmt, 12, folder.c_str(), folder.size(), SQLITE_STATIC);
         
             rc = sqlite3_step(m_Stmt);
             rc = sqlite3_clear_bindings(m_Stmt);
@@ -222,13 +226,13 @@ void Database::UpdateFolder(const std::string& folderName)
     }
 }
 
-void Database::UpdateFavoriteFolderDatabase(const std::string& filename, const std::string& folderName)
+void Database::UpdateFavoriteFolder(const std::string& filename, const std::string& folderName)
 {
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string update = "UPDATE SAMPLES SET FAVORITEFOLDER = ? WHERE FILENAME = ?;";
+        std::string update = "UPDATE SAMPLES SET FOLDER = ? WHERE FILENAME = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, update.c_str(), update.size(), &m_Stmt, NULL);
 
@@ -467,6 +471,51 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
     return value;
 }
 
+std::string Database::GetFavoriteFolderByFilename(const std::string& filename)
+{
+    std::string folder;
+
+    try
+    {
+        rc = sqlite3_open("sample.hive", &m_Database);
+
+        std::string select = "SELECT FOLDER FROM SAMPLES WHERE FILENAME = ?;";
+
+        rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
+
+        rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+
+        if (sqlite3_step(m_Stmt) == SQLITE_ROW)
+        {
+            wxLogInfo("Record found, fetching..");
+
+            folder = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
+        }
+
+        rc = sqlite3_finalize(m_Stmt);
+
+        if (rc != SQLITE_OK)
+        {
+            wxMessageDialog msgDialog(NULL, "Error! Cannot get favorite folder value from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
+            sqlite3_free(m_ErrMsg);
+        }
+        else
+        {
+            wxLogInfo("Selected data from table successfully.");
+        }
+
+        sqlite3_close(m_Database);
+    }
+    catch (const std::exception &exception)
+    {
+        wxLogDebug(exception.what());
+    }
+
+    return folder;
+}
+
 void Database::RemoveSampleFromDatabase(const std::string& filename)
 {
     try
@@ -596,7 +645,8 @@ std::string Database::GetSampleFileExtension(const std::string& filename)
 
 wxVector<wxVector<wxVariant>>
 Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
-                       wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+                       // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+                       wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                        wxTreeCtrl& trash_tree, wxTreeItemId& trash_item,
                        bool show_extension)
 {

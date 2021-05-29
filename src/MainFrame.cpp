@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstddef>
 #include <deque>
 #include <exception>
@@ -17,6 +18,7 @@
 #include <wx/msgdlg.h>
 #include <wx/progdlg.h>
 #include <wx/stdpaths.h>
+#include <wx/textdlg.h>
 #include <wx/variant.h>
 #include <wx/vector.h>
 #include <wx/utils.h>
@@ -98,8 +100,8 @@ MainFrame::MainFrame()
     // m_TrashButton = new wxButton(m_CollectionViewPanel, BC_TrashButton, "Trash", wxDefaultPosition, wxDefaultSize, 0);
 
     // Initializing wxTreeCtrl as another page of wxNotebook
-    m_CollectionView = new wxTreeCtrl(m_CollectionViewPanel, BC_CollectionView, wxDefaultPosition, wxDefaultSize,
-                                      wxTR_HAS_BUTTONS | wxTR_HIDE_ROOT);
+    m_CollectionView = new wxDataViewTreeCtrl(m_CollectionViewPanel, BC_CollectionView, wxDefaultPosition, wxDefaultSize,
+                                              wxTR_HAS_BUTTONS | wxTR_HIDE_ROOT);
 
     m_TrashPane = new wxCollapsiblePane(m_CollectionViewPanel, BC_TrashPane, "Trash",
                                         wxDefaultPosition, wxDefaultSize, wxCP_DEFAULT_STYLE);
@@ -112,7 +114,9 @@ MainFrame::MainFrame()
     m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
 
     // Adding root to CollectionView
-    rootNode = m_CollectionView->AddRoot("ROOT");
+    // rootNode = m_CollectionView->AddRoot("ROOT");
+    root_node = m_CollectionView->AppendContainer(wxDataViewItem(wxNullPtr), "Default");
+    m_CollectionView->AppendItem(root_node, "sample.xyz");
 
     // Addubg root to TrashedItems
     trash_root_node = m_TrashedItems->AddRoot("ROOT");
@@ -869,26 +873,26 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             int rows = m_SampleListView->GetSelections(items);
 
             wxMessageDialog singleMsgDialog(this, wxString::Format(
-                                          "Are you sure you want to delete "
-                                          "%s from database? "
-                                          "Warning this change is "
-                                          "permanent, and cannot be "
-                                          "undone.", sample_path.AfterLast('/')),
-                                      wxMessageBoxCaptionStr,
-                                      wxYES_NO | wxNO_DEFAULT |
-                                      wxICON_QUESTION | wxSTAY_ON_TOP |
-                                      wxCENTER);
+                                                "Are you sure you want to delete "
+                                                "%s from database? "
+                                                "Warning this change is "
+                                                "permanent, and cannot be "
+                                                "undone.", sample_path.AfterLast('/')),
+                                            wxMessageBoxCaptionStr,
+                                            wxYES_NO | wxNO_DEFAULT |
+                                            wxICON_QUESTION | wxSTAY_ON_TOP |
+                                            wxCENTER);
 
             wxMessageDialog multipleMsgDialog(this, wxString::Format(
-                                          "Are you sure you want to delete "
-                                          "%d selected samples from database? "
-                                          "Warning this change is "
-                                          "permanent, and cannot be "
-                                          "undone.", rows),
-                                      wxMessageBoxCaptionStr,
-                                      wxYES_NO | wxNO_DEFAULT |
-                                      wxICON_QUESTION | wxSTAY_ON_TOP |
-                                      wxCENTER);
+                                                  "Are you sure you want to delete "
+                                                  "%d selected samples from database? "
+                                                  "Warning this change is "
+                                                  "permanent, and cannot be "
+                                                  "undone.", rows),
+                                              wxMessageBoxCaptionStr,
+                                              wxYES_NO | wxNO_DEFAULT |
+                                              wxICON_QUESTION | wxSTAY_ON_TOP |
+                                              wxCENTER);
 
             if (m_SampleListView->GetSelectedItemsCount() <= 1)
             {
@@ -1019,7 +1023,7 @@ void MainFrame::LoadDatabase()
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.LoadDatabase(dataset, *m_CollectionView, rootNode,
+        if (db.LoadDatabase(dataset, *m_CollectionView, root_node,
                             *m_TrashedItems, trash_root_node,
                             settings.IsShowFileExtension()).empty())
         {
@@ -1046,20 +1050,27 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
+    int row = 0, container_row = 0;
+
     if (selected_row < 0) return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
+    // wxString selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
+    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
 
-    std::deque<wxTreeItemId> nodes;
-    nodes.push_back(m_CollectionView->GetRootItem());
+    // std::deque<wxTreeItemId> nodes;
+    std::deque<wxDataViewItem> nodes;
+    // nodes.push_back(m_CollectionView->GetRootItem());
+    nodes.push_back(m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row));
 
-    wxTreeItemId found_item;
+    // wxTreeItemId found_item;
+    wxDataViewItem found_item;
 
     if (m_SampleListView->GetToggleValue(selected_row, 0))
     {
         while(!nodes.empty())
         {
-            wxTreeItemId current_item = nodes.front();
+            // wxTreeItemId current_item = nodes.front();
+            wxDataViewItem current_item = nodes.front();
             nodes.pop_front();
 
             if (m_CollectionView->GetItemText(current_item) == selection)
@@ -1069,13 +1080,37 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
                 break;
             }
 
-            wxTreeItemIdValue cookie;
-            wxTreeItemId child = m_CollectionView->GetFirstChild(current_item, cookie);
+            // wxTreeItemIdValue cookie;
+            // wxTreeItemId child = m_CollectionView->GetFirstChild(current_item, cookie);
 
-            while ( child.IsOk() )
+            wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+            while(current_item.IsOk())
             {
+                wxDataViewItem child;
+
+                int child_count = m_CollectionView->GetChildCount(current_item);
+                int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                if(row >= child_count)
+                {
+                    container_row++;
+                    row = 0;
+
+                    if(container_row >= container_count)
+                        break;
+
+                    current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                    wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                    continue;
+                }
+
+                child = m_CollectionView->GetNthChild(current_item, row);
+                wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+
                 nodes.push_back(child);
-                child = m_CollectionView->GetNextChild(current_item, cookie);
+                // child = m_CollectionView->GetNextChild(current_item, cookie);
+                row++;
             }
         }
 
@@ -1091,22 +1126,27 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
         {
             wxLogDebug("Sample not found adding as fav.");
 
-            wxTreeItemId selected = m_CollectionView->GetSelection();
+            // wxTreeItemId selected = m_CollectionView->GetSelection();
+            wxDataViewItem selected = m_CollectionView->GetSelection();
             wxString folder = m_CollectionView->GetItemText(selected);
 
-            m_CollectionView->AppendItem(rootNode, selection);
+            if(selected.IsOk() && m_CollectionView->IsContainer(selected))
+                m_CollectionView->AppendItem(selected, selection);
+            else
+                m_CollectionView->AppendItem(wxDataViewItem(wxNullPtr), selection);
 
             db.UpdateFavoriteColumn(selection.ToStdString(), 1);
-            // db.UpdateFavoriteFolderDatabase(Selection.ToStdString(), folder.ToStdString());
+            db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
 
-            serialize.SerializeDataViewTreeCtrlItems(*m_CollectionView, rootNode);
+            // serialize.SerializeDataViewTreeCtrlItems(*m_CollectionView, rootNode);
         }
     }
     else
     {
         while(!nodes.empty())
         {
-            wxTreeItemId current_item = nodes.front();
+            // wxTreeItemId current_item = nodes.front();
+            wxDataViewItem current_item = nodes.front();
             nodes.pop_front();
 
             if (m_CollectionView->GetItemText(current_item) == selection)
@@ -1116,13 +1156,38 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
                 break;
             }
 
-            wxTreeItemIdValue cookie;
-            wxTreeItemId child = m_CollectionView->GetFirstChild(current_item, cookie);
+            // wxTreeItemIdValue cookie;
+            // wxTreeItemId child = m_CollectionView->GetFirstChild(current_item, cookie);
 
-            while (child.IsOk())
+            wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+            while(current_item.IsOk())
             {
+                wxDataViewItem child;
+
+                int child_count = m_CollectionView->GetChildCount(current_item);
+                int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                if(row >= child_count)
+                {
+                    container_row++;
+                    row = 0;
+
+                    if(container_row >= container_count)
+                        break;
+
+                    current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                    wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                    continue;
+                }
+
+                child = m_CollectionView->GetNthChild(current_item, row);
+                wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+                // child = m_CollectionView->GetNextChild(current_item, cookie);
+
                 nodes.push_back(child);
-                child = m_CollectionView->GetNextChild(current_item, cookie);
+
+                row++;
             }
         }
 
@@ -1130,8 +1195,9 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
 
         if (found_item.IsOk())
         {
-            m_CollectionView->Delete(found_item);
-            db.UpdateFavoriteColumn(selection.ToStdString(), 0);
+            // m_CollectionView->DeleteItem(found_item);
+            // db.UpdateFavoriteColumn(selection.ToStdString(), 0);
+            wxMessageBox("// TODO", "Delete sample", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
         }
         else
         {
@@ -1157,12 +1223,144 @@ void MainFrame::OnExpandTrash(wxCollapsiblePaneEvent& event)
 
 void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
 {
-    wxMessageBox("// TODO", "Add item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+    // wxMessageBox("// TODO", "Add item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+
+    std::deque<wxDataViewItem> nodes;
+    nodes.push_back(m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), 0));
+
+    wxDataViewItem current_item, found_item;
+
+    int row = 0;
+    int folder_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+    wxString msg;
+
+    wxTextEntryDialog* favFolder;
+    favFolder = new wxTextEntryDialog(this, "Enter folder name",
+                                      "Add folder", wxEmptyString,
+                                      wxTextEntryDialogStyle, wxDefaultPosition);
+
+    switch (favFolder->ShowModal())
+    {
+        case wxID_OK:
+        {
+            wxString folder_name = favFolder->GetValue();
+
+            while(!nodes.empty())
+            {
+                current_item = nodes.front();
+                nodes.pop_front();
+
+                if (m_CollectionView->GetItemText(current_item) == folder_name)
+                {
+                    found_item = current_item;
+                    msg = wxString::Format("Found item: %s", m_CollectionView->GetItemText(current_item));
+                    break;
+                }
+
+                wxDataViewItem child = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), 0);
+                msg = wxString::Format("Row: %d :: Folder count: %d :: Child: %s",
+                           row, folder_count, m_CollectionView->GetItemText(child));
+
+                while (row < (folder_count - 1))
+                {
+                    row ++;
+
+                    child = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), row);
+                    nodes.push_back(child);
+                }
+            }
+
+            nodes.clear();
+
+            if (found_item.IsOk())
+            {
+                msg = wxString::Format("Another folder by the name %s already exist. Please try with a different name.",
+                                       folder_name);
+            }
+            else
+            {
+                msg = wxString::Format("Folder %s added to colletions.", folder_name);
+                m_CollectionView->AppendContainer(wxDataViewItem(wxNullPtr), folder_name);
+            }
+            break;
+        }
+        case wxID_CANCEL:
+            break;
+        default:
+            return;
+    }
+
+    m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
 }
 
 void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
 {
-    wxMessageBox("// TODO", "Remove item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+    // wxMessageBox("// TODO", "Remove item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+
+    wxDataViewItem selected = m_CollectionView->GetSelection();
+    wxString folder_name = m_CollectionView->GetItemText(selected);
+
+    wxString msg;
+
+    wxMessageDialog deleteEmptyFolderDialog(this, wxString::Format(
+                                                "Are you sure you want to delete "
+                                                "%s from collections?",
+                                                folder_name),
+                                            wxMessageBoxCaptionStr,
+                                            wxYES_NO | wxNO_DEFAULT |
+                                            wxICON_QUESTION | wxSTAY_ON_TOP);
+
+    wxMessageDialog deleteFilledFolderDialog(this, wxString::Format(
+                                                 "Are you sure you want to delete "
+                                                 "%s and all sample inside %s from collections?",
+                                                 folder_name, folder_name),
+                                             wxMessageBoxCaptionStr,
+                                             wxYES_NO | wxNO_DEFAULT |
+                                             wxICON_QUESTION | wxSTAY_ON_TOP);
+
+    if(m_CollectionView->GetChildCount(selected) <= 0)
+    {
+        switch (deleteEmptyFolderDialog.ShowModal())
+        {
+            case wxID_YES:
+                if (selected.IsOk())
+                {
+                    m_CollectionView->DeleteItem(selected);
+                    msg = wxString::Format("%s deleted from collections successfully.", folder_name);
+                }
+                else
+                    msg = wxString::Format("Error! Cannot delete %s from collections.", folder_name);
+                break;
+            case wxID_NO:
+                break;
+            default:
+                return;
+        }
+    }
+    else
+    {
+        switch (deleteFilledFolderDialog.ShowModal())
+        {
+            case wxID_YES:
+                if (selected.IsOk())
+                {
+                    m_CollectionView->DeleteChildren(selected);
+                    m_CollectionView->DeleteItem(selected);
+                    msg = wxString::Format("%s and all samples inside %s have been deleted from collections successfully.",
+                                           folder_name, folder_name);
+                }
+                else
+                    msg = wxString::Format("Error! Cannot delete %s from collections.", folder_name);
+                break;
+            case wxID_NO:
+                break;
+            default:
+                return;
+        }
+    }
+
+    m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
 }
 
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
