@@ -160,6 +160,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // CollectionViewPanel button event handlers
         // void OnClickCollectionView(wxTreeEvent& event);
+        void OnDragAndDropToCollectionView(wxDropFilesEvent& event);
         void OnClickCollectionAdd(wxCommandEvent& event);
         void OnClickCollectionRemove(wxCommandEvent& event);
 
