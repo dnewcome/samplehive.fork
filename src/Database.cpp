@@ -119,7 +119,7 @@ void Database::InsertSamples(std::vector<Sample> samples)
             type = sample.GetType();
             path = sample.GetPath();
 
-            std::string folder;
+            std::string folder = "Favourites";
 
             rc = sqlite3_bind_int(m_Stmt, 1, sample.GetFavorite());
             rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
