@@ -118,7 +118,6 @@ MainFrame::MainFrame()
     // Adding root to CollectionView
     // rootNode = m_CollectionView->AddRoot("ROOT");
     favorites_folder = m_CollectionView->AppendContainer(wxDataViewItem(wxNullPtr), "Favourites");
-    m_CollectionView->AppendItem(favorites_folder, "sample.xyz");
 
     // Addubg root to TrashedItems
     trash_root_node = m_TrashedItems->AddRoot("ROOT");
@@ -220,8 +219,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_SEARCHCTRL_SEARCH_BTN, &MainFrame::OnDoSearch, this, BC_Search);
     Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, &MainFrame::OnCancelSearch, this, BC_Search);
 
-    // Bind(wxEVT_TREE_ITEM_ACTIVATED, &MainFrame::OnClickCollectionView, this,
-    //      BC_CollectionView);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickCollectionView, this, BC_CollectionView);
     m_CollectionView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToCollectionView), NULL, this);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickCollectionAdd, this, BC_CollectionViewAdd);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickCollectionRemove, this, BC_CollectionViewRemove);
@@ -325,7 +323,10 @@ MainFrame::MainFrame()
 
     // Initialize the database
     Database db(*m_InfoBar);
-    db.CreateDatabase();
+    db.CreateTableSamples();
+    db.CreateTableCollections();
+
+    // db.InsertIntoCollections(m_CollectionView->GetItemText(favorites_folder).ToStdString());
 
     // Restore the data previously added to SampleListView
     LoadDatabase();
@@ -370,7 +371,7 @@ void MainFrame::AddSamples(wxArrayString& files)
                                                             wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                             wxPD_AUTO_HIDE);
     progressDialog->CenterOnParent(wxBOTH);
-    
+
     std::vector<Sample> sample_array;
 
     std::string path;
@@ -457,8 +458,8 @@ void MainFrame::AddSamples(wxArrayString& files)
 
     progressDialog->Pulse("Updating Database..",NULL);
 
-    db.InsertSamples(sample_array);
-    
+    db.InsertIntoSamples(sample_array);
+
     progressDialog->Destroy();
 }
 
@@ -570,10 +571,10 @@ void MainFrame::OnDragAndDropToCollectionView(wxDropFilesEvent& event)
             {
                 m_SampleListView->SetToggleValue(true, row, 0);
 
-                // m_CollectionView->AppendItem(drop_target, files[i]);
+                m_CollectionView->AppendItem(drop_target, files[i]);
 
-                // db.UpdateFavoriteColumn(name.ToStdString(), 1);
-                // db.UpdateFavoriteFolder(name.ToStdString(), folder_name.ToStdString());
+                db.UpdateFavoriteColumn(files[i].ToStdString(), 1);
+                db.UpdateFavoriteFolder(files[i].ToStdString(), folder_name.ToStdString());
             }
             else
                 wxLogDebug("%s is not a folder. Try dropping on folder.",
@@ -1086,6 +1087,8 @@ void MainFrame::LoadDatabase()
 
     try
     {
+        db.LoadCollectionFolder(*m_CollectionView);
+
         wxVector<wxVector<wxVariant>> dataset;
 
         if (db.LoadDatabase(dataset, *m_CollectionView, favorites_folder,
@@ -1197,16 +1200,23 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
             wxDataViewItem selected = m_CollectionView->GetSelection();
             wxString folder;
 
+            // wxDataViewItem selected = event.GetItem();
+
             if(selected.IsOk() && m_CollectionView->IsContainer(selected))
             {
                 folder = m_CollectionView->GetItemText(selected);
                 m_CollectionView->AppendItem(selected, selection);
+
+                // db.UpdateFavoriteColumn(selection.ToStdString(), 1);
+                // db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
             }
             else
             {
-                // msg = "Not a folder.";
-                // folder = m_CollectionView->GetItemText(wxDataViewItem(wxNullPtr));
+                folder = m_CollectionView->GetItemText(favorites_folder);
                 m_CollectionView->AppendItem(favorites_folder, selection);
+
+                // db.UpdateFavoriteColumn(selection.ToStdString(), 1);
+                // db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
             }
 
             db.UpdateFavoriteColumn(selection.ToStdString(), 1);
@@ -1328,6 +1338,7 @@ void MainFrame::OnExpandTrash(wxCollapsiblePaneEvent& event)
 void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
 {
     // wxMessageBox("// TODO", "Add item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+    Database db(*m_InfoBar);
 
     std::deque<wxDataViewItem> nodes;
     nodes.push_back(m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), 0));
@@ -1386,6 +1397,8 @@ void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
             {
                 msg = wxString::Format("Folder %s added to colletions.", folder_name);
                 m_CollectionView->AppendContainer(wxDataViewItem(wxNullPtr), folder_name);
+
+                db.InsertIntoCollections(folder_name.ToStdString());
             }
             break;
         }
@@ -1401,6 +1414,7 @@ void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
 void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
 {
     // wxMessageBox("// TODO", "Remove item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
+    Database db(*m_InfoBar);
 
     wxDataViewItem selected = m_CollectionView->GetSelection();
     wxString folder_name = m_CollectionView->GetItemText(selected);
@@ -1431,12 +1445,14 @@ void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
                 if (selected.IsOk() && m_CollectionView->IsContainer(selected) && folder_name != "Favourites")
                 {
                     m_CollectionView->DeleteItem(selected);
+
+                    db.RemoveFolderFromCollections(folder_name.ToStdString());
                     msg = wxString::Format("%s deleted from collections successfully.", folder_name);
                 }
                 else
-		    if(folder_name == "Favourites")
-		        msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
-		    else
+                    if(folder_name == "Favourites")
+                        msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
+                    else
                         msg = wxString::Format("Error! %s is not a folder, cannot delete from collections.", folder_name);
                 break;
             case wxID_NO:
@@ -1454,13 +1470,15 @@ void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
                 {
                     m_CollectionView->DeleteChildren(selected);
                     m_CollectionView->DeleteItem(selected);
+
+                    db.RemoveFolderFromCollections(folder_name.ToStdString());
                     msg = wxString::Format("%s and all samples inside %s have been deleted from collections successfully.",
                                            folder_name, folder_name);
                 }
                 else
-		    if(folder_name == "Favourites")
-		        msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
-		    else
+                    if(folder_name == "Favourites")
+                        msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
+                    else
                         msg = wxString::Format("Error! %s is not a folder, cannot delete from collections.", folder_name);
                 break;
             case wxID_NO:
@@ -1471,6 +1489,43 @@ void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
     }
 
     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+}
+
+void MainFrame::OnClickCollectionView(wxDataViewEvent &event)
+{
+    Database db(*m_InfoBar);
+
+    // wxDataViewItem selected = m_CollectionView->GetSelection();
+    wxDataViewItem selected = event.GetItem();
+
+    wxString folder_name = m_CollectionView->GetItemText(selected);
+
+    wxLogDebug("Folder name: %s", folder_name);
+
+    try
+    {
+        wxVector<wxVector<wxVariant>> dataset;
+
+        if (db.FilterDatabaseByFolderName(dataset, folder_name.ToStdString()).empty())
+        {
+            wxLogDebug("Error! Database is empty.");
+        }
+        else
+        {
+            m_SampleListView->DeleteAllItems();
+
+            std::cout << folder_name << std::endl;
+
+            for (auto data : dataset)
+            {
+                m_SampleListView->AppendItem(data);
+            }
+        }
+    }
+    catch (...)
+    {
+        std::cerr << "Error loading data." << std::endl;
+    }
 }
 
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
@@ -1486,7 +1541,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
     db.UpdateTrashColumn(filename, 0);
 
-    RefreshDatabase();
+    // RefreshDatabase();
 
     // TODO: Don't let other trashed items re-added again
     m_TrashedItems->Delete(selection_id);

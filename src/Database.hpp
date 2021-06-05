@@ -32,11 +32,13 @@ class Database
     public:
         // -------------------------------------------------------------------
         // Create the table
-        void CreateDatabase();
+        void CreateTableSamples();
+        void CreateTableCollections();
 
         // -------------------------------------------------------------------
         // Insert into database
-        void InsertSamples(std::vector<Sample>);
+        void InsertIntoSamples(std::vector<Sample>);
+        void InsertIntoCollections(const std::string& folderName);
         
         // -------------------------------------------------------------------
         // Update database
@@ -64,16 +66,20 @@ class Database
         // -------------------------------------------------------------------
         // Remove from database
         void RemoveSampleFromDatabase(const std::string& filename);
+        void RemoveFolderFromCollections(const std::string& folderName);
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
         // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
         //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
         //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
-        LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
+        LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                      wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                      wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
+        void LoadCollectionFolder(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,
+        FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& sampleName);
+        wxVector<wxVector<wxVariant>>
+        FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, const std::string& folderName);
 };
