@@ -6,18 +6,24 @@
 #include <wx/accel.h>
 #include <wx/arrstr.h>
 #include <wx/busyinfo.h>
+#include <wx/dataview.h>
 #include <wx/debug.h>
 #include <wx/defs.h>
 #include <wx/dir.h>
 #include <wx/dnd.h>
+#include <wx/dvrenderers.h>
 #include <wx/filefn.h>
 #include <wx/gdicmn.h>
+#include <wx/generic/icon.h>
 #include <wx/gtk/dataobj2.h>
+#include <wx/gtk/dataview.h>
 #include <wx/log.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
+// #include "wx/gtk/colour.h"
 #include <wx/progdlg.h>
 #include <wx/stdpaths.h>
+#include <wx/stringimpl.h>
 #include <wx/textdlg.h>
 #include <wx/variant.h>
 #include <wx/vector.h>
@@ -34,6 +40,10 @@
 #include "Serialize.hpp"
 
 #include <wx/fswatcher.h>
+
+#define ICON_APP "../assets/icons/icon-hive_24x24.png"
+#define ICON_COLOURED "../assets/icons/icon-hive_16x16.png"
+#define ICON_GREYSCALE "../assets/icons/icon-hive_16x16-gs.png"
 
 MainFrame::MainFrame()
     : wxFrame(NULL, wxID_ANY, "Sample Hive", wxDefaultPosition),
@@ -167,7 +177,8 @@ MainFrame::MainFrame()
                                               wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
 
     // Adding columns to wxDataViewListCtrl.
-    m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
+    // m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
+    m_SampleListView->AppendIconTextColumn("Favorite", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
     m_SampleListView->AppendTextColumn("Filename", wxDATAVIEW_CELL_INERT, 320, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
     m_SampleListView->AppendTextColumn("Sample Pack", wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
     m_SampleListView->AppendTextColumn("Type", wxDATAVIEW_CELL_INERT, 120, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
@@ -210,7 +221,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_COLLAPSIBLEPANE_CHANGED, &MainFrame::OnExpandTrash, this, BC_TrashPane);
 
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickSampleView, this, BC_SampleListView);
-    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &MainFrame::OnCheckFavorite, this, BC_SampleListView);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnCheckFavorite, this, BC_SampleListView);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromSampleView, this);
     m_SampleListView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToSampleListView), NULL, this);
     Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowSampleListViewContextMenu, this, BC_SampleListView);
@@ -430,11 +441,15 @@ void MainFrame::AddSamples(wxArrayString& files)
         sample.SetBitrate(tags.GetAudioInfo().bitrate);
     
         wxVector<wxVariant> data;
-    
+
+        wxVariant icon;
+        icon << wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE));
+
         if (tags.IsFileValid())
         {
             data.clear();
-            data.push_back(false);
+            // data.push_back(false);
+            data.push_back(icon);
             data.push_back(filename);
             data.push_back(sample.GetSamplePack());
             data.push_back("");
@@ -569,8 +584,6 @@ void MainFrame::OnDragAndDropToCollectionView(wxDropFilesEvent& event)
 
             if(drop_target.IsOk() && m_CollectionView->IsContainer(drop_target))
             {
-                m_SampleListView->SetToggleValue(true, row, 0);
-
                 m_CollectionView->AppendItem(drop_target, files[i]);
 
                 db.UpdateFavoriteColumn(files[i].ToStdString(), 1);
@@ -579,6 +592,13 @@ void MainFrame::OnDragAndDropToCollectionView(wxDropFilesEvent& event)
             else
                 wxLogDebug("%s is not a folder. Try dropping on folder.",
                            m_CollectionView->GetItemText(drop_target));
+
+            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
+                                       row, 0);
+
+            // m_SampleListView->SetToggleValue(true, row, 0);
+
+            wxLogDebug("Number of children: %d", m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr)));
         }
     }
 }
@@ -862,7 +882,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     else
         return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
 
     // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
@@ -882,7 +902,12 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
     wxMenu menu;
 
-    if (m_SampleListView->GetToggleValue(selected_row, 0))
+    // if (m_SampleListView->GetToggleValue(selected_row, 0))
+    //     menu.Append(MN_FavoriteSample, "Remove from favorites");
+    // else
+    //     menu.Append(MN_FavoriteSample, "Add to favorites");
+
+    if (db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 1)
         menu.Append(MN_FavoriteSample, "Remove from favorites");
     else
         menu.Append(MN_FavoriteSample, "Add to favorites");
@@ -898,17 +923,194 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
         case MN_FavoriteSample:
+        {
+            int row = 0, container_row = 0;
+
             if (m_SampleListView->GetSelectedItemsCount() <= 1)
             {
-                if (m_SampleListView->GetToggleValue(selected_row, 0))
+                // if(!column)
+                // {
+                //     wxLogDebug("Column is not OK");
+                //     return;
+                // }
+
+                // if (m_SampleListView->GetToggleValue(selected_row, 0))
+                // if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 1)
+                // {
+                //     // m_SampleListView->SetToggleValue(false, selected_row, 0);
+                //     CheckForDuplicates(selection, selected_row);
+                //     msg = wxString::Format("Toggle: false");
+                // }
+                // else if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 0)
+                // {
+                //     // m_SampleListView->SetToggleValue(true, selected_row, 0);
+                //     CheckForDuplicates(selection, selected_row);
+                //     msg = wxString::Format("Toggle: true");
+                // }
+                std::deque<wxDataViewItem> nodes;
+                nodes.push_back(m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row));
+
+                wxDataViewItem found_item;
+
+                // if(!column)
+                // {
+                //     wxLogDebug("something wrong with column..");
+                //     return;
+                // }
+
+                if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 0)
                 {
-                    m_SampleListView->SetToggleValue(false, selected_row, 0);
-                    msg = wxString::Format("Toggle: false");
+                    wxLogDebug("Column matches.. looking!");
+                    while(!nodes.empty())
+                    {
+                        wxDataViewItem current_item = nodes.front();
+                        nodes.pop_front();
+
+                        if (m_CollectionView->GetItemText(current_item) == selection)
+                        {
+                            found_item = current_item;
+                            wxLogDebug(m_CollectionView->GetItemText(current_item));
+                            break;
+                        }
+
+                        wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+                        while(current_item.IsOk())
+                        {
+                            wxDataViewItem child;
+
+                            int child_count = m_CollectionView->GetChildCount(current_item);
+                            int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                            if(row >= child_count)
+                            {
+                                container_row++;
+                                row = 0;
+
+                                if(container_row >= container_count)
+                                    break;
+
+                                current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                                wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                                continue;
+                            }
+
+                            child = m_CollectionView->GetNthChild(current_item, row);
+                            wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+
+                            nodes.push_back(child);
+                            row++;
+                        }
+                    }
+
+                    nodes.clear();
+
+                    if (found_item.IsOk())
+                    {
+                        wxString msg = wxString::Format("%s already added as favorite.", selection);
+                        wxMessageDialog msgDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
+                        msgDialog.ShowModal();
+                    }
+                    else
+                    {
+                        wxLogDebug("Sample not found adding as fav.");
+
+                        wxDataViewItem selected = m_CollectionView->GetSelection();
+                        wxString folder;
+
+                        if(selected.IsOk() && m_CollectionView->IsContainer(selected))
+                        {
+                            folder = m_CollectionView->GetItemText(selected);
+                            m_CollectionView->AppendItem(selected, selection);
+                        }
+                        else
+                        {
+                            folder = m_CollectionView->GetItemText(favorites_folder);
+                            m_CollectionView->AppendItem(favorites_folder, selection);
+                        }
+
+                        m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
+                                                   selected_row, 0);
+
+                        db.UpdateFavoriteColumn(selection.ToStdString(), 1);
+                        db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
+
+                        wxLogDebug("Adding %s to folder: %s", selection, folder);
+                    }
                 }
-                else
+                else if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 1)
                 {
-                    m_SampleListView->SetToggleValue(true, selected_row, 0);
-                    msg = wxString::Format("Toggle: true");
+                    wxString folder_name = db.GetFavoriteFolderByFilename(selection.ToStdString());
+
+                    while(!nodes.empty())
+                    {
+                        wxDataViewItem current_item = nodes.front();
+                        nodes.pop_front();
+
+                        wxLogDebug("%s folder name is: %s", selection, folder_name);
+
+                        if (m_CollectionView->GetItemText(current_item) == folder_name)
+                        {
+                            found_item = current_item;
+                            wxLogDebug("Found folder: %s", m_CollectionView->GetItemText(found_item));
+                        }
+
+                        wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+                        while(current_item.IsOk())
+                        {
+                            wxDataViewItem child;
+
+                            int child_count = m_CollectionView->GetChildCount(current_item);
+                            int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                            if(row >= child_count)
+                            {
+                                container_row++;
+                                row = 0;
+
+                                if(container_row >= container_count)
+                                    break;
+
+                                current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                                wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                                continue;
+                            }
+
+                            child = m_CollectionView->GetNthChild(current_item, row);
+                            wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+
+                            if (m_CollectionView->GetItemText(child) == selection)
+                            {
+                                found_item = child;
+                                wxLogDebug("Will delete %s", m_CollectionView->GetItemText(found_item));
+                                break;
+                            }
+
+                            nodes.push_back(child);
+
+                            row++;
+                        }
+                    }
+
+                    nodes.clear();
+
+                    if (found_item.IsOk())
+                    {
+                        wxLogDebug("Folder: %s :: Child: %s", folder_name, m_CollectionView->GetItemText(found_item));
+
+                        m_CollectionView->DeleteItem(found_item);
+
+                        m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
+                                                   selected_row, 0);
+
+                        db.UpdateFavoriteColumn(selection.ToStdString(), 0);
+                        db.UpdateFavoriteFolder(selection.ToStdString(), m_CollectionView->GetItemText(favorites_folder).ToStdString());
+                    }
+                    else
+                    {
+                        wxLogDebug("%s not added as favorite, cannot delete.", selection);
+                    }
                 }
             }
             else
@@ -916,23 +1118,193 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 wxDataViewItemArray items;
                 int rows = m_SampleListView->GetSelections(items);
 
+                std::deque<wxDataViewItem> nodes;
+                nodes.push_back(m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row));
+
+                wxDataViewItem found_item;
+                wxFileDataObject file_data;
+                wxArrayString files;
+                wxString name;
+
                 for (int i = 0; i < rows; i++)
                 {
-                    int row = m_SampleListView->ItemToRow(items[i]);
+                    int item_row = m_SampleListView->ItemToRow(items[i]);
 
-                    if (m_SampleListView->GetToggleValue(row, 0))
+                    name = m_SampleListView->GetTextValue(item_row, 1);
+
+                    file_data.AddFile(name.BeforeLast('.'));
+
+                    files = file_data.GetFilenames();
+
+                    // if (m_SampleListView->GetToggleValue(row, 0))
+                    // {
+                    //     m_SampleListView->SetToggleValue(false, row, 0);
+                    //     msg = wxString::Format("Toggle: false");
+                    // }
+                    // else
+                    // {
+                    //     m_SampleListView->SetToggleValue(true, row, 0);
+                    //     msg = wxString::Format("Toggle: true");
+                    // }
+
+                    if(db.GetFavoriteColumnValueByFilename(files[i].ToStdString()) == 0)
                     {
-                        m_SampleListView->SetToggleValue(false, row, 0);
-                        msg = wxString::Format("Toggle: false");
+                        wxLogDebug("Column matches.. looking!");
+                        while(!nodes.empty())
+                        {
+                            wxDataViewItem current_item = nodes.front();
+                            nodes.pop_front();
+
+                            if (m_CollectionView->GetItemText(current_item) == files[i])
+                            {
+                                found_item = current_item;
+                                wxLogDebug(m_CollectionView->GetItemText(current_item));
+                                break;
+                            }
+
+                            wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+                            while(current_item.IsOk())
+                            {
+                                wxDataViewItem child;
+
+                                int child_count = m_CollectionView->GetChildCount(current_item);
+                                int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                                if(row >= child_count)
+                                {
+                                    container_row++;
+                                    row = 0;
+
+                                    if(container_row >= container_count)
+                                        break;
+
+                                    current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                                    wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                                    continue;
+                                }
+
+                                child = m_CollectionView->GetNthChild(current_item, row);
+                                wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+
+                                nodes.push_back(child);
+                                row++;
+                            }
+                        }
+
+                        nodes.clear();
+
+                        if (found_item.IsOk())
+                        {
+                            wxString msg = wxString::Format("%s already added as favorite.", files[i]);
+                            wxMessageDialog msgDialog(NULL, msg, "Info", wxOK | wxICON_INFORMATION);
+                            msgDialog.ShowModal();
+                        }
+                        else
+                        {
+                            wxLogDebug("Sample not found adding as fav.");
+
+                            wxDataViewItem selected = m_CollectionView->GetSelection();
+                            wxString folder;
+
+                            if(selected.IsOk() && m_CollectionView->IsContainer(selected))
+                            {
+                                folder = m_CollectionView->GetItemText(selected);
+                                m_CollectionView->AppendItem(selected, files[i]);
+                            }
+                            else
+                            {
+                                folder = m_CollectionView->GetItemText(favorites_folder);
+                                m_CollectionView->AppendItem(favorites_folder, files[i]);
+                            }
+
+                            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
+                                                       item_row, 0);
+
+                            db.UpdateFavoriteColumn(files[i].ToStdString(), 1);
+                            db.UpdateFavoriteFolder(files[i].ToStdString(), folder.ToStdString());
+
+                            wxLogDebug("Adding %s to folder: %s", files[i], folder);
+                        }
                     }
-                    else
+                    else if(db.GetFavoriteColumnValueByFilename(files[i].ToStdString()) == 1)
                     {
-                        m_SampleListView->SetToggleValue(true, row, 0);
-                        msg = wxString::Format("Toggle: true");
+                        wxString folder_name = db.GetFavoriteFolderByFilename(files[i].ToStdString());
+
+                        while(!nodes.empty())
+                        {
+                            wxDataViewItem current_item = nodes.front();
+                            nodes.pop_front();
+
+                            wxLogDebug("%s folder name is: %s", files[i], folder_name);
+
+                            if (m_CollectionView->GetItemText(current_item) == folder_name)
+                            {
+                                found_item = current_item;
+                                wxLogDebug("Found folder: %s", m_CollectionView->GetItemText(found_item));
+                            }
+
+                            wxLogDebug("Current item: %s", m_CollectionView->GetItemText(current_item));
+
+                            while(current_item.IsOk())
+                            {
+                                wxDataViewItem child;
+
+                                int child_count = m_CollectionView->GetChildCount(current_item);
+                                int container_count = m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr));
+
+                                if(row >= child_count)
+                                {
+                                    container_row++;
+                                    row = 0;
+
+                                    if(container_row >= container_count)
+                                        break;
+
+                                    current_item = m_CollectionView->GetNthChild(wxDataViewItem(wxNullPtr), container_row);
+                                    wxLogDebug("Inside.. Current item: %s", m_CollectionView->GetItemText(current_item));
+                                    continue;
+                                }
+
+                                child = m_CollectionView->GetNthChild(current_item, row);
+                                wxLogDebug("Child item: %s", m_CollectionView->GetItemText(child));
+
+                                if (m_CollectionView->GetItemText(child) == files[i])
+                                {
+                                    found_item = child;
+                                    wxLogDebug("Will delete %s", m_CollectionView->GetItemText(found_item));
+                                    break;
+                                }
+
+                                nodes.push_back(child);
+
+                                row++;
+                            }
+                        }
+
+                        nodes.clear();
+
+                        if (found_item.IsOk())
+                        {
+                            wxLogDebug("Folder: %s :: Child: %s", folder_name, m_CollectionView->GetItemText(found_item));
+
+                            m_CollectionView->DeleteItem(found_item);
+
+                            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
+                                                       item_row, 0);
+
+                            db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
+                            db.UpdateFavoriteFolder(files[i].ToStdString(), m_CollectionView->GetItemText(favorites_folder).ToStdString());
+                        }
+                        else
+                        {
+                            wxLogDebug("%s not added as favorite, cannot delete.", files[i]);
+                        }
                     }
                 }
             }
             break;
+        }
         case MN_DeleteSample:
         {
             wxDataViewItemArray items;
@@ -1015,9 +1387,14 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 if (m_SampleListView->GetSelectedItemsCount() <= 1)
                 {
                     msg = "Trashing..";
-                    if (m_SampleListView->GetToggleValue(selected_row, 0))
+                    if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()))
+                    // if (m_SampleListView->GetToggleValue(selected_row, 0))
                     {
-                        m_SampleListView->SetToggleValue(false, selected_row, 0);
+                        // m_SampleListView->SetToggleValue(false, selected_row, 0);
+
+                        m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
+                                                   selected_row, 0);
+
                         db.UpdateFavoriteColumn(filename, 0);
                     }
                     db.UpdateTrashColumn(filename, 1);
@@ -1029,23 +1406,35 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     wxDataViewItemArray items;
                     int rows = m_SampleListView->GetSelections(items);
 
+                    wxString name;
+                    wxFileDataObject file_data;
+                    wxArrayString files;
+
                     for (int i = 0; i < rows; i++)
                     {
-                        int row = m_SampleListView->ItemToRow(items[i]);
+                        int item_row = m_SampleListView->ItemToRow(items[i]);
 
-                        wxString text_value = m_SampleListView->GetTextValue(row, 1);
+                        wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
                         std::string multi_selection = text_value.Contains(wxString::Format(".%s", extension)) ?
                             text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
-                        if (m_SampleListView->GetToggleValue(row, 0))
+                        file_data.AddFile(multi_selection);
+
+                        files = file_data.GetFilenames();
+
+                        // if (m_SampleListView->GetToggleValue(row, 0))
+                        if(db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                         {
-                            m_SampleListView->SetToggleValue(false, row, 0);
+                            // m_SampleListView->SetToggleValue(false, row, 0);
+                            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
+                                                       item_row, 0);
+
                             db.UpdateFavoriteColumn(multi_selection, 0);
                         }
 
                         db.UpdateTrashColumn(multi_selection, 1);
                         m_TrashedItems->AppendItem(trash_root_node, multi_selection);
-                        m_SampleListView->DeleteItem(row);
+                        m_SampleListView->DeleteItem(item_row);
                     }
                 }
             }
@@ -1116,6 +1505,16 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
     Database db(*m_InfoBar);
     Serializer serialize(m_ConfigFilepath);
 
+    wxDataViewColumn* column = m_SampleListView->GetCurrentColumn();
+
+    if(!column)
+    {
+        wxLogDebug("Column not found");
+        return;
+    }
+
+    wxLogDebug("Current column: %s", column->GetTitle());
+
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
     int row = 0, container_row = 0;
@@ -1135,8 +1534,9 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
     // wxTreeItemId found_item;
     wxDataViewItem found_item;
 
-    if (m_SampleListView->GetToggleValue(selected_row, 0))
+    if(column->GetTitle() == "Favorite" && db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 0)
     {
+        wxLogDebug("Column matches.. looking!");
         while(!nodes.empty())
         {
             // wxTreeItemId current_item = nodes.front();
@@ -1219,6 +1619,12 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
                 // db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
             }
 
+            // column->SetBitmap(wxBitmap(ICON_GREYSCALE));
+            // icon << wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE));
+
+            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
+                                       selected_row, 0);
+
             db.UpdateFavoriteColumn(selection.ToStdString(), 1);
             db.UpdateFavoriteFolder(selection.ToStdString(), folder.ToStdString());
 
@@ -1226,7 +1632,7 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
             // serialize.SerializeDataViewTreeCtrlItems(*m_CollectionView, rootNode);
         }
     }
-    else
+    else if(column->GetTitle() == "Favorite" && db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 1)
     {
         wxString folder_name = db.GetFavoriteFolderByFilename(selection.ToStdString());
 
@@ -1309,6 +1715,12 @@ void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
                 // }
             // }
             m_CollectionView->DeleteItem(found_item);
+
+            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
+                                       selected_row, 0);
+
+            db.UpdateFavoriteColumn(selection.ToStdString(), 0);
+            db.UpdateFavoriteFolder(selection.ToStdString(), m_CollectionView->GetItemText(favorites_folder).ToStdString());
 
             // wxLogDebug("Found %s folder name is: %s", selection, folder_name);
             // wxMessageBox("// TODO", "Delete sample", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
@@ -1607,7 +2019,7 @@ void MainFrame::LoadConfigFile()
     this->SetFont(settings.GetFontType());
     this->SetSize(width, height);
     this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon("../assets/icons/icon-hive_24x24.png", wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetIcon(wxIcon(ICON_APP, wxICON_DEFAULT_TYPE, -1, -1));
 }
 
 void MainFrame::RefreshDatabase()

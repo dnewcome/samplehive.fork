@@ -1,9 +1,13 @@
 #include <deque>
 #include <exception>
 
+#include <wx/dataview.h>
+#include <wx/dvrenderers.h>
 #include <wx/log.h>
 #include <wx/msgdlg.h>
 #include <wx/string.h>
+#include <wx/stringimpl.h>
+#include <wx/variant.h>
 
 #include "Database.hpp"
 #include "SettingsDialog.hpp"
@@ -871,9 +875,14 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                     trash_tree.AppendItem(trash_item, filename);
                 else
                 {
+                    wxVariant icon_c, icon_gs;
+                    icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
+                    icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+
                     if (favorite == 1)
                     {
-                        vec.push_back(true);
+                        // vec.push_back(true);
+                        vec.push_back(icon_c);
 
                         wxLogDebug("Loading collection items..");
 
@@ -923,7 +932,8 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 
                     }
                     else
-                        vec.push_back(false);
+                        // vec.push_back(false);
+                        vec.push_back(icon_gs);
 
                     if (show_extension)
                     {
