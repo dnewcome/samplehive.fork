@@ -130,6 +130,7 @@ class MainFrame : public wxFrame
         bool bLoop = false;
         bool bMuted = false;
         bool bStopped = false;
+        bool bFiltered = false;
 
         // -------------------------------------------------------------------
         const std::string m_ConfigFilepath;
@@ -163,6 +164,7 @@ class MainFrame : public wxFrame
         void OnDragAndDropToCollectionView(wxDropFilesEvent& event);
         void OnClickCollectionAdd(wxCommandEvent& event);
         void OnClickCollectionRemove(wxCommandEvent& event);
+        void OnShowCollectionViewContextMenu(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // SearchCtrl event handlers

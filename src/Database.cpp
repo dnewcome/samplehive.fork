@@ -1014,10 +1014,19 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
 
                 wxVector<wxVariant> vec;
 
+                wxVariant icon_c, icon_gs;
+                icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
+                icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+
                 if (favorite == 1)
-                    vec.push_back(true);
+                    vec.push_back(icon_c);
                 else
-                    vec.push_back(false);
+                    vec.push_back(icon_gs);
+
+                // if (favorite == 1)
+                //     vec.push_back(true);
+                // else
+                //     vec.push_back(false);
 
                 vec.push_back(filename);
                 vec.push_back(sample_pack);
@@ -1089,10 +1098,19 @@ Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, c
 
                 wxVector<wxVariant> vec;
 
+                wxVariant icon_c, icon_gs;
+                icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
+                icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+
                 if (favorite == 1)
-                    vec.push_back(true);
+                    vec.push_back(icon_c);
                 else
-                    vec.push_back(false);
+                    vec.push_back(icon_gs);
+
+                // if (favorite == 1)
+                //     vec.push_back(true);
+                // else
+                //     vec.push_back(false);
 
                 vec.push_back(filename);
                 vec.push_back(sample_pack);

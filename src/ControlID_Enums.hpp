@@ -41,11 +41,18 @@ enum ControlIDs
     SD_FontBrowseButton,
 
     // -------------------------------------------------------------------
-    // Menu items
+    // SampleView Menu items
     MN_FavoriteSample,
     MN_DeleteSample,
     MN_TrashSample,
     MN_EditTagSample,
+
+    // -------------------------------------------------------------------
+    // CollectionView Menu items
+    MN_CreateFolder,
+    MN_RemoveFolder,
+    MN_RemoveSample,
+    MN_FilterSampleView,
 
     // -------------------------------------------------------------------
     // Edit tags dialog controls
