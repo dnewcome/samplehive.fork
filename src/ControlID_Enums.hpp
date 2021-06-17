@@ -46,6 +46,7 @@ enum ControlIDs
     MN_DeleteSample,
     MN_TrashSample,
     MN_EditTagSample,
+    MN_OpenFile,
 
     // -------------------------------------------------------------------
     // CollectionView Menu items
@@ -53,6 +54,7 @@ enum ControlIDs
     MN_RemoveFolder,
     MN_RemoveSample,
     MN_FilterSampleView,
+    MN_ShowInLibrary,
 
     // -------------------------------------------------------------------
     // Edit tags dialog controls
