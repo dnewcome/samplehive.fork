@@ -923,7 +923,11 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                         {
                             // wxLogDebug("Another folder by the name %s already exist. Please try with a different name.",
                                        // folder_name);
-                            favorite_tree.AppendItem(found_item, filename);
+                            if (show_extension)
+                                favorite_tree.AppendItem(found_item,
+                                                         wxString::Format("%s.%s", filename, file_extension));
+                            else
+                                favorite_tree.AppendItem(found_item, filename);
                         }
                         // else
                         // {
