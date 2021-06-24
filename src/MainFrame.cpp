@@ -127,7 +127,6 @@ MainFrame::MainFrame()
     m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
 
     // Adding root to CollectionView
-    // rootNode = m_CollectionView->AddRoot("ROOT");
     favorites_folder = m_CollectionView->AppendContainer(wxDataViewItem(wxNullPtr), "Favourites");
 
     // Addubg root to TrashedItems
@@ -178,7 +177,6 @@ MainFrame::MainFrame()
                                               wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
 
     // Adding columns to wxDataViewListCtrl.
-    // m_SampleListView->AppendToggleColumn("", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
     m_SampleListView->AppendIconTextColumn("Favorite", wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, wxDATAVIEW_COL_RESIZABLE);
     m_SampleListView->AppendTextColumn("Filename", wxDATAVIEW_CELL_INERT, 320, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
     m_SampleListView->AppendTextColumn("Sample Pack", wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
@@ -222,7 +220,6 @@ MainFrame::MainFrame()
     Bind(wxEVT_COLLAPSIBLEPANE_CHANGED, &MainFrame::OnExpandTrash, this, BC_TrashPane);
 
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickSampleView, this, BC_SampleListView);
-    // Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnCheckFavorite, this, BC_SampleListView);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromSampleView, this);
     m_SampleListView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToSampleListView), NULL, this);
     Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowSampleListViewContextMenu, this, BC_SampleListView);
@@ -231,7 +228,6 @@ MainFrame::MainFrame()
     Bind(wxEVT_SEARCHCTRL_SEARCH_BTN, &MainFrame::OnDoSearch, this, BC_Search);
     Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, &MainFrame::OnCancelSearch, this, BC_Search);
 
-    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickCollectionView, this, BC_CollectionView);
     m_CollectionView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToCollectionView), NULL, this);
     Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowCollectionViewContextMenu, this, BC_CollectionView);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickCollectionAdd, this, BC_CollectionViewAdd);
@@ -450,7 +446,6 @@ void MainFrame::AddSamples(wxArrayString& files)
         if (tags.IsFileValid())
         {
             data.clear();
-            // data.push_back(false);
             data.push_back(icon);
             data.push_back(filename);
             data.push_back(sample.GetSamplePack());
@@ -554,31 +549,17 @@ void MainFrame::OnDragAndDropToCollectionView(wxDropFilesEvent& event)
         wxDataViewItem drop_target;;
         wxDataViewColumn* column;
         wxPoint position = event.GetPosition();
+
         m_CollectionView->HitTest(position, drop_target, column);
 
         wxString folder_name = m_CollectionView->GetItemText(drop_target);
 
-        // if(!drop_target.IsOk() || !m_CollectionView->IsContainer(drop_target))
-        // {
-        //     wxLogMessage("%s is not a folder. Try dropping on folder.", folder_name);
-        //     return;
-        // }
+        wxString msg;
 
-        // // wxString* files = event.GetFiles();
-
-        // for(int i = 0; i < event.GetNumberOfFiles(); i++)
-        // {
-        //     wxLogDebug("Number of files: %d", event.GetNumberOfFiles());
-        //     wxLogDebug("Dropping %s on folder: %s", files[i], folder_name);
-        //     m_CollectionView->AppendItem(drop_target, files[i]);
-        // }
-
-        for(int i = 0; i < rows; i++)
+        for (int i = 0; i < rows; i++)
         {
             int row = m_SampleListView->ItemToRow(items[i]);
 
-            // wxString name = settings.IsShowFileExtension() ?
-            //     m_SampleListView->GetTextValue(row, 1) : m_SampleListView->GetTextValue(row, 1).BeforeLast('.');
             wxString name = m_SampleListView->GetTextValue(row, 1);
 
             file_data.AddFile(name);
@@ -590,23 +571,39 @@ void MainFrame::OnDragAndDropToCollectionView(wxDropFilesEvent& event)
             wxLogDebug("Dropping %d files %s on folder %s",
                        rows - i, files[i], m_CollectionView->GetItemText(drop_target));
 
-            if(drop_target.IsOk() && m_CollectionView->IsContainer(drop_target))
+            if (drop_target.IsOk() && m_CollectionView->IsContainer(drop_target) &&
+               db.GetFavoriteColumnValueByFilename(file_name.ToStdString()) == 0)
             {
                 m_CollectionView->AppendItem(drop_target, files[i]);
 
+                m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
+                                           row, 0);
+
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
                 db.UpdateFavoriteFolder(file_name.ToStdString(), folder_name.ToStdString());
+
+                msg = wxString::Format("%s added to %s.", files[i], folder_name);
             }
             else
-                wxLogDebug("%s is not a folder. Try dropping on folder.",
-                           m_CollectionView->GetItemText(drop_target));
+            {
+                if (db.GetFavoriteColumnValueByFilename(file_name.ToStdString()) == 1)
+                {
+                    msg = wxString::Format("%s is already added to %s folder",
+                                           files[i], db.GetFavoriteFolderByFilename(file_name.ToStdString()));
+                }
+                else
+                {
+                    if (m_CollectionView->GetItemText(drop_target) == "")
+                        msg = "Cannot add item outside of folder, try dropping on a folder.";
+                    else
+                        msg = wxString::Format("%s is not a folder, try dropping on a folder.",
+                                               m_CollectionView->GetItemText(drop_target));
+                }
 
-            m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
-                                       row, 0);
+            }
 
-            // m_SampleListView->SetToggleValue(true, row, 0);
-
-            wxLogDebug("Number of children: %d", m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr)));
+            if (!msg.IsEmpty())
+                m_InfoBar->ShowMessage(msg, wxICON_ERROR);
         }
     }
 }
@@ -704,7 +701,7 @@ void MainFrame::OnDragFromSampleView(wxDataViewEvent& event)
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
 
-    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
+    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
     wxFileDataObject* fileData = new wxFileDataObject();
 
@@ -737,7 +734,7 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
 
-    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
+    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
     m_MediaCtrl->Load(sample_path);
     m_MediaCtrl->Play();
@@ -847,8 +844,17 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
 
     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
 
-    if (selected_row < 0)
+    int current_row = m_SampleListView->ItemToRow(m_SampleListView->GetCurrentItem());
+
+    if (selected_row < 0 || !event.GetItem().IsOk())
         return;
+
+    if (selected_row != current_row)
+    {
+        m_SampleListView->SetCurrentItem(event.GetItem());
+        wxLogDebug("Triggered");
+        return;
+    }
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
 
@@ -857,10 +863,6 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
 
     if (!column)
         return;
-    // else if (column->GetTitle() != "Favorite")
-    //     return;
-
-    // wxLogDebug("Clicked On Favorite Column!");
 
     //Get Filename
     // int selected_row = m_SampleListView->ItemToRow(event.GetItem());
@@ -882,9 +884,9 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
 
-    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
-    std::string filename = GetFileNamePathAndExtension(selection).Filename;
-    std::string extension = GetFileNamePathAndExtension(selection).Extension;
+    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
+    std::string filename = GetFilenamePathAndExtension(selection).Filename;
+    std::string extension = GetFilenamePathAndExtension(selection).Extension;
 
     if (column->GetTitle() != "Favorite")
     {
@@ -902,14 +904,15 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
     {
         wxLogDebug("Adding sample to favorite..");
 
+        wxString msg;
+
         //Get Folder Name and location
         std::string folder_name = "Favourites";
         wxDataViewItem folder_selection = m_CollectionView->GetSelection();
-        if(folder_selection.IsOk() && m_CollectionView->IsContainer(folder_selection))
+
+        if (folder_selection.IsOk() && m_CollectionView->IsContainer(folder_selection))
             folder_name = m_CollectionView->GetItemText(folder_selection).ToStdString();
 
-        // wxString name = settings.IsShowFileExtension() ?
-            // m_SampleListView->GetTextValue(selected_row, 1) : m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
         wxString name = m_SampleListView->GetTextValue(selected_row, 1);
 
         //Get Root
@@ -935,7 +938,8 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
                     break;
                 }
             }
-            wxLogDebug("Adding %s to %s", name, folder_name);
+
+            msg = wxString::Format("Added %s to %s", name, folder_name);
         }
         else
         {
@@ -960,8 +964,12 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
                     }
                 }
             }
-            wxLogDebug("Removing %s from %s", name, folder_name);
+
+            msg = wxString::Format("Removed %s from %s", name, folder_name);
         }
+
+        if (!msg.IsEmpty())
+            m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
     }
 }
 
@@ -972,9 +980,6 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
 
     wxDataViewItem selected_item = event.GetItem();
 
-    // wxString folder_name = settings.IsShowFileExtension() ?
-    //     m_CollectionView->GetItemText(selected_item).BeforeLast('.') :
-    //     m_CollectionView->GetItemText(selected_item);
     wxString folder_name = m_CollectionView->GetItemText(selected_item);
 
     wxMenu menu;
@@ -1007,9 +1012,6 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                 // break;
             case MN_RemoveFolder:
             {
-                // wxDataViewItem selected = m_CollectionView->GetSelection();
-                // wxString folder_name = m_CollectionView->GetItemText(selected);
-
                 wxString msg;
 
                 wxMessageDialog deleteEmptyFolderDialog(this, wxString::Format(
@@ -1033,7 +1035,8 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                     switch (deleteEmptyFolderDialog.ShowModal())
                     {
                         case wxID_YES:
-                            if (selected_item.IsOk() && m_CollectionView->IsContainer(selected_item) && folder_name != "Favourites")
+                            if (selected_item.IsOk() && m_CollectionView->IsContainer(selected_item) &&
+                                folder_name != "Favourites")
                             {
                                 m_CollectionView->DeleteItem(selected_item);
 
@@ -1042,7 +1045,8 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                             }
                             else
                                 if(folder_name == "Favourites")
-                                    msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
+                                    msg = wxString::Format("Error! Default folder %s cannot be deleted.",
+                                                           folder_name);
                                 else
                                     msg = wxString::Format("Error! %s is not a folder, cannot delete from collections.", folder_name);
                             break;
@@ -1119,14 +1123,12 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
             {
                 if (!bFiltered)
                 {
-                    // wxDataViewItem selected_item = event.GetItem();
-                    // wxString folder_name = m_CollectionView->GetItemText(selected_item);
-
                     try
                     {
                         wxVector<wxVector<wxVariant>> dataset;
 
-                        if (db.FilterDatabaseByFolderName(dataset, folder_name.ToStdString()).empty())
+                        if (db.FilterDatabaseByFolderName(dataset, folder_name.ToStdString(),
+                                                          settings.IsShowFileExtension()).empty())
                         {
                             wxLogDebug("Error! Database is empty.");
                         }
@@ -1155,7 +1157,7 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                     {
                         wxVector<wxVector<wxVariant>> dataset;
 
-                        if (db.FilterDatabaseBySampleName(dataset, "").empty())
+                        if (db.FilterDatabaseBySampleName(dataset, "", settings.IsShowFileExtension()).empty())
                         {
                             wxLogDebug("Error! Database is empty.");
                         }
@@ -1192,7 +1194,8 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                 for(int i = 0; i < m_SampleListView->GetItemCount(); i++)
                 {
                     wxString matched_sample = settings.IsShowFileExtension() ?
-                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') : m_SampleListView->GetTextValue(i, 1);
+                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
+                        m_SampleListView->GetTextValue(i, 1);
 
                     wxString selected_sample_name = settings.IsShowFileExtension() ?
                         m_CollectionView->GetItemText(event.GetItem()).BeforeLast('.') :
@@ -1217,7 +1220,8 @@ void MainFrame::OnShowCollectionViewContextMenu(wxDataViewEvent& event)
                 for(int i = 0; i < m_SampleListView->GetItemCount(); i++)
                 {
                     wxString matched_sample = settings.IsShowFileExtension() ?
-                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') : m_SampleListView->GetTextValue(i, 1);
+                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
+                        m_SampleListView->GetTextValue(i, 1);
 
                     wxString selected_sample_name = settings.IsShowFileExtension() ?
                         m_CollectionView->GetItemText(event.GetItem()).BeforeLast('.') :
@@ -1261,9 +1265,9 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
     wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
 
-    wxString sample_path = GetFileNamePathAndExtension(selection).Path;
-    std::string filename = GetFileNamePathAndExtension(selection).Filename;
-    std::string extension = GetFileNamePathAndExtension(selection).Extension;
+    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
+    std::string filename = GetFilenamePathAndExtension(selection).Filename;
+    std::string extension = GetFilenamePathAndExtension(selection).Extension;
 
     wxMenu menu;
     
@@ -1289,7 +1293,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     else
     {
         menu.Append(MN_EditTagSample, "Edit tags")->Enable(false);
-        menu.Append(MN_OpenFile, "Open file in file manager")->Enable(false);
+        menu.Append(MN_OpenFile, "Open in file manager")->Enable(false);
     }
 
     switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
@@ -1298,35 +1302,39 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         {
             //Get Folder Name and location
             std::string folder_name = "Favourites";
+
             wxDataViewItem folder_selection = m_CollectionView->GetSelection();
+
             if (folder_selection.IsOk() && m_CollectionView->IsContainer(folder_selection))
                 folder_name = m_CollectionView->GetItemText(folder_selection).ToStdString();
-            
+
             //Get Tree Root And Temp Items
             wxDataViewItem root = wxDataViewItem(wxNullPtr);    
             wxDataViewItem container;
             wxDataViewItem child;
-            
+
             //Get All Selected Samples
             wxDataViewItemArray samples;
             int sample_count = m_SampleListView->GetSelections(samples);
             int selected_row = 0;
             int db_status = 0;
-            
+
             for (int k = 0; k < sample_count; k++)
             {
                 //Get Filename
                 selected_row = m_SampleListView->ItemToRow(samples[k]);
+
                 if (selected_row < 0)
                     continue;
-                
-                // wxString name = settings.IsShowFileExtension() ?
-                //     m_SampleListView->GetTextValue(selected_row, 1) : m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
+
                 wxString name = m_SampleListView->GetTextValue(selected_row, 1);
+
+                filename = settings.IsShowFileExtension() ?
+                    name.BeforeLast('.').ToStdString() : name.ToStdString();
 
                 //Check Database
                 db_status = db.GetFavoriteColumnValueByFilename(filename);
-                
+
                 //Aleady Added, Do Nothing
                 if (favorite_add && db_status == 1)
                     continue;
@@ -1334,7 +1342,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 //Already Removed, Do Nothing
                 if (!favorite_add && db_status == 0)
                     continue;
-                
+
                 //Add To Favorites
                 if (favorite_add && db_status == 0)
                 {
@@ -1347,14 +1355,15 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     for (int i = 0; i < m_CollectionView->GetChildCount(root); i++)
                     {
                         container = m_CollectionView->GetNthChild(root, i);
-                        
+
                         if (m_CollectionView->GetItemText(container).ToStdString() == folder_name)
                         {
                             m_CollectionView->AppendItem(container, name);
+
+                            msg = wxString::Format("Added %s to %s", name, folder_name);
                             break;
                         }
                     }
-                    wxLogDebug("Adding %s to %s", name, folder_name);
                 }
                 else 
                 {
@@ -1376,6 +1385,8 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             if (m_CollectionView->GetItemText(child) == name)
                             {
                                 m_CollectionView->DeleteItem(child);
+
+                                msg = wxString::Format("Removed %s from %s", name, folder_name);
                                 break;
                             }
                         }
@@ -1421,7 +1432,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 {
                     case wxID_YES:
                     {
-                        msg = wxString::Format("Selected row: %d :: Sample: %s", selected_row, filename);
+                        wxLogDebug("Selected row: %d :: Sample: %s", selected_row, filename);
 
                         db.RemoveSampleFromDatabase(filename);
                         m_SampleListView->DeleteItem(selected_row);
@@ -1434,13 +1445,20 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_CollectionView->GetNthChild(container, k);
 
-                                if (m_CollectionView->GetItemText(child) == filename)
+                                wxString child_text = settings.IsShowFileExtension() ?
+                                    m_CollectionView->GetItemText(child).BeforeLast('.') :
+                                    m_CollectionView->GetItemText(child);
+
+                                if (child_text == filename)
                                 {
                                     m_CollectionView->DeleteItem(child);
+
                                     break;
                                 }
                             }
                         }
+
+                        msg = wxString::Format("Deleted %s from database successfully", selection);
                     }
                     break;
                     case wxID_NO:
@@ -1461,7 +1479,8 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             int row = m_SampleListView->ItemToRow(items[i]);
 
                             wxString text_value = m_SampleListView->GetTextValue(row, 1);
-                            std::string multi_selection = text_value.Contains(wxString::Format(".%s", extension)) ?
+
+                            std::string multi_selection = settings.IsShowFileExtension() ?
                                 text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
                             db.RemoveSampleFromDatabase(multi_selection);
@@ -1475,13 +1494,19 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                 {
                                     child = m_CollectionView->GetNthChild(container, k);
 
-                                    if (m_CollectionView->GetItemText(child) == multi_selection)
+                                    wxString child_text = settings.IsShowFileExtension() ?
+                                        m_CollectionView->GetItemText(child).BeforeLast('.') :
+                                        m_CollectionView->GetItemText(child);
+
+                                    if (child_text == multi_selection)
                                     {
                                         m_CollectionView->DeleteItem(child);
                                         break;
                                     }
                                 }
                             }
+
+                            msg = wxString::Format("Deleted %s from database successfully", text_value);
                         }
                     }
                     break;
@@ -1500,19 +1525,21 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             wxDataViewItem container;
             wxDataViewItem child;
 
-            if (db.IsTrashed(selection.BeforeLast('.').ToStdString()))
-                msg = "Already trashed..";
+            if (db.IsTrashed(filename))
+                wxLogDebug("Already trashed..");
             else
             {
                 if (m_SampleListView->GetSelectedItemsCount() <= 1)
                 {
-                    msg = "Trashing..";
+                    wxString name = m_SampleListView->GetTextValue(selected_row, 1);
 
-                    if (db.GetFavoriteColumnValueByFilename(selection.ToStdString()))
-                    // if (m_SampleListView->GetToggleValue(selected_row, 0))
+                    filename = settings.IsShowFileExtension() ?
+                        name.BeforeLast('.').ToStdString() : name.ToStdString();
+
+                    wxLogDebug("Trashing..");
+
+                    if (db.GetFavoriteColumnValueByFilename(filename))
                     {
-                        // m_SampleListView->SetToggleValue(false, selected_row, 0);
-
                         m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
                                                    selected_row, 0);
 
@@ -1526,7 +1553,11 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_CollectionView->GetNthChild(container, k);
 
-                                if (m_CollectionView->GetItemText(child) == filename)
+                                wxString child_text = settings.IsShowFileExtension() ?
+                                    m_CollectionView->GetItemText(child).BeforeLast('.') :
+                                    m_CollectionView->GetItemText(child);
+
+                                if (child_text == filename)
                                 {
                                     m_CollectionView->DeleteItem(child);
                                     break;
@@ -1536,8 +1567,10 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     }
 
                     db.UpdateTrashColumn(filename, 1);
-                    m_TrashedItems->AppendItem(trash_root_node, filename);
+                    m_TrashedItems->AppendItem(trash_root_node, name);
                     m_SampleListView->DeleteItem(selected_row);
+
+                    msg = wxString::Format("%s sent to trash", name);
                 }
                 else
                 {
@@ -1553,21 +1586,21 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                         int item_row = m_SampleListView->ItemToRow(items[i]);
 
                         wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
-                        std::string multi_selection = text_value.Contains(wxString::Format(".%s", extension)) ?
-                            text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
+
+                        std::string multi_selection = settings.IsShowFileExtension() ?
+                            m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                            m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
 
                         file_data.AddFile(multi_selection);
 
                         files = file_data.GetFilenames();
 
-                        // if (m_SampleListView->GetToggleValue(row, 0))
                         if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                         {
-                            // m_SampleListView->SetToggleValue(false, row, 0);
                             m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
                                                        item_row, 0);
 
-                            db.UpdateFavoriteColumn(multi_selection, 0);
+                            db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
                             for (int j = 0; j < m_CollectionView->GetChildCount(root); j++)
                             {
@@ -1577,7 +1610,11 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                 {
                                     child = m_CollectionView->GetNthChild(container, k);
 
-                                    if (m_CollectionView->GetItemText(child) == multi_selection)
+                                    wxString child_text = settings.IsShowFileExtension() ?
+                                        m_CollectionView->GetItemText(child).BeforeLast('.') :
+                                        m_CollectionView->GetItemText(child);
+
+                                    if (child_text == files[i])
                                     {
                                         m_CollectionView->DeleteItem(child);
                                         break;
@@ -1586,9 +1623,11 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             }
                         }
 
-                        db.UpdateTrashColumn(multi_selection, 1);
-                        m_TrashedItems->AppendItem(trash_root_node, multi_selection);
+                        db.UpdateTrashColumn(files[i].ToStdString(), 1);
+                        m_TrashedItems->AppendItem(trash_root_node, text_value);
                         m_SampleListView->DeleteItem(item_row);
+
+                        msg = wxString::Format("%s sent to trash", text_value);
                     }
                 }
             }
@@ -1601,13 +1640,13 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             switch (tagEditor->ShowModal())
             {
                 case wxID_OK:
-                    msg = wxString::Format("tags dialog ok, Return code: %d", tagEditor->GetReturnCode());
+                    wxLogDebug("tags dialog ok, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 case wxID_APPLY:
-                    msg = wxString::Format("tags dialog apply, Return code: %d", tagEditor->GetReturnCode());
+                    wxLogDebug("tags dialog apply, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 case wxID_CANCEL:
-                    msg = wxString::Format("tags dialog cancel, Return code: %d", tagEditor->GetReturnCode());
+                    wxLogDebug("tags dialog cancel, Return code: %d", tagEditor->GetReturnCode());
                     break;
                 default:
                     msg = "Unexpected TagEditor return code!";
@@ -1624,7 +1663,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     }
 
     if(!msg.IsEmpty())
-        wxLogDebug(msg);
+        m_InfoBar->ShowMessage(msg);
 }
 
 void MainFrame::LoadDatabase()
@@ -1658,87 +1697,6 @@ void MainFrame::LoadDatabase()
     }
 }
 
-// void MainFrame::OnCheckFavorite(wxDataViewEvent& event)
-// {
-//     Database db(*m_InfoBar);
-//     Serializer serialize(m_ConfigFilepath);
-//     Settings settings(this,m_ConfigFilepath, m_DatabaseFilepath);
-
-//     //Get Column
-//     wxDataViewColumn* column = m_SampleListView->GetCurrentColumn();
-
-//     if(!column) return;
-//     else if (column->GetTitle() != "Favorite") return;
-
-//     wxLogDebug("Clicked On Favorite Column!");
-
-//     //Get Filename
-//     int selected_row = m_SampleListView->ItemToRow(event.GetItem());
-
-//     if(selected_row < 0) return;
-
-//     wxString selection;
-//     if(settings.IsShowFileExtension())
-//         selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
-//     else
-//         selection = m_SampleListView->GetTextValue(selected_row, 1);
-
-//     //Get Folder Name and location
-//     std::string folder_name = "Favourites";
-//     wxDataViewItem folder_selection = m_CollectionView->GetSelection();
-//     if(folder_selection.IsOk() && m_CollectionView->IsContainer(folder_selection))
-//         folder_name = m_CollectionView->GetItemText(folder_selection).ToStdString();
-
-//     //Get Root
-//     wxDataViewItem root = wxDataViewItem(wxNullPtr);
-//     wxDataViewItem container;
-//     wxDataViewItem child;
-
-//     if(db.GetFavoriteColumnValueByFilename(selection.ToStdString()) == 0)
-//     {
-//         m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_COLOURED))),
-//                                        selected_row, 0);
-
-//         db.UpdateFavoriteColumn(selection.ToStdString(), 1);
-//         db.UpdateFavoriteFolder(selection.ToStdString(), folder_name);
-
-//         for(int i = 0; i < m_CollectionView->GetChildCount(root); i++)
-//         {
-//             container = m_CollectionView->GetNthChild(root, i);
-
-//             if(m_CollectionView->GetItemText(container).ToStdString() == folder_name)
-//             {
-//                 m_CollectionView->AppendItem(container, selection);
-//                 break;
-//             }
-//         }
-//         wxLogDebug("Adding %s to %s", selection, folder_name);
-//     }
-//     else
-//     {
-//         m_SampleListView->SetValue(wxVariant(wxDataViewIconText(wxEmptyString, wxIcon(ICON_GREYSCALE))),
-//                                        selected_row, 0);
-
-//         db.UpdateFavoriteColumn(selection.ToStdString(), 0);
-//         db.UpdateFavoriteFolder(selection.ToStdString(), "");
-
-//         for(int i = 0; i < m_CollectionView->GetChildCount(root); i++)
-//         {
-//             container = m_CollectionView->GetNthChild(root, i);
-//             for(int j = 0; j < m_CollectionView->GetChildCount(container); j++)
-//             {
-//                 child = m_CollectionView->GetNthChild(container, j);
-//                 if(m_CollectionView->GetItemText(child) == selection)
-//                 {
-//                     m_CollectionView->DeleteItem(child);
-//                     break;
-//                 }
-//             }
-//         }
-//         wxLogDebug("Removing %s from %s", selection, folder_name);
-//     }
-// }
-
 void MainFrame::OnExpandTrash(wxCollapsiblePaneEvent& event)
 {
     if(m_TrashPane->IsExpanded())
@@ -1754,7 +1712,6 @@ void MainFrame::OnExpandTrash(wxCollapsiblePaneEvent& event)
 
 void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
 {
-    // wxMessageBox("// TODO", "Add item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
     Database db(*m_InfoBar);
 
     std::deque<wxDataViewItem> nodes;
@@ -1833,7 +1790,6 @@ void MainFrame::OnClickCollectionAdd(wxCommandEvent& event)
 
 void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
 {
-    // wxMessageBox("// TODO", "Remove item", wxOK | wxCENTER, this, wxDefaultCoord, wxDefaultCoord);
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
@@ -1858,7 +1814,7 @@ void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
                                              wxYES_NO | wxNO_DEFAULT |
                                              wxICON_QUESTION | wxSTAY_ON_TOP);
 
-    if(m_CollectionView->GetChildCount(selected_item) <= 0)
+    if (m_CollectionView->GetChildCount(selected_item) <= 0)
     {
         switch (deleteEmptyFolderDialog.ShowModal())
         {
@@ -1871,7 +1827,7 @@ void MainFrame::OnClickCollectionRemove(wxCommandEvent& event)
                     msg = wxString::Format("%s deleted from collections successfully.", folder_name);
                 }
                 else
-                    if(folder_name == "Favourites")
+                    if (folder_name == "Favourites")
                         msg = wxString::Format("Error! Default folder %s cannot be deleted.", folder_name);
                     else
                         msg = wxString::Format("Error! %s is not a folder, cannot delete from collections.", folder_name);
@@ -1950,8 +1906,8 @@ void MainFrame::OnClickCollectionView(wxDataViewEvent &event)
     return;
     
     Database db(*m_InfoBar);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
-    // wxDataViewItem selected = m_CollectionView->GetSelection();
     wxDataViewItem selected = event.GetItem();
 
     wxString folder_name = m_CollectionView->GetItemText(selected);
@@ -1962,7 +1918,8 @@ void MainFrame::OnClickCollectionView(wxDataViewEvent &event)
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.FilterDatabaseByFolderName(dataset, folder_name.ToStdString()).empty())
+        if (db.FilterDatabaseByFolderName(dataset, folder_name.ToStdString(),
+                                          settings.IsShowFileExtension()).empty())
         {
             wxLogDebug("Error! Database is empty.");
         }
@@ -1989,11 +1946,11 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
     Database db(*m_InfoBar);
 
     wxTreeItemId selection_id = m_TrashedItems->GetSelection();
-    wxString selection = m_TrashedItems->GetItemText(selection_id);
+    wxString selection_text = m_TrashedItems->GetItemText(selection_id);
 
-    wxString path = GetFileNamePathAndExtension(selection).Path;
-    std::string extension = GetFileNamePathAndExtension(selection).Extension;
-    std::string filename = GetFileNamePathAndExtension(selection).Filename;
+    wxString path = GetFilenamePathAndExtension(selection_text).Path;
+    std::string extension = GetFilenamePathAndExtension(selection_text).Extension;
+    std::string filename = GetFilenamePathAndExtension(selection_text).Filename;
 
     db.UpdateTrashColumn(filename, 0);
 
@@ -2006,6 +1963,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 void MainFrame::OnDoSearch(wxCommandEvent& event)
 {
     Database db(*m_InfoBar);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     std::string search = m_SearchBox->GetValue().ToStdString();
 
@@ -2013,7 +1971,7 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.FilterDatabaseBySampleName(dataset, search).empty())
+        if (db.FilterDatabaseBySampleName(dataset, search, settings.IsShowFileExtension()).empty())
         {
             wxLogDebug("Error! Database is empty.");
         }
@@ -2069,6 +2027,17 @@ void MainFrame::LoadConfigFile()
 void MainFrame::RefreshDatabase()
 {
     m_SampleListView->DeleteAllItems();
+
+    wxLogDebug("Count: %d", m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr)));
+
+    if (m_CollectionView->GetChildCount(wxDataViewItem(wxNullPtr)) < 1 &&
+        m_CollectionView->GetItemText(wxDataViewItem(wxNullPtr)) == "Favourites")
+        return;
+    else
+        m_CollectionView->DeleteAllItems();
+
+    m_TrashedItems->DeleteAllItems();
+
     LoadDatabase();
 }
 
@@ -2093,7 +2062,7 @@ void MainFrame::RefreshDatabase()
 // }
 
 FileInfo
-MainFrame::GetFileNamePathAndExtension(const wxString& selected, bool checkExtension, bool doGetFilename) const
+MainFrame::GetFilenamePathAndExtension(const wxString& selected, bool checkExtension, bool doGetFilename) const
 {
     Database db(*m_InfoBar);
     Settings settings(m_ConfigFilepath, m_DatabaseFilepath);

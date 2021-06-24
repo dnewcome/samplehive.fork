@@ -79,7 +79,8 @@ class Database
         void LoadCollectionFolder(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                   const std::string& sampleName);
+                                   const std::string& sampleName, bool show_extension);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, const std::string& folderName);
+        FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec,
+                                   const std::string& folderName, bool show_extension);
 };

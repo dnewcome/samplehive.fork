@@ -53,7 +53,7 @@ class MainFrame : public wxFrame
     private:
         // -------------------------------------------------------------------
         // Main Panel
-	wxPanel* m_MainPanel;
+        wxPanel* m_MainPanel;
         wxBoxSizer* m_MainSizer;
 
     private:
@@ -173,12 +173,10 @@ class MainFrame : public wxFrame
 
         // -------------------------------------------------------------------
         // SampleListView event handlers
-        void OnCheckFavorite(wxDataViewEvent& event);
         void OnClickSampleView(wxDataViewEvent& event);
         void OnDragAndDropToSampleListView(wxDropFilesEvent& event);
         void OnDragFromSampleView(wxDataViewEvent& event);
         void OnShowSampleListViewContextMenu(wxDataViewEvent& event);
-        void OnSampleListViewContextMenuSelect(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // Timer update event handler
@@ -195,7 +193,7 @@ class MainFrame : public wxFrame
 
         // -------------------------------------------------------------------
         // Getters
-        FileInfo GetFileNamePathAndExtension(const wxString& selected,
+        FileInfo GetFilenamePathAndExtension(const wxString& selected,
                                              bool checkExtension = true, bool doGetFilename = true) const;
 
         // -------------------------------------------------------------------

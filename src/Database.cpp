@@ -872,7 +872,12 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                 wxVector<wxVariant> vec;
 
                 if (trashed == 1)
-                    trash_tree.AppendItem(trash_item, filename);
+                {
+                    if (show_extension)
+                        trash_tree.AppendItem(trash_item, wxString::Format("%s.%s", filename, file_extension));
+                    else
+                        trash_tree.AppendItem(trash_item, filename);
+                }
                 else
                 {
                     wxVariant icon_c, icon_gs;
@@ -982,7 +987,8 @@ Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, const std::string& sampleName)
+Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
+                                     const std::string& sampleName, bool show_extension)
 {
     try
     {
@@ -993,7 +999,7 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
         }
 
         std::string filter = "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                              CHANNELS, LENGTH, SAMPLERATE, BITRATE     \
+                              CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
                               FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%';";
 
         rc = sqlite3_prepare_v2(m_Database, filter.c_str(), filter.size(), &m_Stmt, NULL);
@@ -1015,6 +1021,7 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
                 int length = sqlite3_column_int(m_Stmt, 5);
                 int sample_rate = sqlite3_column_int(m_Stmt, 6);
                 int bitrate = sqlite3_column_int(m_Stmt, 7);
+                wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 8))));
 
                 wxVector<wxVariant> vec;
 
@@ -1032,7 +1039,17 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
                 // else
                 //     vec.push_back(false);
 
-                vec.push_back(filename);
+                // vec.push_back(filename);
+
+                if (show_extension)
+                {
+                    vec.push_back(path.AfterLast('/'));
+                }
+                else
+                {
+                    vec.push_back(path.AfterLast('/').BeforeLast('.'));
+                }
+
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
@@ -1066,7 +1083,8 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec, c
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, const std::string& folderName)
+Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec,
+                                     const std::string& folderName, bool show_extension)
 {
     try
     {
@@ -1077,7 +1095,7 @@ Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, c
         }
 
         std::string filter = "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                              CHANNELS, LENGTH, SAMPLERATE, BITRATE \
+                              CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
                               FROM SAMPLES WHERE FOLDER = ? AND FAVORITE = 1;";
 
         rc = sqlite3_prepare_v2(m_Database, filter.c_str(), filter.size(), &m_Stmt, NULL);
@@ -1099,6 +1117,7 @@ Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, c
                 int length = sqlite3_column_int(m_Stmt, 5);
                 int sample_rate = sqlite3_column_int(m_Stmt, 6);
                 int bitrate = sqlite3_column_int(m_Stmt, 7);
+                wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 8))));
 
                 wxVector<wxVariant> vec;
 
@@ -1116,7 +1135,17 @@ Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec, c
                 // else
                 //     vec.push_back(false);
 
-                vec.push_back(filename);
+                // vec.push_back(filename);
+
+                if (show_extension)
+                {
+                    vec.push_back(path.AfterLast('/'));
+                }
+                else
+                {
+                    vec.push_back(path.AfterLast('/').BeforeLast('.'));
+                }
+
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
