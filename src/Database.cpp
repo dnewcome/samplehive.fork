@@ -79,7 +79,7 @@ void Database::CreateTableSamples()
     }
 }
 
-void Database::CreateTableCollections()
+void Database::CreateTableHives()
 {
     /* Create SQL statement */
     std::string collections = "CREATE TABLE IF NOT EXISTS COLLECTIONS(FOLDERNAME TEXT NOT NULL);";
@@ -235,7 +235,7 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
     }
 }
 
-void Database::InsertIntoCollections(const std::string& folderName)
+void Database::InsertIntoHives(const std::string& folderName)
 {
     try
     {
@@ -373,7 +373,7 @@ void Database::UpdateFolder(const std::string& folderName)
     }
 }
 
-void Database::UpdateFavoriteFolder(const std::string& filename, const std::string& folderName)
+void Database::UpdateHiveName(const std::string& filename, const std::string& folderName)
 {
     try
     {
@@ -618,7 +618,7 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
     return value;
 }
 
-std::string Database::GetFavoriteFolderByFilename(const std::string& filename)
+std::string Database::GetHiveByFilename(const std::string& filename)
 {
     std::string folder;
 
@@ -702,7 +702,7 @@ void Database::RemoveSampleFromDatabase(const std::string& filename)
     }
 }
 
-void Database::RemoveFolderFromCollections(const std::string& folderName)
+void Database::RemoveHiveFromDatabase(const std::string& folderName)
 {
     try
     {
@@ -830,7 +830,7 @@ std::string Database::GetSampleFileExtension(const std::string& filename)
 }
 
 wxVector<wxVector<wxVariant>>
-Database::LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
+Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                        // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
                        wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                        wxTreeCtrl& trash_tree, wxTreeItemId& trash_item,
@@ -1083,7 +1083,7 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec,
+Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
                                      const std::string& folderName, bool show_extension)
 {
     try
@@ -1178,7 +1178,7 @@ Database::FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec,
     return sampleVec;
 }
 
-void Database::LoadCollectionFolder(wxDataViewTreeCtrl& treeCtrl)
+void Database::LoadHivesDatabase(wxDataViewTreeCtrl& treeCtrl)
 {
     try
     {

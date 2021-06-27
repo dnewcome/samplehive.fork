@@ -33,18 +33,18 @@ class Database
         // -------------------------------------------------------------------
         // Create the table
         void CreateTableSamples();
-        void CreateTableCollections();
+        void CreateTableHives();
 
         // -------------------------------------------------------------------
         // Insert into database
         void InsertIntoSamples(std::vector<Sample>);
-        void InsertIntoCollections(const std::string& folderName);
+        void InsertIntoHives(const std::string& folderName);
         
         // -------------------------------------------------------------------
         // Update database
         void UpdateFavoriteColumn(const std::string& filename, int value);
         void UpdateFolder(const std::string& folderName);
-        void UpdateFavoriteFolder(const std::string& filename,
+        void UpdateHiveName(const std::string& filename,
                                   const std::string& folderName);
         void UpdateTrashColumn(const std::string& filename, int value);
         void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
@@ -53,7 +53,7 @@ class Database
         // -------------------------------------------------------------------
         // Get from database
         int GetFavoriteColumnValueByFilename(const std::string& filename);
-        std::string GetFavoriteFolderByFilename(const std::string& filename);
+        std::string GetHiveByFilename(const std::string& filename);
         std::string GetSamplePathByFilename(const std::string& filename);
         std::string GetSampleFileExtension(const std::string& filename);
         std::string GetSampleType(const std::string& filename);
@@ -66,21 +66,21 @@ class Database
         // -------------------------------------------------------------------
         // Remove from database
         void RemoveSampleFromDatabase(const std::string& filename);
-        void RemoveFolderFromCollections(const std::string& folderName);
+        void RemoveHiveFromDatabase(const std::string& folderName);
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
         // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
         //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
         //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
-        LoadDatabase(wxVector<wxVector<wxVariant>>& vecSet,
-                     wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
-                     wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
-        void LoadCollectionFolder(wxDataViewTreeCtrl& favorite_tree);
+        LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
+                            wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
+                            wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
+        void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& sampleName, bool show_extension);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseByFolderName(wxVector<wxVector<wxVariant>>& sampleVec,
+        FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& folderName, bool show_extension);
 };

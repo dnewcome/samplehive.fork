@@ -19,15 +19,15 @@ enum ControlIDs
     BC_Autoplay,
     BC_Volume,
     BC_SamplePosition,
-    BC_CollectionView,
+    BC_Hives,
     BC_DirCtrl,
     BC_SampleListView,
     BC_Search,
     BC_MediaCtrl,
     BC_TrashPane,
     BC_RestoreTrashedItemButton,
-    BC_CollectionViewAdd,
-    BC_CollectionViewRemove,
+    BC_HiveAdd,
+    BC_HiveRemove,
 
     // -------------------------------------------------------------------
     // Setting dialog controls
@@ -50,8 +50,8 @@ enum ControlIDs
 
     // -------------------------------------------------------------------
     // CollectionView Menu items
-    MN_CreateFolder,
-    MN_RemoveFolder,
+    MN_CreateHive,
+    MN_RemoveHive,
     MN_RemoveSample,
     MN_FilterSampleView,
     MN_ShowInLibrary,

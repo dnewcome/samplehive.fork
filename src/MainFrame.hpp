@@ -82,24 +82,24 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Left panel controls
         wxPanel* m_BottomLeftPanel;
-        wxPanel* m_CollectionViewPanel;
+        wxPanel* m_HivesPanel;
         wxWindow* m_TrashPaneWindow;
         wxNotebook* m_ViewChoice;
         wxBoxSizer* m_BottomLeftPanelMainSizer;
-        wxBoxSizer* m_CollectionViewMainSizer;
-        wxBoxSizer* m_CollectionViewFavoritesSizer;
-        wxBoxSizer* m_CollectionViewTrashSizer;
-        wxBoxSizer* m_CollectionViewButtonSizer;
+        wxBoxSizer* m_HivesMainSizer;
+        wxBoxSizer* m_HivesFavoritesSizer;
+        wxBoxSizer* m_HivesViewTrashSizer;
+        wxBoxSizer* m_HivesButtonSizer;
         wxBoxSizer* m_TrashItemSizer;
-        wxSizerItem *m_CollectionViewTrashSizerItem;
+        wxSizerItem* m_HivesViewTrashSizerItem;
         wxDirCtrl* m_DirCtrl;
-        wxDataViewTreeCtrl* m_CollectionView;
+        wxDataViewTreeCtrl* m_Hives;
         wxDataViewItem favorites_folder;
         wxTreeItemId trash_root_node;
         wxCollapsiblePane* m_TrashPane;
         wxTreeCtrl* m_TrashedItems;
-        wxButton* m_AddTreeItemButton;
-        wxButton* m_RemoveTreeItemButton;
+        wxButton* m_AddHiveButton;
+        wxButton* m_RemoveHiveButton;
         wxButton* m_RestoreTrashedItemButton;
 
         // -------------------------------------------------------------------
@@ -159,12 +159,11 @@ class MainFrame : public wxFrame
         void OnClickRestoreTrashItem(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
-        // CollectionViewPanel button event handlers
-        void OnClickCollectionView(wxDataViewEvent& event);
-        void OnDragAndDropToCollectionView(wxDropFilesEvent& event);
-        void OnClickCollectionAdd(wxCommandEvent& event);
-        void OnClickCollectionRemove(wxCommandEvent& event);
-        void OnShowCollectionViewContextMenu(wxDataViewEvent& event);
+        // Hives panel button event handlers
+        void OnDragAndDropToHives(wxDropFilesEvent& event);
+        void OnClickAddHive(wxCommandEvent& event);
+        void OnClickRemoveHive(wxCommandEvent& event);
+        void OnShowHivesContextMenu(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // SearchCtrl event handlers
