@@ -49,9 +49,9 @@ enum ControlIDs
     MN_OpenFile,
 
     // -------------------------------------------------------------------
-    // CollectionView Menu items
+    // Hives Menu items
     MN_CreateHive,
-    MN_RemoveHive,
+    MN_DeleteHive,
     MN_RemoveSample,
     MN_FilterSampleView,
     MN_ShowInLibrary,

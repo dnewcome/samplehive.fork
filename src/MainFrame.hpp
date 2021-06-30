@@ -94,7 +94,7 @@ class MainFrame : public wxFrame
         wxSizerItem* m_HivesViewTrashSizerItem;
         wxDirCtrl* m_DirCtrl;
         wxDataViewTreeCtrl* m_Hives;
-        wxDataViewItem favorites_folder;
+        wxDataViewItem favorites_hive;
         wxTreeItemId trash_root_node;
         wxCollapsiblePane* m_TrashPane;
         wxTreeCtrl* m_TrashedItems;

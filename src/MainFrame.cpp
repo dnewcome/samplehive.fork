@@ -129,7 +129,7 @@ MainFrame::MainFrame()
     m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
 
     // Adding default hive
-    favorites_folder = m_Hives->AppendContainer(wxDataViewItem(wxNullPtr), "Favourites");
+    favorites_hive = m_Hives->AppendContainer(wxDataViewItem(wxNullPtr), "Favourites");
 
     // Addubg root to TrashedItems
     trash_root_node = m_TrashedItems->AddRoot("ROOT");
@@ -337,7 +337,7 @@ MainFrame::MainFrame()
     db.CreateTableSamples();
     db.CreateTableHives();
 
-    // db.InsertIntoHives(m_Hives->GetItemText(favorites_folder).ToStdString());
+    // db.InsertIntoHives(m_Hives->GetItemText(favorites_hive).ToStdString());
 
     // Restore the data previously added to SampleListView
     LoadDatabase();
@@ -554,7 +554,7 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 
         m_Hives->HitTest(position, drop_target, column);
 
-        wxString folder_name = m_Hives->GetItemText(drop_target);
+        wxString hive_name = m_Hives->GetItemText(drop_target);
 
         wxString msg;
 
@@ -582,9 +582,9 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
                                            row, 0);
 
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
-                db.UpdateHiveName(file_name.ToStdString(), folder_name.ToStdString());
+                db.UpdateHiveName(file_name.ToStdString(), hive_name.ToStdString());
 
-                msg = wxString::Format("%s added to %s.", files[i], folder_name);
+                msg = wxString::Format("%s added to %s.", files[i], hive_name);
             }
             else
             {
@@ -893,7 +893,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
     std::string filename = GetFilenamePathAndExtension(selection).Filename;
     std::string extension = GetFilenamePathAndExtension(selection).Extension;
 
-    if (column->GetTitle() != "Favorite")
+    if (column->GetTitle() != m_Hives->GetItemText(favorites_hive))
     {
         m_MediaCtrl->Load(sample_path);
 
@@ -911,12 +911,12 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
 
         wxString msg;
 
-        //Get Folder Name and location
-        std::string folder_name = "Favourites";
-        wxDataViewItem folder_selection = m_Hives->GetSelection();
+        //Get Hive Name and location
+        std::string hive_name = m_Hives->GetItemText(favorites_hive).ToStdString();
+        wxDataViewItem hive_selection = m_Hives->GetSelection();
 
-        if (folder_selection.IsOk() && m_Hives->IsContainer(folder_selection))
-            folder_name = m_Hives->GetItemText(folder_selection).ToStdString();
+        if (hive_selection.IsOk() && m_Hives->IsContainer(hive_selection))
+            hive_name = m_Hives->GetItemText(hive_selection).ToStdString();
 
         wxString name = m_SampleListView->GetTextValue(selected_row, 1);
 
@@ -931,20 +931,20 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
                                        selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 1);
-            db.UpdateHiveName(filename, folder_name);
+            db.UpdateHiveName(filename, hive_name);
 
             for (int i = 0; i < m_Hives->GetChildCount(root); i++)
             {
                 container = m_Hives->GetNthChild(root, i);
 
-                if (m_Hives->GetItemText(container).ToStdString() == folder_name)
+                if (m_Hives->GetItemText(container).ToStdString() == hive_name)
                 {
                     m_Hives->AppendItem(container, name);
                     break;
                 }
             }
 
-            msg = wxString::Format("Added %s to %s", name, folder_name);
+            msg = wxString::Format("Added %s to %s", name, hive_name);
         }
         else
         {
@@ -952,7 +952,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
                                        selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 0);
-            db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_folder).ToStdString());
+            db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
 
             for (int i = 0; i < m_Hives->GetChildCount(root); i++)
             {
@@ -970,7 +970,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
                 }
             }
 
-            msg = wxString::Format("Removed %s from %s", name, folder_name);
+            msg = wxString::Format("Removed %s from %s", name, hive_name);
         }
 
         if (!msg.IsEmpty())
@@ -985,15 +985,15 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
     wxDataViewItem selected_item = event.GetItem();
 
-    wxString folder_name = m_Hives->GetItemText(selected_item);
+    wxString hive_name = m_Hives->GetItemText(selected_item);
 
     wxMenu menu;
 
     if (m_Hives->IsContainer(selected_item))
     {
         // Container menu items
-        // container_menu.Append(MN_CreateFolder, "Create new folder");
-        menu.Append(MN_RemoveHive, "Remove folder");
+        // container_menu.Append(MN_CreateHive, "Create new hive");
+        menu.Append(MN_DeleteHive, "Delete hive");
 
         if (!bFiltered)
             menu.Append(MN_FilterSampleView, "Filter sample view");
@@ -1013,31 +1013,31 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
         switch (m_Hives->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
         {
-            // case MN_CreateFolder:
+            // case MN_CreateHive:
                 // break;
-            case MN_RemoveHive:
+            case MN_DeleteHive:
             {
                 wxString msg;
 
-                wxMessageDialog deleteEmptyFolderDialog(this, wxString::Format(
-                                                            "Are you sure you want to delete "
-                                                            "%s from collections?",
-                                                            folder_name),
-                                                        wxMessageBoxCaptionStr,
-                                                        wxYES_NO | wxNO_DEFAULT |
-                                                        wxICON_QUESTION | wxSTAY_ON_TOP);
+                wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(
+                                                          "Are you sure you want to delete "
+                                                          "%s from hives?",
+                                                          hive_name),
+                                                      wxMessageBoxCaptionStr,
+                                                      wxYES_NO | wxNO_DEFAULT |
+                                                      wxICON_QUESTION | wxSTAY_ON_TOP);
 
-                wxMessageDialog deleteFilledFolderDialog(this, wxString::Format(
-                                                             "Are you sure you want to delete "
-                                                             "%s and all sample inside %s from collections?",
-                                                             folder_name, folder_name),
-                                                         wxMessageBoxCaptionStr,
-                                                         wxYES_NO | wxNO_DEFAULT |
-                                                         wxICON_QUESTION | wxSTAY_ON_TOP);
+                wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(
+                                                           "Are you sure you want to delete "
+                                                           "%s and all sample inside %s from hives?",
+                                                           hive_name, hive_name),
+                                                       wxMessageBoxCaptionStr,
+                                                       wxYES_NO | wxNO_DEFAULT |
+                                                       wxICON_QUESTION | wxSTAY_ON_TOP);
 
-                if (folder_name == m_Hives->GetItemText(favorites_folder))
+                if (hive_name == m_Hives->GetItemText(favorites_hive))
                 {
-                    wxMessageBox(wxString::Format("Error! Default folder %s cannot be deleted.", folder_name),
+                    wxMessageBox(wxString::Format("Error! Default hive %s cannot be deleted.", hive_name),
                                  "Error!", wxOK | wxCENTRE, this);
                     return;
                 }
@@ -1049,24 +1049,24 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 else if (selected_item.IsOk() && !m_Hives->IsContainer(selected_item))
                 {
                     wxMessageBox(wxString::Format("Error! %s is not a hive, cannot delete from hives.",
-                                                  folder_name),
+                                                  hive_name),
                                  "Error!", wxOK | wxCENTRE, this);
                     return;
                 }
 
                 if(m_Hives->GetChildCount(selected_item) <= 0)
                 {
-                    switch (deleteEmptyFolderDialog.ShowModal())
+                    switch (deleteEmptyHiveDialog.ShowModal())
                     {
                         case wxID_YES:
                             if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) &&
-                                folder_name != "Favourites")
+                                hive_name != m_Hives->GetItemText(favorites_hive))
                             {
                                 m_Hives->DeleteItem(selected_item);
 
-                                db.RemoveHiveFromDatabase(folder_name.ToStdString());
+                                db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                                msg = wxString::Format("%s deleted from collections successfully.", folder_name);
+                                msg = wxString::Format("%s deleted from hives successfully.", hive_name);
                             }
                             break;
                         case wxID_NO:
@@ -1077,10 +1077,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
                 else
                 {
-                    switch (deleteFilledFolderDialog.ShowModal())
+                    switch (deleteFilledHiveDialog.ShowModal())
                     {
                         case wxID_YES:
-                            if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) && folder_name != "Favourites")
+                            if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) &&
+                                hive_name != m_Hives->GetItemText(favorites_hive))
                             {
                                 wxDataViewItem child_item;
 
@@ -1106,7 +1107,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                             db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                             db.UpdateHiveName(matched_sample.ToStdString(),
-                                                              m_Hives->GetItemText(favorites_folder).ToStdString());
+                                                              m_Hives->GetItemText(favorites_hive).ToStdString());
 
                                             break;
                                         }
@@ -1118,11 +1119,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 m_Hives->DeleteChildren(selected_item);
                                 m_Hives->DeleteItem(selected_item);
 
-                                db.RemoveHiveFromDatabase(folder_name.ToStdString());
+                                db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
                                 msg = wxString::Format(
                                     "%s and all samples inside %s have been deleted from hives successfully.",
-                                    folder_name, folder_name);
+                                    hive_name, hive_name);
                             }
                             break;
                         case wxID_NO:
@@ -1144,7 +1145,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         wxVector<wxVector<wxVariant>> dataset;
 
-                        if (db.FilterDatabaseByHiveName(dataset, folder_name.ToStdString(),
+                        if (db.FilterDatabaseByHiveName(dataset, hive_name.ToStdString(),
                                                           settings.IsShowFileExtension()).empty())
                         {
                             wxMessageBox("Error! Database is empty.", "Error!",
@@ -1155,7 +1156,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                         {
                             m_SampleListView->DeleteAllItems();
 
-                            wxLogDebug("Folder name: %s", folder_name);
+                            wxLogDebug("Hive name: %s", hive_name);
 
                             for (auto data : dataset)
                             {
@@ -1231,7 +1232,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                         db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                         db.UpdateHiveName(matched_sample.ToStdString(),
-                                          m_Hives->GetItemText(favorites_folder).ToStdString());
+                                          m_Hives->GetItemText(favorites_hive).ToStdString());
 
                         m_Hives->DeleteItem(selected_item);
 
@@ -1328,13 +1329,13 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     {
         case MN_FavoriteSample:
         {
-            //Get Folder Name and location
-            std::string folder_name = "Favourites";
+            //Get Hive Name and location
+            std::string hive_name = m_Hives->GetItemText(favorites_hive).ToStdString();
 
-            wxDataViewItem folder_selection = m_Hives->GetSelection();
+            wxDataViewItem hive_selection = m_Hives->GetSelection();
 
-            if (folder_selection.IsOk() && m_Hives->IsContainer(folder_selection))
-                folder_name = m_Hives->GetItemText(folder_selection).ToStdString();
+            if (hive_selection.IsOk() && m_Hives->IsContainer(hive_selection))
+                hive_name = m_Hives->GetItemText(hive_selection).ToStdString();
 
             //Get Tree Root And Temp Items
             wxDataViewItem root = wxDataViewItem(wxNullPtr);    
@@ -1378,17 +1379,17 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                                selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 1);
-                    db.UpdateHiveName(filename, folder_name);
+                    db.UpdateHiveName(filename, hive_name);
         
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
                     {
                         container = m_Hives->GetNthChild(root, i);
 
-                        if (m_Hives->GetItemText(container).ToStdString() == folder_name)
+                        if (m_Hives->GetItemText(container).ToStdString() == hive_name)
                         {
                             m_Hives->AppendItem(container, name);
 
-                            msg = wxString::Format("Added %s to %s", name, folder_name);
+                            msg = wxString::Format("Added %s to %s", name, hive_name);
                             break;
                         }
                     }
@@ -1400,7 +1401,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                                selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 0);
-                    db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_folder).ToStdString());
+                    db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
                     
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
                     {
@@ -1414,7 +1415,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                             {
                                 m_Hives->DeleteItem(child);
 
-                                msg = wxString::Format("Removed %s from %s", name, folder_name);
+                                msg = wxString::Format("Removed %s from %s", name, hive_name);
                                 break;
                             }
                         }
@@ -1707,7 +1708,7 @@ void MainFrame::LoadDatabase()
 
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.LoadSamplesDatabase(dataset, *m_Hives, favorites_folder,
+        if (db.LoadSamplesDatabase(dataset, *m_Hives, favorites_hive,
                                    *m_TrashedItems, trash_root_node,
                                    settings.IsShowFileExtension()).empty())
         {
@@ -1750,7 +1751,7 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
     wxDataViewItem current_item, found_item;
 
     int row = 0;
-    int folder_count = m_Hives->GetChildCount(wxDataViewItem(wxNullPtr));
+    int hive_count = m_Hives->GetChildCount(wxDataViewItem(wxNullPtr));
 
     wxString msg;
 
@@ -1782,9 +1783,9 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
                 wxDataViewItem child = m_Hives->GetNthChild(wxDataViewItem(wxNullPtr), 0);
 
                 wxLogDebug("Row: %d :: Hive count: %d :: Child: %s",
-                           row, folder_count, m_Hives->GetItemText(child));
+                           row, hive_count, m_Hives->GetItemText(child));
 
-                while (row < (folder_count - 1))
+                while (row < (hive_count - 1))
                 {
                     row ++;
 
@@ -1827,29 +1828,29 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
     Database db(*m_InfoBar);
 
     wxDataViewItem selected_item = m_Hives->GetSelection();
-    wxString folder_name = m_Hives->GetItemText(selected_item);
+    wxString hive_name = m_Hives->GetItemText(selected_item);
 
     wxString msg;
 
-    wxMessageDialog deleteEmptyFolderDialog(this, wxString::Format(
-                                                "Are you sure you want to delete "
-                                                "%s from collections?",
-                                                folder_name),
-                                            wxMessageBoxCaptionStr,
-                                            wxYES_NO | wxNO_DEFAULT |
-                                            wxICON_QUESTION | wxSTAY_ON_TOP);
+    wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(
+                                              "Are you sure you want to delete "
+                                              "%s from hives?",
+                                              hive_name),
+                                          wxMessageBoxCaptionStr,
+                                          wxYES_NO | wxNO_DEFAULT |
+                                          wxICON_QUESTION | wxSTAY_ON_TOP);
 
-    wxMessageDialog deleteFilledFolderDialog(this, wxString::Format(
-                                                 "Are you sure you want to delete "
-                                                 "%s and all sample inside %s from collections?",
-                                                 folder_name, folder_name),
-                                             wxMessageBoxCaptionStr,
-                                             wxYES_NO | wxNO_DEFAULT |
-                                             wxICON_QUESTION | wxSTAY_ON_TOP);
+    wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(
+                                               "Are you sure you want to delete "
+                                               "%s and all sample inside %s from hives?",
+                                               hive_name, hive_name),
+                                           wxMessageBoxCaptionStr,
+                                           wxYES_NO | wxNO_DEFAULT |
+                                           wxICON_QUESTION | wxSTAY_ON_TOP);
 
-    if (folder_name == m_Hives->GetItemText(favorites_folder))
+    if (hive_name == m_Hives->GetItemText(favorites_hive))
     {
-        wxMessageBox(wxString::Format("Error! Default folder %s cannot be deleted.", folder_name),
+        wxMessageBox(wxString::Format("Error! Default hive %s cannot be deleted.", hive_name),
                      "Error!", wxOK | wxCENTRE, this);
         return;
     }
@@ -1860,22 +1861,23 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
     }
     else if (selected_item.IsOk() && !m_Hives->IsContainer(selected_item))
     {
-        wxMessageBox(wxString::Format("Error! %s is not a hive, cannot delete from hives.", folder_name),
+        wxMessageBox(wxString::Format("Error! %s is not a hive, cannot delete from hives.", hive_name),
                      "Error!", wxOK | wxCENTRE, this);
         return;
     }
 
     if (m_Hives->GetChildCount(selected_item) <= 0)
     {
-        switch (deleteEmptyFolderDialog.ShowModal())
+        switch (deleteEmptyHiveDialog.ShowModal())
         {
             case wxID_YES:
-                if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) && folder_name != "Favourites")
+                if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) &&
+                    hive_name != m_Hives->GetItemText(favorites_hive))
                 {
                     m_Hives->DeleteItem(selected_item);
 
-                    db.RemoveHiveFromDatabase(folder_name.ToStdString());
-                    msg = wxString::Format("%s deleted from collections successfully.", folder_name);
+                    db.RemoveHiveFromDatabase(hive_name.ToStdString());
+                    msg = wxString::Format("%s deleted from hives successfully.", hive_name);
                 }
                 break;
             case wxID_NO:
@@ -1886,10 +1888,11 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
     }
     else
     {
-        switch (deleteFilledFolderDialog.ShowModal())
+        switch (deleteFilledHiveDialog.ShowModal())
         {
             case wxID_YES:
-                if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) && folder_name != "Favourites")
+                if (selected_item.IsOk() && m_Hives->IsContainer(selected_item) &&
+                    hive_name != m_Hives->GetItemText(favorites_hive))
                 {
                     wxDataViewItem child_item;
 
@@ -1915,7 +1918,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
                                 db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                 db.UpdateHiveName(matched_sample.ToStdString(),
-                                                  m_Hives->GetItemText(favorites_folder).ToStdString());
+                                                  m_Hives->GetItemText(favorites_hive).ToStdString());
 
                                 break;
                             }
@@ -1927,10 +1930,10 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                     m_Hives->DeleteChildren(selected_item);
                     m_Hives->DeleteItem(selected_item);
 
-                    db.RemoveHiveFromDatabase(folder_name.ToStdString());
+                    db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                    msg = wxString::Format("%s and all samples inside %s have been deleted from collections successfully.",
-                                           folder_name, folder_name);
+                    msg = wxString::Format("%s and all samples inside %s have been deleted from hives successfully.",
+                                           hive_name, hive_name);
                 }
                 break;
             case wxID_NO:
@@ -2034,7 +2037,7 @@ void MainFrame::RefreshDatabase()
     wxLogDebug("Count: %d", m_Hives->GetChildCount(wxDataViewItem(wxNullPtr)));
 
     if (m_Hives->GetChildCount(wxDataViewItem(wxNullPtr)) < 1 &&
-        m_Hives->GetItemText(wxDataViewItem(wxNullPtr)) == "Favourites")
+        m_Hives->GetItemText(wxDataViewItem(wxNullPtr)) == m_Hives->GetItemText(favorites_hive))
         return;
     else
         m_Hives->DeleteAllItems();
