@@ -38,14 +38,13 @@ class Database
         // -------------------------------------------------------------------
         // Insert into database
         void InsertIntoSamples(std::vector<Sample>);
-        void InsertIntoHives(const std::string& folderName);
+        void InsertIntoHives(const std::string& hiveName);
         
         // -------------------------------------------------------------------
         // Update database
         void UpdateFavoriteColumn(const std::string& filename, int value);
-        void UpdateFolder(const std::string& folderName);
-        void UpdateHiveName(const std::string& filename,
-                                  const std::string& folderName);
+        void UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName);
+        void UpdateHiveName(const std::string& filename, const std::string& hiveName);
         void UpdateTrashColumn(const std::string& filename, int value);
         void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
         void UpdateSampleType(const std::string& filename, const std::string& type);
@@ -66,7 +65,7 @@ class Database
         // -------------------------------------------------------------------
         // Remove from database
         void RemoveSampleFromDatabase(const std::string& filename);
-        void RemoveHiveFromDatabase(const std::string& folderName);
+        void RemoveHiveFromDatabase(const std::string& hiveName);
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
@@ -82,5 +81,5 @@ class Database
                                    const std::string& sampleName, bool show_extension);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                   const std::string& folderName, bool show_extension);
+                                 const std::string& hiveName, bool show_extension);
 };

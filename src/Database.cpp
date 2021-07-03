@@ -38,7 +38,7 @@ void Database::CreateTableSamples()
         "BITRATE        INT     NOT NULL,"
         "PATH           TEXT    NOT NULL,"
         "TRASHED        INT     NOT NULL,"
-        "FOLDER         TEXT    NOT NULL);";
+        "HIVE           TEXT    NOT NULL);";
 
     try
     {
@@ -82,7 +82,7 @@ void Database::CreateTableSamples()
 void Database::CreateTableHives()
 {
     /* Create SQL statement */
-    std::string collections = "CREATE TABLE IF NOT EXISTS COLLECTIONS(FOLDERNAME TEXT NOT NULL);";
+    std::string hives = "CREATE TABLE IF NOT EXISTS HIVES(HIVE TEXT NOT NULL);";
 
     try
     {
@@ -96,11 +96,11 @@ void Database::CreateTableHives()
             wxLogDebug("Opening DB..");
         }
 
-        rc = sqlite3_exec(m_Database, collections.c_str(), NULL, 0, &m_ErrMsg);
+        rc = sqlite3_exec(m_Database, hives.c_str(), NULL, 0, &m_ErrMsg);
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog msgDialog(NULL, "Error! Cannot create table collections.",
+            wxMessageDialog msgDialog(NULL, "Error! Cannot create table hives.",
                                       "Error", wxOK | wxICON_ERROR);
             msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
@@ -140,7 +140,7 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
 
         std::string insert = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
                               EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
-                              SAMPLERATE, BITRATE, PATH, TRASHED, FOLDER) \
+                              SAMPLERATE, BITRATE, PATH, TRASHED, HIVE) \
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
@@ -168,7 +168,7 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
             type = sample.GetType();
             path = sample.GetPath();
 
-            std::string folder = "Favourites";
+            std::string hive = "Favorites";
 
             rc = sqlite3_bind_int(m_Stmt, 1, sample.GetFavorite());
             rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
@@ -181,7 +181,7 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
             rc = sqlite3_bind_int(m_Stmt, 9, sample.GetBitrate());
             rc = sqlite3_bind_text(m_Stmt, 10, path.c_str(), path.size(), SQLITE_STATIC);
             rc = sqlite3_bind_int(m_Stmt, 11, sample.GetTrashed());
-            rc = sqlite3_bind_text(m_Stmt, 12, folder.c_str(), folder.size(), SQLITE_STATIC);
+            rc = sqlite3_bind_text(m_Stmt, 12, hive.c_str(), hive.size(), SQLITE_STATIC);
         
             rc = sqlite3_step(m_Stmt);
             rc = sqlite3_clear_bindings(m_Stmt);
@@ -235,7 +235,7 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
     }
 }
 
-void Database::InsertIntoHives(const std::string& folderName)
+void Database::InsertIntoHives(const std::string& hiveName)
 {
     try
     {
@@ -249,7 +249,7 @@ void Database::InsertIntoHives(const std::string& folderName)
             wxLogDebug("Opening DB..");
         }
 
-        std::string insert = "INSERT INTO COLLECTIONS(FOLDERNAME) VALUES(?);";
+        std::string insert = "INSERT INTO HIVES(HIVE) VALUES(?);";
 
         rc = sqlite3_prepare_v2(m_Database, insert.c_str(), insert.size(), &m_Stmt, NULL);
 
@@ -276,10 +276,10 @@ void Database::InsertIntoHives(const std::string& folderName)
         //     type = sample.GetType();
         //     path = sample.GetPath();
 
-        //     std::string folder = "Favourites";
+        //     std::string hive = "Favourites";
 
         // rc = sqlite3_bind_int(m_Stmt, 1, sample.GetFavorite());
-        rc = sqlite3_bind_text(m_Stmt, 1, folderName.c_str(), folderName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC);
 
         rc = sqlite3_step(m_Stmt);
             // rc = sqlite3_clear_bindings(m_Stmt);
@@ -333,17 +333,18 @@ void Database::InsertIntoHives(const std::string& folderName)
     }
 }
 
-void Database::UpdateFolder(const std::string& folderName)
+void Database::UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName)
 {
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string update = "UPDATE SAMPLES SET FOLDER = ?;";
+        std::string update = "UPDATE HIVES SET HIVE = ? WHERE HIVE = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, update.c_str(), update.size(), &m_Stmt, NULL);
 
-        rc = sqlite3_bind_text(m_Stmt, 1, folderName.c_str(), folderName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 1, hiveNewName.c_str(), hiveNewName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 2, hiveOldName.c_str(), hiveOldName.size(), SQLITE_STATIC);
 
         if (sqlite3_step(m_Stmt) != SQLITE_DONE)
         {
@@ -355,14 +356,14 @@ void Database::UpdateFolder(const std::string& folderName)
         if (rc != SQLITE_OK)
         {
             wxMessageDialog msgDialog(NULL,
-                                      "Error! Cannot insert folder into table.",
+                                      "Error! Cannot update hive name.",
                                       "Error", wxOK | wxICON_ERROR);
             msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
         }
         else
         {
-            wxLogInfo("Folder inserted successfully. %s", m_ErrMsg);
+            wxLogInfo("Hive updated successfully. %s", m_ErrMsg);
         }
 
         sqlite3_close(m_Database);
@@ -373,17 +374,17 @@ void Database::UpdateFolder(const std::string& folderName)
     }
 }
 
-void Database::UpdateHiveName(const std::string& filename, const std::string& folderName)
+void Database::UpdateHiveName(const std::string& filename, const std::string& hiveName)
 {
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string update = "UPDATE SAMPLES SET FOLDER = ? WHERE FILENAME = ?;";
+        std::string update = "UPDATE SAMPLES SET HIVE = ? WHERE FILENAME = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, update.c_str(), update.size(), &m_Stmt, NULL);
 
-        rc = sqlite3_bind_text(m_Stmt, 1, folderName.c_str(), folderName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC);
         rc = sqlite3_bind_text(m_Stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC);
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
@@ -620,13 +621,13 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
 
 std::string Database::GetHiveByFilename(const std::string& filename)
 {
-    std::string folder;
+    std::string hive;
 
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string select = "SELECT FOLDER FROM SAMPLES WHERE FILENAME = ?;";
+        std::string select = "SELECT HIVE FROM SAMPLES WHERE FILENAME = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
 
@@ -636,14 +637,14 @@ std::string Database::GetHiveByFilename(const std::string& filename)
         {
             wxLogInfo("Record found, fetching..");
 
-            folder = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
+            hive = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
         rc = sqlite3_finalize(m_Stmt);
 
         if (rc != SQLITE_OK)
         {
-            wxMessageDialog msgDialog(NULL, "Error! Cannot get favorite folder value from table.",
+            wxMessageDialog msgDialog(NULL, "Error! Cannot get hive value from table.",
                                       "Error", wxOK | wxICON_ERROR);
             msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);
@@ -660,7 +661,7 @@ std::string Database::GetHiveByFilename(const std::string& filename)
         wxLogDebug(exception.what());
     }
 
-    return folder;
+    return hive;
 }
 
 void Database::RemoveSampleFromDatabase(const std::string& filename)
@@ -702,17 +703,17 @@ void Database::RemoveSampleFromDatabase(const std::string& filename)
     }
 }
 
-void Database::RemoveHiveFromDatabase(const std::string& folderName)
+void Database::RemoveHiveFromDatabase(const std::string& hiveName)
 {
     try
     {
         rc = sqlite3_open("sample.hive", &m_Database);
 
-        std::string remove = "DELETE FROM COLLECTIONS WHERE FOLDERNAME = ?;";
+        std::string remove = "DELETE FROM HIVES WHERE HIVE = ?;";
 
         rc = sqlite3_prepare_v2(m_Database, remove.c_str(), remove.size(), &m_Stmt, NULL);
 
-        rc = sqlite3_bind_text(m_Stmt, 1, folderName.c_str(), folderName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC);
 
         if (sqlite3_step(m_Stmt) == SQLITE_DONE)
         {
@@ -846,7 +847,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 
         std::string load = "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
                             TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
-                            TRASHED, FOLDER FROM SAMPLES;";
+                            TRASHED, HIVE FROM SAMPLES;";
 
         rc = sqlite3_prepare_v2(m_Database, load.c_str(), load.size(), &m_Stmt, NULL);
 
@@ -867,7 +868,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                 int bitrate = sqlite3_column_int(m_Stmt, 8);
                 wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 9)));
                 int trashed = sqlite3_column_int(m_Stmt, 10);
-                wxString folder_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 11)));
+                wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 11)));
 
                 wxVector<wxVariant> vec;
 
@@ -881,15 +882,15 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                 else
                 {
                     wxVariant icon_c, icon_gs;
-                    icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
-                    icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+                    icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
+                    icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
 
                     if (favorite == 1)
                     {
                         // vec.push_back(true);
                         vec.push_back(icon_c);
 
-                        wxLogDebug("Loading collection items..");
+                        wxLogDebug("Loading hives..");
 
                         std::deque<wxDataViewItem> nodes;
                         nodes.push_back(favorite_tree.GetNthChild(wxDataViewItem(wxNullPtr), 0));
@@ -897,23 +898,23 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                         wxDataViewItem current_item, found_item;
 
                         int row = 0;
-                        int folder_count = favorite_tree.GetChildCount(wxDataViewItem(wxNullPtr));
+                        int hive_count = favorite_tree.GetChildCount(wxDataViewItem(wxNullPtr));
 
                         while(!nodes.empty())
                         {
                             current_item = nodes.front();
                             nodes.pop_front();
 
-                            if (favorite_tree.GetItemText(current_item) == folder_name)
+                            if (favorite_tree.GetItemText(current_item) == hive_name)
                             {
                                 found_item = current_item;
-                                wxLogDebug("Loading, folder name: %s", folder_name);
+                                wxLogDebug("Loading, hive name: %s", hive_name);
                                 break;
                             }
 
                             wxDataViewItem child = favorite_tree.GetNthChild(wxDataViewItem(wxNullPtr), 0);
 
-                            while (row < (folder_count - 1))
+                            while (row < (hive_count - 1))
                             {
                                 row ++;
 
@@ -926,8 +927,8 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 
                         if (found_item.IsOk())
                         {
-                            // wxLogDebug("Another folder by the name %s already exist. Please try with a different name.",
-                                       // folder_name);
+                            // wxLogDebug("Another hive by the name %s already exist. Please try with a different name.",
+                                       // hive_name);
                             if (show_extension)
                                 favorite_tree.AppendItem(found_item,
                                                          wxString::Format("%s.%s", filename, file_extension));
@@ -936,7 +937,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                         }
                         // else
                         // {
-                        //     favorite_tree.AppendItem(wxDataViewItem(wxNullPtr), folder_name);
+                        //     favorite_tree.AppendItem(wxDataViewItem(wxNullPtr), hive_name);
                         // }
 
                     }
@@ -1026,8 +1027,8 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
                 wxVector<wxVariant> vec;
 
                 wxVariant icon_c, icon_gs;
-                icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
-                icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
+                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
 
                 if (favorite == 1)
                     vec.push_back(icon_c);
@@ -1084,7 +1085,7 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
 
 wxVector<wxVector<wxVariant>>
 Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                     const std::string& folderName, bool show_extension)
+                                     const std::string& hiveName, bool show_extension)
 {
     try
     {
@@ -1096,11 +1097,11 @@ Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
 
         std::string filter = "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
                               CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
-                              FROM SAMPLES WHERE FOLDER = ? AND FAVORITE = 1;";
+                              FROM SAMPLES WHERE HIVE = ? AND FAVORITE = 1;";
 
         rc = sqlite3_prepare_v2(m_Database, filter.c_str(), filter.size(), &m_Stmt, NULL);
 
-        rc = sqlite3_bind_text(m_Stmt, 1, folderName.c_str(), folderName.size(), SQLITE_STATIC);
+        rc = sqlite3_bind_text(m_Stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC);
 
         if (rc == SQLITE_OK)
         {
@@ -1122,8 +1123,8 @@ Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
                 wxVector<wxVariant> vec;
 
                 wxVariant icon_c, icon_gs;
-                icon_c << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16.png"));
-                icon_gs << wxDataViewIconText(wxEmptyString, wxIcon("../assets/icons/icon-hive_16x16-gs.png"));
+                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
+                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
 
                 if (favorite == 1)
                     vec.push_back(icon_c);
@@ -1188,7 +1189,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl& treeCtrl)
             throw sqlite3_errmsg(m_Database);
         }
 
-        std::string select = "SELECT FOLDERNAME FROM COLLECTIONS;";
+        std::string select = "SELECT HIVE FROM HIVES;";
 
         rc = sqlite3_prepare_v2(m_Database, select.c_str(), select.size(), &m_Stmt, NULL);
 
@@ -1197,14 +1198,14 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl& treeCtrl)
             while (SQLITE_ROW == sqlite3_step(m_Stmt))
             {
                 wxLogInfo("Record found, fetching..");
-                wxString folder = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0))));
+                wxString hive = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0))));
 
-                treeCtrl.AppendContainer(wxDataViewItem(wxNullPtr), folder);
+                treeCtrl.AppendContainer(wxDataViewItem(wxNullPtr), hive);
             }
         }
         else
         {
-            wxMessageDialog msgDialog(NULL, "Error! Cannot load foldername from collection table.",
+            wxMessageDialog msgDialog(NULL, "Error! Cannot load hive from hives table.",
                                       "Error", wxOK | wxICON_ERROR);
             msgDialog.ShowModal();
             sqlite3_free(m_ErrMsg);

@@ -164,6 +164,7 @@ class MainFrame : public wxFrame
         void OnClickAddHive(wxCommandEvent& event);
         void OnClickRemoveHive(wxCommandEvent& event);
         void OnShowHivesContextMenu(wxDataViewEvent& event);
+        void OnHiveStartEditing(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // SearchCtrl event handlers

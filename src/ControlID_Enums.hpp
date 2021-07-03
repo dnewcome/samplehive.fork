@@ -50,7 +50,7 @@ enum ControlIDs
 
     // -------------------------------------------------------------------
     // Hives Menu items
-    MN_CreateHive,
+    MN_RenameHive,
     MN_DeleteHive,
     MN_RemoveSample,
     MN_FilterSampleView,
