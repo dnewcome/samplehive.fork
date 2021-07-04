@@ -62,9 +62,6 @@ MainFrame::MainFrame()
     m_TopPanelMainSizer = new wxBoxSizer(wxVERTICAL);
     m_BottomRightPanelMainSizer = new wxBoxSizer(wxVERTICAL);
 
-    m_SearchBoxSizer = new wxBoxSizer(wxHORIZONTAL);
-    m_ListCtrlSizer = new wxBoxSizer(wxVERTICAL);
-
     m_BrowserControlSizer = new wxBoxSizer(wxHORIZONTAL);
     m_WaveformDisplaySizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -78,15 +75,17 @@ MainFrame::MainFrame()
     m_MainPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Creating top splitter window
-    m_TopSplitter = new wxSplitterWindow(m_MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_BORDER | wxSP_LIVE_UPDATE);
+    m_TopSplitter = new wxSplitterWindow(m_MainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                         wxSP_NOBORDER | wxSP_LIVE_UPDATE | wxSP_THIN_SASH);
     m_TopSplitter->SetMinimumPaneSize(200);
     m_TopSplitter->SetSashGravity(0);
 
     // Top half of TopSplitter window
     m_TopPanel = new wxPanel(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
-    // Bottom half of the TopSsplitter window
-    m_BottomSplitter = new wxSplitterWindow(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_BORDER | wxSP_LIVE_UPDATE);
+    // Bottom half of the TopSplitter window
+    m_BottomSplitter = new wxSplitterWindow(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                            wxSP_NOBORDER | wxSP_LIVE_UPDATE | wxSP_THIN_SASH);
     m_BottomSplitter->SetMinimumPaneSize(300);
     m_BottomSplitter->SetSashGravity(0.2);
 
@@ -94,17 +93,19 @@ MainFrame::MainFrame()
     m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Initializing wxNotebook
-    m_ViewChoice = new wxNotebook(m_BottomLeftPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0);
+    m_Notebook = new wxNotebook(m_BottomLeftPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
 
     // Initializing wxGenericDirCtrl as one of the wxNotebook page.
-    m_DirCtrl = new wxDirCtrl(m_ViewChoice, BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
-                              wxDefaultSize, wxDIRCTRL_3D_INTERNAL, wxEmptyString, 0);
+    m_DirCtrl = new wxDirCtrl(m_Notebook, BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
+                              wxDefaultSize, wxDIRCTRL_SHOW_FILTERS,
+                              "All files (*.*)|*.*|Ogg files (*.ogg)|*.ogg|Wav files (*.wav)|*.wav|"
+                              "Flac files (*.flac)|*.flac", 0);
 
     wxString path = wxStandardPaths::Get().GetDocumentsDir();
     m_DirCtrl->SetPath(path);
 
     // This panel will hold page 2nd page of wxNotebook
-    m_HivesPanel = new wxPanel(m_ViewChoice, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    m_HivesPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
     m_AddHiveButton = new wxButton(m_HivesPanel, BC_HiveAdd, "+", wxDefaultPosition, wxDefaultSize, 0);
     m_AddHiveButton->SetToolTip("Create new hive");
@@ -124,7 +125,7 @@ MainFrame::MainFrame()
     m_TrashPaneWindow = m_TrashPane->GetPane();
 
     m_TrashedItems = new wxTreeCtrl(m_TrashPaneWindow, BC_Hives, wxDefaultPosition, wxDefaultSize,
-                                    wxTR_HAS_BUTTONS | wxTR_HIDE_ROOT);
+                                    wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_SINGLE);
 
     m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
 
@@ -135,11 +136,11 @@ MainFrame::MainFrame()
     trash_root_node = m_TrashedItems->AddRoot("ROOT");
 
     // Adding the pages to wxNotebook
-    m_ViewChoice->AddPage(m_DirCtrl, "Browse", false);
-    m_ViewChoice->AddPage(m_HivesPanel, "Hives", false);
+    m_Notebook->AddPage(m_DirCtrl, "Browse", false);
+    m_Notebook->AddPage(m_HivesPanel, "Hives", false);
 
     // Right half of BottomSlitter window
-    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D);
+    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Set split direction
     m_TopSplitter->SplitHorizontally(m_TopPanel, m_BottomSplitter);
@@ -150,7 +151,10 @@ MainFrame::MainFrame()
     m_AutoPlayCheck->SetToolTip("Autoplay");
     m_VolumeSlider = new wxSlider(m_TopPanel, BC_Volume, 100, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
     m_VolumeSlider->SetToolTip("Volume");
-    m_SamplePosition = new wxStaticText(m_TopPanel, BC_SamplePosition, "--:--/--:--", wxDefaultPosition, wxDefaultSize);
+    m_VolumeSlider->SetMinSize(wxSize(120, -1));
+    m_VolumeSlider->SetMaxSize(wxSize(120, -1));
+    m_SamplePosition = new wxStaticText(m_TopPanel, BC_SamplePosition, "--:--/--:--",
+                                        wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
 
     m_WaveformViewer = new wxSVGCtrl(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_WaveformViewer->Load("../assets/waveform.svg");
@@ -171,22 +175,73 @@ MainFrame::MainFrame()
     m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, "Search for samples..", wxDefaultPosition,
                                    wxDefaultSize, wxTE_PROCESS_ENTER);
 
+    // Set minimum and maximum size of m_SearchBox so it doesn't expand too wide when resizing the main frame.
+    m_SearchBox->SetMinSize(wxSize(-1, 38));
+    m_SearchBox->SetMaxSize(wxSize(-1, 38));
+
     m_SearchBox->ShowSearchButton(true);
     m_SearchBox->ShowCancelButton(true);
 
     // Initializing wxDataViewListCtrl on bottom panel.
     m_SampleListView = new wxDataViewListCtrl(m_BottomRightPanel, BC_SampleListView, wxDefaultPosition, wxDefaultSize,
-                                              wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES);
+                                              wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES | wxDV_ROW_LINES);
 
     // Adding columns to wxDataViewListCtrl.
-    m_SampleListView->AppendBitmapColumn(wxBitmap(ICON_COLOURED), 0, wxDATAVIEW_CELL_ACTIVATABLE, 30, wxALIGN_CENTER, !wxDATAVIEW_COL_RESIZABLE);
-    m_SampleListView->AppendTextColumn("Filename", wxDATAVIEW_CELL_INERT, 320, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Sample Pack", wxDATAVIEW_CELL_INERT, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Type", wxDATAVIEW_CELL_INERT, 120, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Channels", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Length", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Sample Rate", wxDATAVIEW_CELL_INERT, 140, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
-    m_SampleListView->AppendTextColumn("Bitrate", wxDATAVIEW_CELL_INERT, 100, wxALIGN_RIGHT, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_COL_SORTABLE);
+    m_SampleListView->AppendBitmapColumn(wxBitmap(ICON_COLOURED),
+                                         0,
+                                         wxDATAVIEW_CELL_ACTIVATABLE,
+                                         30,
+                                         wxALIGN_CENTER,
+                                         !wxDATAVIEW_COL_RESIZABLE);
+    m_SampleListView->AppendTextColumn("Filename",
+                                       wxDATAVIEW_CELL_INERT,
+                                       260,
+                                       wxALIGN_LEFT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Sample Pack",
+                                       wxDATAVIEW_CELL_INERT,
+                                       180,
+                                       wxALIGN_LEFT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Type",
+                                       wxDATAVIEW_CELL_INERT,
+                                       120,
+                                       wxALIGN_LEFT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Channels",
+                                       wxDATAVIEW_CELL_INERT,
+                                       90,
+                                       wxALIGN_RIGHT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Length",
+                                       wxDATAVIEW_CELL_INERT,
+                                       80,
+                                       wxALIGN_RIGHT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Sample Rate",
+                                       wxDATAVIEW_CELL_INERT,
+                                       120,
+                                       wxALIGN_RIGHT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
+    m_SampleListView->AppendTextColumn("Bitrate",
+                                       wxDATAVIEW_CELL_INERT,
+                                       80,
+                                       wxALIGN_RIGHT,
+                                       wxDATAVIEW_COL_RESIZABLE |
+                                       wxDATAVIEW_COL_SORTABLE |
+                                       wxDATAVIEW_COL_REORDERABLE);
 
     // Enable SampleListView to accept files to be dropped on it
     m_SampleListView->DragAcceptFiles(true);
@@ -236,17 +291,6 @@ MainFrame::MainFrame()
     Bind(wxEVT_BUTTON, &MainFrame::OnClickAddHive, this, BC_HiveAdd);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickRemoveHive, this, BC_HiveRemove);
 
-    // // Setting up keybindings
-    // wxAcceleratorEntry entries[5];
-    // entries[0].Set(wxACCEL_NORMAL, (int) 'P', BC_Play);
-    // entries[1].Set(wxACCEL_NORMAL, (int) 'L', BC_Loop);
-    // entries[2].Set(wxACCEL_NORMAL, (int) 'S', BC_Stop);
-    // entries[3].Set(wxACCEL_NORMAL, (int) 'M', BC_Mute);
-    // entries[4].Set(wxACCEL_NORMAL, (int) 'O', BC_Settings);
-
-    // wxAcceleratorTable accel(5, entries);
-    // this->SetAcceleratorTable(accel);
-
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);
 
@@ -256,7 +300,7 @@ MainFrame::MainFrame()
     m_BrowserControlSizer->Add(m_LoopButton, 0, wxALL | wxALIGN_LEFT, 2);
     m_BrowserControlSizer->Add(m_StopButton, 0, wxALL | wxALIGN_LEFT, 2);
     m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_LEFT, 2);
-    m_BrowserControlSizer->Add(0,0,10, wxALL | wxEXPAND, 0);
+    m_BrowserControlSizer->Add(0,0,1, wxALL | wxEXPAND, 0);
     m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(20,0,0, wxALL | wxEXPAND, 0);
     m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_RIGHT, 2);
@@ -268,7 +312,7 @@ MainFrame::MainFrame()
     m_TopPanelMainSizer->Add(m_WaveformDisplaySizer, 1, wxALL | wxEXPAND, 2);
     m_TopPanelMainSizer->Add(m_BrowserControlSizer, 0, wxALL | wxEXPAND, 2);
 
-    m_BottomLeftPanelMainSizer->Add(m_ViewChoice, 1, wxALL | wxEXPAND, 2);
+    m_BottomLeftPanelMainSizer->Add(m_Notebook, 1, wxALL | wxEXPAND, 2);
 
     m_HivesFavoritesSizer->Add(m_Hives, 1, wxALL | wxEXPAND, 2);
 
@@ -285,12 +329,9 @@ MainFrame::MainFrame()
     m_TrashItemSizer->Add(m_TrashedItems, 1, wxALL | wxEXPAND, 2);
     m_TrashItemSizer->Add(m_RestoreTrashedItemButton, 0, wxALL | wxEXPAND, 2);
 
-    // SearchBoxSizer->Add(SearchBox, 1, wxALL | wxEXPAND, 0);
-    // ListCtrlSizer->Add(SampleListView, 1, wxALL | wxEXPAND, 0);
-
     m_BottomRightPanelMainSizer->Add(m_SearchBox, 1, wxALL | wxEXPAND, 2);
-    m_BottomRightPanelMainSizer->Add(m_InfoBar, 1, wxALL | wxEXPAND, 2);
-    m_BottomRightPanelMainSizer->Add(m_SampleListView, 9, wxALL | wxEXPAND, 2);
+    m_BottomRightPanelMainSizer->Add(m_InfoBar, 0, wxALL | wxEXPAND, 2);
+    m_BottomRightPanelMainSizer->Add(m_SampleListView, 1, wxALL | wxEXPAND, 2);
 
     // Sizer for the frame
     this->SetSizer(m_MainSizer);
@@ -337,8 +378,6 @@ MainFrame::MainFrame()
     Database db(*m_InfoBar);
     db.CreateTableSamples();
     db.CreateTableHives();
-
-    // db.InsertIntoHives(m_Hives->GetItemText(favorites_hive).ToStdString());
 
     // Restore the data previously added to SampleListView
     LoadDatabase();

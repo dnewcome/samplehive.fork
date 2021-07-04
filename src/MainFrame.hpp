@@ -84,7 +84,7 @@ class MainFrame : public wxFrame
         wxPanel* m_BottomLeftPanel;
         wxPanel* m_HivesPanel;
         wxWindow* m_TrashPaneWindow;
-        wxNotebook* m_ViewChoice;
+        wxNotebook* m_Notebook;
         wxBoxSizer* m_BottomLeftPanelMainSizer;
         wxBoxSizer* m_HivesMainSizer;
         wxBoxSizer* m_HivesFavoritesSizer;
@@ -106,8 +106,6 @@ class MainFrame : public wxFrame
         // Right panel controls
         wxPanel* m_BottomRightPanel;
         wxBoxSizer* m_BottomRightPanelMainSizer;
-        wxBoxSizer* m_SearchBoxSizer;
-        wxBoxSizer* m_ListCtrlSizer;
         wxSearchCtrl* m_SearchBox;
         wxInfoBar* m_InfoBar;
         wxDataViewListCtrl* m_SampleListView;
