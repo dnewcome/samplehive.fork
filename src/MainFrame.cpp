@@ -67,9 +67,11 @@ MainFrame::MainFrame()
 
     m_HivesMainSizer = new wxBoxSizer(wxVERTICAL);
     m_HivesFavoritesSizer = new wxBoxSizer(wxVERTICAL);
-    m_HivesViewTrashSizer = new wxBoxSizer(wxVERTICAL);
     m_HivesButtonSizer = new wxBoxSizer(wxHORIZONTAL);
+
+    m_TrashMainSizer = new wxBoxSizer(wxVERTICAL);
     m_TrashItemSizer = new wxBoxSizer(wxVERTICAL);
+    m_TrashButtonSizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Main panel of the app
     m_MainPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -105,39 +107,42 @@ MainFrame::MainFrame()
     m_DirCtrl->SetPath(path);
 
     // This panel will hold page 2nd page of wxNotebook
-    m_HivesPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    m_HivesPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     m_AddHiveButton = new wxButton(m_HivesPanel, BC_HiveAdd, "+", wxDefaultPosition, wxDefaultSize, 0);
     m_AddHiveButton->SetToolTip("Create new hive");
     m_RemoveHiveButton = new wxButton(m_HivesPanel, BC_HiveRemove, "-", wxDefaultPosition, wxDefaultSize, 0);
     m_RemoveHiveButton->SetToolTip("Delete selected hive");
-    // m_TrashButton = new wxButton(m_HivesPanel, BC_TrashButton, "Trash", wxDefaultPosition, wxDefaultSize, 0);
 
     // Initializing wxTreeCtrl as another page of wxNotebook
     m_Hives = new wxDataViewTreeCtrl(m_HivesPanel, BC_Hives, wxDefaultPosition, wxDefaultSize,
                                      wxDV_NO_HEADER | wxDV_SINGLE);
 
-    m_Hives->DragAcceptFiles(true);
-
-    m_TrashPane = new wxCollapsiblePane(m_HivesPanel, BC_TrashPane, "Trash",
-                                        wxDefaultPosition, wxDefaultSize, wxCP_DEFAULT_STYLE);
-
-    m_TrashPaneWindow = m_TrashPane->GetPane();
-
-    m_TrashedItems = new wxTreeCtrl(m_TrashPaneWindow, BC_Hives, wxDefaultPosition, wxDefaultSize,
-                                    wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_SINGLE);
-
-    m_RestoreTrashedItemButton = new wxButton(m_TrashPaneWindow, BC_RestoreTrashedItemButton, "Restore item");
-
     // Adding default hive
     favorites_hive = m_Hives->AppendContainer(wxDataViewItem(wxNullPtr), "Favorites");
 
+    // Setting m_Hives to accept files to be dragged and dropped on it
+    m_Hives->DragAcceptFiles(true);
+
+    m_TrashPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+
+    m_Trash = new wxTreeCtrl(m_TrashPanel, BC_Trash, wxDefaultPosition, wxDefaultSize,
+                             wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_MULTIPLE);
+
+    // Setting m_Trash to accept files to be dragged and dropped on it
+    m_Trash->DragAcceptFiles(true);
+
+    m_RestoreTrashedItemButton = new wxButton(m_TrashPanel, BC_RestoreTrashedItem, "Restore sample",
+                                              wxDefaultPosition, wxDefaultSize, 0);
+    m_RestoreTrashedItemButton->SetToolTip("Restore selected sample");
+
     // Addubg root to TrashedItems
-    trash_root_node = m_TrashedItems->AddRoot("ROOT");
+    trash_root = m_Trash->AddRoot("Trash");
 
     // Adding the pages to wxNotebook
     m_Notebook->AddPage(m_DirCtrl, "Browse", false);
     m_Notebook->AddPage(m_HivesPanel, "Hives", false);
+    m_Notebook->AddPage(m_TrashPanel, "Trash", false);
 
     // Right half of BottomSlitter window
     m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -273,8 +278,9 @@ MainFrame::MainFrame()
 
     Bind(wxEVT_TIMER, &MainFrame::UpdateElapsedTime, this);
 
-    Bind(wxEVT_BUTTON, &MainFrame::OnClickRestoreTrashItem, this, BC_RestoreTrashedItemButton);
-    Bind(wxEVT_COLLAPSIBLEPANE_CHANGED, &MainFrame::OnExpandTrash, this, BC_TrashPane);
+    m_Trash->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToTrash), NULL, this);
+    Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &MainFrame::OnShowTrashContextMenu, this, BC_Trash);
+    Bind(wxEVT_BUTTON, &MainFrame::OnClickRestoreTrashItem, this, BC_RestoreTrashedItem);
 
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickSampleView, this, BC_SampleListView);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromSampleView, this);
@@ -316,18 +322,17 @@ MainFrame::MainFrame()
 
     m_HivesFavoritesSizer->Add(m_Hives, 1, wxALL | wxEXPAND, 2);
 
-    m_HivesViewTrashSizer->Add(m_TrashPane, 1, wxALL | wxEXPAND, 2);
-
     m_HivesButtonSizer->Add(m_AddHiveButton, 1, wxALL | wxEXPAND, 2);
     m_HivesButtonSizer->Add(m_RemoveHiveButton, 1, wxALL | wxEXPAND, 2);
-    // m_HivesButtonSizer->Add(m_TrashButton, 1, wxALL | wxEXPAND, 2);
 
     m_HivesMainSizer->Add(m_HivesFavoritesSizer, 1, wxALL | wxEXPAND, 2);
-    m_HivesViewTrashSizerItem = m_HivesMainSizer->Add(m_HivesViewTrashSizer, 0, wxALL | wxEXPAND, 2);
     m_HivesMainSizer->Add(m_HivesButtonSizer, 0, wxALL | wxEXPAND, 2);
 
-    m_TrashItemSizer->Add(m_TrashedItems, 1, wxALL | wxEXPAND, 2);
-    m_TrashItemSizer->Add(m_RestoreTrashedItemButton, 0, wxALL | wxEXPAND, 2);
+    m_TrashItemSizer->Add(m_Trash, 1, wxALL | wxEXPAND, 2);
+    m_TrashButtonSizer->Add(m_RestoreTrashedItemButton, 1, wxALL | wxEXPAND, 2);
+
+    m_TrashMainSizer->Add(m_TrashItemSizer, 1, wxALL | wxEXPAND, 2);
+    m_TrashMainSizer->Add(m_TrashButtonSizer, 0, wxALL | wxEXPAND, 2);
 
     m_BottomRightPanelMainSizer->Add(m_SearchBox, 1, wxALL | wxEXPAND, 2);
     m_BottomRightPanelMainSizer->Add(m_InfoBar, 0, wxALL | wxEXPAND, 2);
@@ -363,10 +368,10 @@ MainFrame::MainFrame()
     m_HivesMainSizer->Layout();
 
     // Sizer for trash pane
-    m_TrashPaneWindow->SetSizer(m_TrashItemSizer);
-    m_TrashItemSizer->Fit(m_TrashPaneWindow);
-    m_TrashItemSizer->SetSizeHints(m_TrashPaneWindow);
-    m_TrashItemSizer->Layout();
+    m_TrashPanel->SetSizer(m_TrashMainSizer);
+    m_TrashMainSizer->Fit(m_TrashPanel);
+    m_TrashMainSizer->SetSizeHints(m_TrashPanel);
+    m_TrashMainSizer->Layout();
 
     // Sizer for bottom right panel
     m_BottomRightPanel->SetSizer(m_BottomRightPanelMainSizer);
@@ -1693,27 +1698,38 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         case MN_TrashSample:
         {
             wxDataViewItem root = wxDataViewItem(wxNullPtr);
-            wxDataViewItem container;
-            wxDataViewItem child;
+            wxDataViewItem container, child;
 
             if (db.IsTrashed(filename))
                 wxLogDebug("Already trashed..");
             else
             {
-                if (m_SampleListView->GetSelectedItemsCount() <= 1)
+                wxDataViewItemArray items;
+                int rows = m_SampleListView->GetSelections(items);
+
+                wxString name;
+                wxFileDataObject file_data;
+                wxArrayString files;
+
+                for (int i = 0; i < rows; i++)
                 {
-                    wxString name = m_SampleListView->GetTextValue(selected_row, 1);
+                    int item_row = m_SampleListView->ItemToRow(items[i]);
 
-                    filename = settings.IsShowFileExtension() ?
-                        name.BeforeLast('.').ToStdString() : name.ToStdString();
+                    wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
 
-                    wxLogDebug("Trashing..");
+                    std::string multi_selection = settings.IsShowFileExtension() ?
+                        m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                        m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
 
-                    if (db.GetFavoriteColumnValueByFilename(filename))
+                    file_data.AddFile(multi_selection);
+
+                    files = file_data.GetFilenames();
+
+                    if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                     {
-                        m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
+                        m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
 
-                        db.UpdateFavoriteColumn(filename, 0);
+                        db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
                         for (int j = 0; j < m_Hives->GetChildCount(root); j++)
                         {
@@ -1727,7 +1743,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                                     m_Hives->GetItemText(child).BeforeLast('.') :
                                     m_Hives->GetItemText(child);
 
-                                if (child_text == filename)
+                                if (child_text == files[i])
                                 {
                                     m_Hives->DeleteItem(child);
                                     break;
@@ -1736,68 +1752,14 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                         }
                     }
 
-                    db.UpdateTrashColumn(filename, 1);
-                    m_TrashedItems->AppendItem(trash_root_node, name);
-                    m_SampleListView->DeleteItem(selected_row);
+                    db.UpdateTrashColumn(files[i].ToStdString(), 1);
+                    db.UpdateHiveName(files[i].ToStdString(), m_Hives->GetItemText(favorites_hive).ToStdString());
 
-                    msg = wxString::Format("%s sent to trash", name);
-                }
-                else
-                {
-                    wxDataViewItemArray items;
-                    int rows = m_SampleListView->GetSelections(items);
+                    m_Trash->AppendItem(trash_root, text_value);
 
-                    wxString name;
-                    wxFileDataObject file_data;
-                    wxArrayString files;
+                    m_SampleListView->DeleteItem(item_row);
 
-                    for (int i = 0; i < rows; i++)
-                    {
-                        int item_row = m_SampleListView->ItemToRow(items[i]);
-
-                        wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
-
-                        std::string multi_selection = settings.IsShowFileExtension() ?
-                            m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
-                            m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
-
-                        file_data.AddFile(multi_selection);
-
-                        files = file_data.GetFilenames();
-
-                        if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
-                        {
-                            m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
-
-                            db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
-
-                            for (int j = 0; j < m_Hives->GetChildCount(root); j++)
-                            {
-                                container = m_Hives->GetNthChild(root, j);
-
-                                for (int k = 0; k < m_Hives->GetChildCount(container); k++)
-                                {
-                                    child = m_Hives->GetNthChild(container, k);
-
-                                    wxString child_text = settings.IsShowFileExtension() ?
-                                        m_Hives->GetItemText(child).BeforeLast('.') :
-                                        m_Hives->GetItemText(child);
-
-                                    if (child_text == files[i])
-                                    {
-                                        m_Hives->DeleteItem(child);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        db.UpdateTrashColumn(files[i].ToStdString(), 1);
-                        m_TrashedItems->AppendItem(trash_root_node, text_value);
-                        m_SampleListView->DeleteItem(item_row);
-
-                        msg = wxString::Format("%s sent to trash", text_value);
-                    }
+                    msg = wxString::Format("%s sent to trash", text_value);
                 }
             }
         }
@@ -1847,8 +1809,7 @@ void MainFrame::LoadDatabase()
         wxVector<wxVector<wxVariant>> dataset;
 
         if (db.LoadSamplesDatabase(dataset, *m_Hives, favorites_hive,
-                                   *m_TrashedItems, trash_root_node,
-                                   settings.IsShowFileExtension()).empty())
+                                   *m_Trash, trash_root, settings.IsShowFileExtension()).empty())
         {
             wxLogInfo("Error! Database is empty.");
         }
@@ -1866,16 +1827,168 @@ void MainFrame::LoadDatabase()
     }
 }
 
-void MainFrame::OnExpandTrash(wxCollapsiblePaneEvent& event)
+void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 {
-    if(m_TrashPane->IsExpanded())
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Database db(*m_InfoBar);
+
+    wxTreeItemId selected_trashed_item = event.GetItem();
+
+    wxMenu menu;
+
+    menu.Append(MN_DeleteTrash, "Delete from database");
+    menu.Append(MN_RestoreTrashedItem, "Restore sample");
+
+    if (selected_trashed_item.IsOk())
     {
-        m_HivesViewTrashSizerItem->SetProportion(1);
-        m_HivesPanel->Layout();
+        switch (m_Trash->GetPopupMenuSelectionFromUser(menu, event.GetPoint()))
+        {
+            case MN_DeleteTrash:
+            {
+                wxLogDebug("Delete permanently");
+
+                wxString trashed_item_name = settings.IsShowFileExtension() ?
+                    m_Trash->GetItemText(selected_trashed_item).BeforeLast('.') :
+                    m_Trash->GetItemText(selected_trashed_item);
+
+                db.RemoveSampleFromDatabase(trashed_item_name.ToStdString());
+
+                m_Trash->Delete(selected_trashed_item);
+            }
+            break;
+            case MN_RestoreTrashedItem:
+            {
+                wxLogDebug("Restore sample");
+
+                Database db(*m_InfoBar);
+
+                wxArrayTreeItemIds selected_item_ids;
+                m_Trash->GetSelections(selected_item_ids);
+
+                wxFileDataObject file_data;
+                wxArrayString files;
+
+                wxString selected_item_text;
+                std::string filename;
+
+                for (size_t i = 0; i < selected_item_ids.GetCount(); i++)
+                {
+                    selected_item_text = m_Trash->GetItemText(selected_item_ids[i]);
+
+                    wxLogDebug("Count: %d :: Selected item text: %s",
+                               (int)selected_item_ids.GetCount(), selected_item_text);
+
+                    filename = GetFilenamePathAndExtension(selected_item_text).Filename;
+
+                    file_data.AddFile(filename);
+
+                    files = file_data.GetFilenames();
+
+                    db.UpdateTrashColumn(files[i].ToStdString(), 0);
+
+                    try
+                    {
+                        wxVector<wxVector<wxVariant>> dataset;
+
+                        if (db.RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
+                                                          settings.IsShowFileExtension()).empty())
+                        {
+                            wxLogDebug("Error! Database is empty.");
+                        }
+                        else
+                        {
+                            for (auto data : dataset)
+                            {
+                                m_SampleListView->AppendItem(data);
+                            }
+                        }
+                    }
+                    catch (...)
+                    {
+                        std::cerr << "Error loading data." << std::endl;
+                    }
+
+                    m_Trash->Delete(selected_item_ids[i]);
+                }
+            }
+            break;
+            default:
+                break;
+        }
     }
-    else
-    {   m_HivesViewTrashSizerItem->SetProportion(0) ;
-        m_HivesPanel->Layout();
+}
+
+void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
+{
+    Database db(*m_InfoBar);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+
+    if (event.GetNumberOfFiles() > 0)
+    {
+        wxFileDataObject file_data;
+        wxArrayString files;
+
+        wxDataViewItemArray items;
+        int rows = m_SampleListView->GetSelections(items);
+
+        wxString msg;
+
+        wxDataViewItem root = wxDataViewItem(wxNullPtr);
+        wxDataViewItem container, child;
+
+        for (int i = 0; i < rows; i++)
+        {
+            int item_row = m_SampleListView->ItemToRow(items[i]);
+
+            wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
+
+            std::string multi_selection = settings.IsShowFileExtension() ?
+                m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
+
+            file_data.AddFile(multi_selection);
+
+            files = file_data.GetFilenames();
+
+            if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
+            {
+                m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
+
+                db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
+
+                for (int j = 0; j < m_Hives->GetChildCount(root); j++)
+                {
+                    container = m_Hives->GetNthChild(root, j);
+
+                    for (int k = 0; k < m_Hives->GetChildCount(container); k++)
+                    {
+                        child = m_Hives->GetNthChild(container, k);
+
+                        wxString child_text = settings.IsShowFileExtension() ?
+                            m_Hives->GetItemText(child).BeforeLast('.') :
+                            m_Hives->GetItemText(child);
+
+                        if (child_text == files[i])
+                        {
+                            m_Hives->DeleteItem(child);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            db.UpdateTrashColumn(files[i].ToStdString(), 1);
+            db.UpdateHiveName(files[i].ToStdString(), m_Hives->GetItemText(favorites_hive).ToStdString());
+
+            m_Trash->AppendItem(trash_root, text_value);
+
+            m_SampleListView->DeleteItem(item_row);
+
+            msg = wxString::Format("%s sent to trash", text_value);
+        }
+
+        if (!msg.IsEmpty())
+            m_InfoBar->ShowMessage(msg, wxICON_ERROR);
     }
 }
 
@@ -2088,20 +2201,62 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
     Database db(*m_InfoBar);
+    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
-    wxTreeItemId selection_id = m_TrashedItems->GetSelection();
-    wxString selection_text = m_TrashedItems->GetItemText(selection_id);
+    wxArrayTreeItemIds selected_item_ids;
+    m_Trash->GetSelections(selected_item_ids);
 
-    wxString path = GetFilenamePathAndExtension(selection_text).Path;
-    std::string extension = GetFilenamePathAndExtension(selection_text).Extension;
-    std::string filename = GetFilenamePathAndExtension(selection_text).Filename;
+    wxFileDataObject file_data;
+    wxArrayString files;
 
-    db.UpdateTrashColumn(filename, 0);
+    wxString selected_item_text;
+    std::string filename;
 
-    // RefreshDatabase();
+    if (m_Trash->GetChildrenCount(trash_root) == 0)
+    {
+        wxMessageBox("Trash is empty, nothing to restore!", wxMessageBoxCaptionStr, wxOK | wxCENTRE, this);
+        return;
+    }
 
-    // TODO: Don't let other trashed items re-added again
-    m_TrashedItems->Delete(selection_id);
+    for (size_t i = 0; i < selected_item_ids.GetCount(); i++)
+    {
+        selected_item_text = m_Trash->GetItemText(selected_item_ids[i]);
+
+        wxLogDebug("Count: %d :: Selected item text: %s",
+                   (int)selected_item_ids.GetCount(), selected_item_text);
+
+        filename = GetFilenamePathAndExtension(selected_item_text).Filename;
+
+        file_data.AddFile(filename);
+
+        files = file_data.GetFilenames();
+
+        db.UpdateTrashColumn(files[i].ToStdString(), 0);
+
+        try
+        {
+            wxVector<wxVector<wxVariant>> dataset;
+
+            if (db.RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
+                                              settings.IsShowFileExtension()).empty())
+            {
+                wxLogDebug("Error! Database is empty.");
+            }
+            else
+            {
+                for (auto data : dataset)
+                {
+                    m_SampleListView->AppendItem(data);
+                }
+            }
+        }
+        catch (...)
+        {
+            std::cerr << "Error loading data." << std::endl;
+        }
+
+        m_Trash->Delete(selected_item_ids[i]);
+    }
 }
 
 void MainFrame::OnDoSearch(wxCommandEvent& event)
@@ -2180,7 +2335,7 @@ void MainFrame::RefreshDatabase()
     else
         m_Hives->DeleteAllItems();
 
-    m_TrashedItems->DeleteAllItems();
+    m_Trash->DeleteAllItems();
 
     LoadDatabase();
 }

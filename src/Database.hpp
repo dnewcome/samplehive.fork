@@ -77,6 +77,9 @@ class Database
                             wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
+        RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
+                                   bool show_extension);
+        wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& sampleName, bool show_extension);
         wxVector<wxVector<wxVariant>>

@@ -24,8 +24,8 @@ enum ControlIDs
     BC_SampleListView,
     BC_Search,
     BC_MediaCtrl,
-    BC_TrashPane,
-    BC_RestoreTrashedItemButton,
+    BC_Trash,
+    BC_RestoreTrashedItem,
     BC_HiveAdd,
     BC_HiveRemove,
 
@@ -55,6 +55,11 @@ enum ControlIDs
     MN_RemoveSample,
     MN_FilterSampleView,
     MN_ShowInLibrary,
+
+    // -------------------------------------------------------------------
+    // Trash Menu items
+    MN_DeleteTrash,
+    MN_RestoreTrashedItem,
 
     // -------------------------------------------------------------------
     // Edit tags dialog controls

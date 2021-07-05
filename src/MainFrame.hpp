@@ -83,21 +83,20 @@ class MainFrame : public wxFrame
         // Left panel controls
         wxPanel* m_BottomLeftPanel;
         wxPanel* m_HivesPanel;
-        wxWindow* m_TrashPaneWindow;
+        wxPanel* m_TrashPanel;
         wxNotebook* m_Notebook;
         wxBoxSizer* m_BottomLeftPanelMainSizer;
         wxBoxSizer* m_HivesMainSizer;
         wxBoxSizer* m_HivesFavoritesSizer;
-        wxBoxSizer* m_HivesViewTrashSizer;
         wxBoxSizer* m_HivesButtonSizer;
+        wxBoxSizer* m_TrashMainSizer;
         wxBoxSizer* m_TrashItemSizer;
-        wxSizerItem* m_HivesViewTrashSizerItem;
+        wxBoxSizer* m_TrashButtonSizer;
         wxDirCtrl* m_DirCtrl;
         wxDataViewTreeCtrl* m_Hives;
         wxDataViewItem favorites_hive;
-        wxTreeItemId trash_root_node;
-        wxCollapsiblePane* m_TrashPane;
-        wxTreeCtrl* m_TrashedItems;
+        wxTreeItemId trash_root;
+        wxTreeCtrl* m_Trash;
         wxButton* m_AddHiveButton;
         wxButton* m_RemoveHiveButton;
         wxButton* m_RestoreTrashedItemButton;
@@ -153,8 +152,9 @@ class MainFrame : public wxFrame
 
         // -------------------------------------------------------------------
         // TrashPane event handlers
-        void OnExpandTrash(wxCollapsiblePaneEvent& event);
+        void OnShowTrashContextMenu(wxTreeEvent& event);
         void OnClickRestoreTrashItem(wxCommandEvent& event);
+        void OnDragAndDropToTrash(wxDropFilesEvent& event);
 
         // -------------------------------------------------------------------
         // Hives panel button event handlers

@@ -1346,3 +1346,89 @@ void Database::UpdateTrashColumn(const std::string& filename, int value)
         wxLogDebug(exception.what());
     }
 }
+
+wxVector<wxVector<wxVariant>>
+Database::RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
+                                     bool show_extension)
+{
+    try
+    {
+        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        {
+            wxLogDebug("Error opening DB");
+            throw sqlite3_errmsg(m_Database);
+        }
+
+        std::string restore = "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
+                               TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                               TRASHED, HIVE FROM SAMPLES WHERE FILENAME = ?;";
+
+        rc = sqlite3_prepare_v2(m_Database, restore.c_str(), restore.size(), &m_Stmt, NULL);
+
+        rc = sqlite3_bind_text(m_Stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC);
+
+        if (rc == SQLITE_OK)
+        {
+            while (SQLITE_ROW == sqlite3_step(m_Stmt))
+            {
+                int favorite = sqlite3_column_int(m_Stmt, 0);
+                wxString filename = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1)));
+                wxString file_extension = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2)));
+                wxString sample_pack = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 3)));
+                wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(m_Stmt, 4)));
+                int channels = sqlite3_column_int(m_Stmt, 5);
+                int length = sqlite3_column_int(m_Stmt, 6);
+                int sample_rate = sqlite3_column_int(m_Stmt, 7);
+                int bitrate = sqlite3_column_int(m_Stmt, 8);
+                wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 9)));
+                int trashed = sqlite3_column_int(m_Stmt, 10);
+                wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 11)));
+
+                wxVector<wxVariant> vec;
+
+                wxVariant icon_c, icon_gs;
+                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
+                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
+
+                if (trashed == 0)
+                {
+                    if (favorite == 1)
+                        vec.push_back(icon_c);
+                    else
+                        vec.push_back(icon_gs);
+
+                    if (show_extension)
+                        vec.push_back(path.AfterLast('/'));
+                    else
+                        vec.push_back(path.AfterLast('/').BeforeLast('.'));
+
+                    vec.push_back(sample_pack);
+                    vec.push_back(sample_type);
+                    vec.push_back(wxString::Format("%d", channels));
+                    vec.push_back(wxString::Format("%d", length));
+                    vec.push_back(wxString::Format("%d", sample_rate));
+                    vec.push_back(wxString::Format("%d", bitrate));
+
+                    vecSet.push_back(vec);
+                }
+            }
+        }
+        else
+        {
+            wxMessageDialog msgDialog(NULL, "Error! Cannot load data from table.",
+                                      "Error", wxOK | wxICON_ERROR);
+            msgDialog.ShowModal();
+            sqlite3_free(m_ErrMsg);
+        }
+
+        rc = sqlite3_finalize(m_Stmt);
+
+        sqlite3_close(m_Database);
+    }
+    catch (const std::exception &exception)
+    {
+        wxLogDebug(exception.what());
+    }
+
+    return vecSet;
+}
