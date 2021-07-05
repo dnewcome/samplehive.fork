@@ -107,7 +107,7 @@ class MainFrame : public wxFrame
         wxBoxSizer* m_BottomRightPanelMainSizer;
         wxSearchCtrl* m_SearchBox;
         wxInfoBar* m_InfoBar;
-        wxDataViewListCtrl* m_SampleListView;
+        wxDataViewListCtrl* m_Library;
 
         // -------------------------------------------------------------------
         // MediaCtrl
@@ -170,11 +170,12 @@ class MainFrame : public wxFrame
         void OnCancelSearch(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
-        // SampleListView event handlers
-        void OnClickSampleView(wxDataViewEvent& event);
-        void OnDragAndDropToSampleListView(wxDropFilesEvent& event);
-        void OnDragFromSampleView(wxDataViewEvent& event);
-        void OnShowSampleListViewContextMenu(wxDataViewEvent& event);
+        // Library event handlers
+        void OnClickLibrary(wxDataViewEvent& event);
+        void OnDragAndDropToLibrary(wxDropFilesEvent& event);
+        void OnDragFromLibrary(wxDataViewEvent& event);
+        void OnShowLibraryContextMenu(wxDataViewEvent& event);
+        void OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // Timer update event handler

@@ -21,7 +21,7 @@ enum ControlIDs
     BC_SamplePosition,
     BC_Hives,
     BC_DirCtrl,
-    BC_SampleListView,
+    BC_Library,
     BC_Search,
     BC_MediaCtrl,
     BC_Trash,
@@ -41,7 +41,7 @@ enum ControlIDs
     SD_FontBrowseButton,
 
     // -------------------------------------------------------------------
-    // SampleView Menu items
+    // Library Menu items
     MN_FavoriteSample,
     MN_DeleteSample,
     MN_TrashSample,
@@ -49,11 +49,23 @@ enum ControlIDs
     MN_OpenFile,
 
     // -------------------------------------------------------------------
+    // Library Column Header Menu items
+    MN_ColumnFavorite,
+    MN_ColumnFilename,
+    MN_ColumnSamplePack,
+    MN_ColumnType,
+    MN_ColumnChannels,
+    MN_ColumnLength,
+    MN_ColumnSampleRate,
+    MN_ColumnBitrate,
+    MN_ColumnPath,
+
+    // -------------------------------------------------------------------
     // Hives Menu items
     MN_RenameHive,
     MN_DeleteHive,
     MN_RemoveSample,
-    MN_FilterSampleView,
+    MN_FilterLibrary,
     MN_ShowInLibrary,
 
     // -------------------------------------------------------------------

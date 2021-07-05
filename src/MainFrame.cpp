@@ -17,6 +17,7 @@
 #include <wx/generic/icon.h>
 #include <wx/gtk/dataobj2.h>
 #include <wx/gtk/dataview.h>
+#include <wx/headercol.h>
 #include <wx/log.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
@@ -188,71 +189,78 @@ MainFrame::MainFrame()
     m_SearchBox->ShowCancelButton(true);
 
     // Initializing wxDataViewListCtrl on bottom panel.
-    m_SampleListView = new wxDataViewListCtrl(m_BottomRightPanel, BC_SampleListView, wxDefaultPosition, wxDefaultSize,
-                                              wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES | wxDV_ROW_LINES);
+    m_Library = new wxDataViewListCtrl(m_BottomRightPanel, BC_Library, wxDefaultPosition, wxDefaultSize,
+                                       wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES | wxDV_ROW_LINES);
 
     // Adding columns to wxDataViewListCtrl.
-    m_SampleListView->AppendBitmapColumn(wxBitmap(ICON_COLOURED),
-                                         0,
-                                         wxDATAVIEW_CELL_ACTIVATABLE,
-                                         30,
-                                         wxALIGN_CENTER,
-                                         !wxDATAVIEW_COL_RESIZABLE);
-    m_SampleListView->AppendTextColumn("Filename",
-                                       wxDATAVIEW_CELL_INERT,
-                                       260,
-                                       wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Sample Pack",
-                                       wxDATAVIEW_CELL_INERT,
-                                       180,
-                                       wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Type",
-                                       wxDATAVIEW_CELL_INERT,
-                                       120,
-                                       wxALIGN_LEFT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Channels",
-                                       wxDATAVIEW_CELL_INERT,
-                                       90,
-                                       wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Length",
-                                       wxDATAVIEW_CELL_INERT,
-                                       80,
-                                       wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Sample Rate",
-                                       wxDATAVIEW_CELL_INERT,
-                                       120,
-                                       wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
-    m_SampleListView->AppendTextColumn("Bitrate",
-                                       wxDATAVIEW_CELL_INERT,
-                                       80,
-                                       wxALIGN_RIGHT,
-                                       wxDATAVIEW_COL_RESIZABLE |
-                                       wxDATAVIEW_COL_SORTABLE |
-                                       wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendBitmapColumn(wxBitmap(ICON_COLOURED),
+                                  0,
+                                  wxDATAVIEW_CELL_ACTIVATABLE,
+                                  30,
+                                  wxALIGN_CENTER,
+                                  !wxDATAVIEW_COL_RESIZABLE);
+    m_Library->AppendTextColumn("Filename",
+                                wxDATAVIEW_CELL_INERT,
+                                250,
+                                wxALIGN_LEFT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Sample Pack",
+                                wxDATAVIEW_CELL_INERT,
+                                180,
+                                wxALIGN_LEFT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Type",
+                                wxDATAVIEW_CELL_INERT,
+                                120,
+                                wxALIGN_LEFT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Channels",
+                                wxDATAVIEW_CELL_INERT,
+                                90,
+                                wxALIGN_RIGHT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Length",
+                                wxDATAVIEW_CELL_INERT,
+                                80,
+                                wxALIGN_RIGHT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Sample Rate",
+                                wxDATAVIEW_CELL_INERT,
+                                120,
+                                wxALIGN_RIGHT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Bitrate",
+                                wxDATAVIEW_CELL_INERT,
+                                80,
+                                wxALIGN_RIGHT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
+    m_Library->AppendTextColumn("Path",
+                                wxDATAVIEW_CELL_INERT,
+                                250,
+                                wxALIGN_LEFT,
+                                wxDATAVIEW_COL_RESIZABLE |
+                                wxDATAVIEW_COL_SORTABLE |
+                                wxDATAVIEW_COL_REORDERABLE);
 
-    // Enable SampleListView to accept files to be dropped on it
-    m_SampleListView->DragAcceptFiles(true);
+    // Enable Library to accept files to be dropped on it
+    m_Library->DragAcceptFiles(true);
 
-    // Enable dragging a file from SampleListView
-    m_SampleListView->EnableDragSource(wxDF_FILENAME);
+    // Enable dragging a file from Library
+    m_Library->EnableDragSource(wxDF_FILENAME);
 
     // Initialize wxInfoBar for showing information inside application
     m_InfoBar = new wxInfoBar(m_BottomRightPanel);
@@ -282,10 +290,11 @@ MainFrame::MainFrame()
     Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &MainFrame::OnShowTrashContextMenu, this, BC_Trash);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickRestoreTrashItem, this, BC_RestoreTrashedItem);
 
-    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickSampleView, this, BC_SampleListView);
-    Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromSampleView, this);
-    m_SampleListView->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToSampleListView), NULL, this);
-    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowSampleListViewContextMenu, this, BC_SampleListView);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickLibrary, this, BC_Library);
+    Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromLibrary, this);
+    m_Library->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToLibrary), NULL, this);
+    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowLibraryContextMenu, this, BC_Library);
+    Bind(wxEVT_DATAVIEW_COLUMN_HEADER_RIGHT_CLICK, &MainFrame::OnShowLibraryColumnHeaderContextMenu, this, BC_Library);
 
     Bind(wxEVT_TEXT, &MainFrame::OnDoSearch, this, BC_Search);
     Bind(wxEVT_SEARCHCTRL_SEARCH_BTN, &MainFrame::OnDoSearch, this, BC_Search);
@@ -336,7 +345,7 @@ MainFrame::MainFrame()
 
     m_BottomRightPanelMainSizer->Add(m_SearchBox, 1, wxALL | wxEXPAND, 2);
     m_BottomRightPanelMainSizer->Add(m_InfoBar, 0, wxALL | wxEXPAND, 2);
-    m_BottomRightPanelMainSizer->Add(m_SampleListView, 1, wxALL | wxEXPAND, 2);
+    m_BottomRightPanelMainSizer->Add(m_Library, 1, wxALL | wxEXPAND, 2);
 
     // Sizer for the frame
     this->SetSizer(m_MainSizer);
@@ -384,7 +393,7 @@ MainFrame::MainFrame()
     db.CreateTableSamples();
     db.CreateTableHives();
 
-    // Restore the data previously added to SampleListView
+    // Restore the data previously added to Library
     LoadDatabase();
 }
 
@@ -500,10 +509,11 @@ void MainFrame::AddSamples(wxArrayString& files)
             data.push_back(wxString::Format("%d", sample.GetLength()));
             data.push_back(wxString::Format("%d", sample.GetSampleRate()));
             data.push_back(wxString::Format("%d", sample.GetBitrate()));
+            data.push_back(path);
     
             wxLogDebug("Adding file: %s :: Extension: %s", sample.GetFilename(), sample.GetFileExtension());
     
-            m_SampleListView->AppendItem(data);
+            m_Library->AppendItem(data);
 
             sample_array.push_back(sample);
         }
@@ -529,7 +539,7 @@ void MainFrame::OnClickDirCtrl(wxCommandEvent& event)
     AddSamples(path);
 }
 
-void MainFrame::OnDragAndDropToSampleListView(wxDropFilesEvent& event)
+void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 {
     //Log Start
     wxLogDebug("Start Inserting Samples");
@@ -590,7 +600,7 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
         wxArrayString files;
 
         wxDataViewItemArray items;
-        int rows = m_SampleListView->GetSelections(items);
+        int rows = m_Library->GetSelections(items);
 
         wxDataViewItem drop_target;;
         wxDataViewColumn* column;
@@ -604,9 +614,9 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 
         for (int i = 0; i < rows; i++)
         {
-            int row = m_SampleListView->ItemToRow(items[i]);
+            int row = m_Library->ItemToRow(items[i]);
 
-            wxString name = m_SampleListView->GetTextValue(row, 1);
+            wxString name = m_Library->GetTextValue(row, 1);
 
             file_data.AddFile(name);
 
@@ -622,7 +632,7 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
             {
                 m_Hives->AppendItem(drop_target, files[i]);
 
-                m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), row, 0);
+                m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), row, 0);
 
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
                 db.UpdateHiveName(file_name.ToStdString(), hive_name.ToStdString());
@@ -728,16 +738,16 @@ void MainFrame::OnDragFromDirCtrl(wxTreeEvent& event)
     LogDragResult(drop_source.DoDragDrop());
 }
 
-void MainFrame::OnDragFromSampleView(wxDataViewEvent& event)
+void MainFrame::OnDragFromLibrary(wxDataViewEvent& event)
 {
     // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     // Database db(*m_InfoBar);
 
-    int selected_row = m_SampleListView->ItemToRow(event.GetItem());
+    int selected_row = m_Library->ItemToRow(event.GetItem());
 
     if (selected_row < 0) return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_Library->GetTextValue(selected_row, 1);
 
     // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
@@ -766,11 +776,11 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     // Database db(*m_InfoBar);
 
-    int selected_row = m_SampleListView->GetSelectedRow();
+    int selected_row = m_Library->GetSelectedRow();
 
     if (selected_row < 0) return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_Library->GetTextValue(selected_row, 1);
 
     // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
@@ -885,45 +895,45 @@ void MainFrame::OnSlideVolume(wxScrollEvent& event)
     m_MediaCtrl->SetVolume(float(m_VolumeSlider->GetValue()) / 100);
 }
 
-void MainFrame::OnClickSampleView(wxDataViewEvent& event)
+void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 {
     Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Database db(*m_InfoBar);
 
-    int selected_row = m_SampleListView->ItemToRow(event.GetItem());
+    int selected_row = m_Library->ItemToRow(event.GetItem());
 
-    int current_row = m_SampleListView->ItemToRow(m_SampleListView->GetCurrentItem());
+    int current_row = m_Library->ItemToRow(m_Library->GetCurrentItem());
 
     if (selected_row < 0 || !event.GetItem().IsOk())
         return;
 
     if (selected_row != current_row)
     {
-        m_SampleListView->SetCurrentItem(event.GetItem());
+        m_Library->SetCurrentItem(event.GetItem());
         wxLogDebug("Triggered");
         return;
     }
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_Library->GetTextValue(selected_row, 1);
 
     //Get Column
-    wxDataViewColumn* CurrentColumn = m_SampleListView->GetCurrentColumn();
+    wxDataViewColumn* CurrentColumn = m_Library->GetCurrentColumn();
 
     //Get Favorite column
-    wxDataViewColumn* FavoriteColumn = m_SampleListView->GetColumn(0);
+    wxDataViewColumn* FavoriteColumn = m_Library->GetColumn(0);
 
     if (!CurrentColumn)
         return;
 
     //Get Filename
-    // int selected_row = m_SampleListView->ItemToRow(event.GetItem());
+    // int selected_row = m_Library->ItemToRow(event.GetItem());
     // if (selected_row < 0) return;
 
     // wxString selection;
     // if(settings.IsShowFileExtension())
-    //     selection = m_SampleListView->GetTextValue(selected_row, 1).BeforeLast('.');
+    //     selection = m_Library->GetTextValue(selected_row, 1).BeforeLast('.');
     // else
-    //     selection = m_SampleListView->GetTextValue(selected_row, 1);
+    //     selection = m_Library->GetTextValue(selected_row, 1);
 
     // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
@@ -964,7 +974,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
         if (hive_selection.IsOk() && m_Hives->IsContainer(hive_selection))
             hive_name = m_Hives->GetItemText(hive_selection).ToStdString();
 
-        wxString name = m_SampleListView->GetTextValue(selected_row, 1);
+        wxString name = m_Library->GetTextValue(selected_row, 1);
 
         //Get Root
         wxDataViewItem root = wxDataViewItem(wxNullPtr);
@@ -973,7 +983,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
 
         if (db.GetFavoriteColumnValueByFilename(filename) == 0)
         {
-            m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
+            m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 1);
             db.UpdateHiveName(filename, hive_name);
@@ -993,7 +1003,7 @@ void MainFrame::OnClickSampleView(wxDataViewEvent& event)
         }
         else
         {
-            m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
+            m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 0);
             db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
@@ -1040,9 +1050,9 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
         menu.Append(MN_DeleteHive, "Delete hive");
 
         if (!bFiltered)
-            menu.Append(MN_FilterSampleView, "Filter sample view");
+            menu.Append(MN_FilterLibrary, "Filter library");
         else
-            menu.Append(MN_FilterSampleView, "Clear filter");
+            menu.Append(MN_FilterLibrary, "Clear filter");
     }
     else
     {
@@ -1232,11 +1242,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                             {
                                 wxDataViewItem child_item;
 
-                                for (int i = 0; i < m_SampleListView->GetItemCount(); i++)
+                                for (int i = 0; i < m_Library->GetItemCount(); i++)
                                 {
                                     wxString matched_sample = settings.IsShowFileExtension() ?
-                                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
-                                        m_SampleListView->GetTextValue(i, 1);
+                                        m_Library->GetTextValue(i, 1).BeforeLast('.') :
+                                        m_Library->GetTextValue(i, 1);
 
                                     for (int j = 0; j < m_Hives->GetChildCount(selected_hive); j++)
                                     {
@@ -1250,7 +1260,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         {
                                             wxLogDebug("Found match");
 
-                                            m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                                            m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
 
                                             db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                             db.UpdateHiveName(matched_sample.ToStdString(),
@@ -1284,7 +1294,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
             }
                 break;
-            case MN_FilterSampleView:
+            case MN_FilterLibrary:
             {
                 if (!bFiltered)
                 {
@@ -1301,13 +1311,13 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                         }
                         else
                         {
-                            m_SampleListView->DeleteAllItems();
+                            m_Library->DeleteAllItems();
 
                             wxLogDebug("Hive name: %s", hive_name);
 
                             for (auto data : dataset)
                             {
-                                m_SampleListView->AppendItem(data);
+                                m_Library->AppendItem(data);
                             }
                         }
                     }
@@ -1332,11 +1342,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                         }
                         else
                         {
-                            m_SampleListView->DeleteAllItems();
+                            m_Library->DeleteAllItems();
 
                             for (auto data : dataset)
                             {
-                                m_SampleListView->AppendItem(data);
+                                m_Library->AppendItem(data);
                             }
                         }
                     }
@@ -1361,11 +1371,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
         switch (m_Hives->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
         {
             case MN_RemoveSample:
-                for(int i = 0; i < m_SampleListView->GetItemCount(); i++)
+                for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
                     wxString matched_sample = settings.IsShowFileExtension() ?
-                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
-                        m_SampleListView->GetTextValue(i, 1);
+                        m_Library->GetTextValue(i, 1).BeforeLast('.') :
+                        m_Library->GetTextValue(i, 1);
 
                     wxString selected_sample_name = settings.IsShowFileExtension() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
@@ -1375,7 +1385,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         wxLogDebug("Found match");
 
-                        m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                        m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
 
                         db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                         db.UpdateHiveName(matched_sample.ToStdString(),
@@ -1393,11 +1403,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
                 break;
             case MN_ShowInLibrary:
-                for(int i = 0; i < m_SampleListView->GetItemCount(); i++)
+                for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
                     wxString matched_sample = settings.IsShowFileExtension() ?
-                        m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
-                        m_SampleListView->GetTextValue(i, 1);
+                        m_Library->GetTextValue(i, 1).BeforeLast('.') :
+                        m_Library->GetTextValue(i, 1);
 
                     wxString selected_sample_name = settings.IsShowFileExtension() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
@@ -1407,11 +1417,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         wxLogDebug("Found match");
 
-                        wxDataViewItem matched_item = m_SampleListView->RowToItem(i);
+                        wxDataViewItem matched_item = m_Library->RowToItem(i);
 
-                        m_SampleListView->UnselectAll();
-                        m_SampleListView->SelectRow(i);
-                        m_SampleListView->EnsureVisible(matched_item);
+                        m_Library->UnselectAll();
+                        m_Library->SelectRow(i);
+                        m_Library->EnsureVisible(matched_item);
 
                         break;
                     }
@@ -1423,7 +1433,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
     }
 }
 
-void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
+void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
@@ -1435,11 +1445,11 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     int selected_row;
 
     if (item.IsOk())
-        selected_row = m_SampleListView->ItemToRow(item);
+        selected_row = m_Library->ItemToRow(item);
     else
         return;
 
-    wxString selection = m_SampleListView->GetTextValue(selected_row, 1);
+    wxString selection = m_Library->GetTextValue(selected_row, 1);
 
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
     std::string filename = GetFilenamePathAndExtension(selection).Filename;
@@ -1461,7 +1471,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
     menu.Append(MN_DeleteSample, "Delete");
     menu.Append(MN_TrashSample, "Trash");
     
-    if (m_SampleListView->GetSelectedItemsCount() <= 1)
+    if (m_Library->GetSelectedItemsCount() <= 1)
     {
         menu.Append(MN_EditTagSample, "Edit tags")->Enable(true);
         menu.Append(MN_OpenFile, "Open in file manager")->Enable(true);
@@ -1472,7 +1482,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         menu.Append(MN_OpenFile, "Open in file manager")->Enable(false);
     }
 
-    switch (m_SampleListView->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
+    switch (m_Library->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
         case MN_FavoriteSample:
         {
@@ -1491,19 +1501,19 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
             //Get All Selected Samples
             wxDataViewItemArray samples;
-            int sample_count = m_SampleListView->GetSelections(samples);
+            int sample_count = m_Library->GetSelections(samples);
             int selected_row = 0;
             int db_status = 0;
 
             for (int k = 0; k < sample_count; k++)
             {
                 //Get Filename
-                selected_row = m_SampleListView->ItemToRow(samples[k]);
+                selected_row = m_Library->ItemToRow(samples[k]);
 
                 if (selected_row < 0)
                     continue;
 
-                wxString name = m_SampleListView->GetTextValue(selected_row, 1);
+                wxString name = m_Library->GetTextValue(selected_row, 1);
 
                 filename = settings.IsShowFileExtension() ?
                     name.BeforeLast('.').ToStdString() : name.ToStdString();
@@ -1522,7 +1532,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 //Add To Favorites
                 if (favorite_add && db_status == 0)
                 {
-                    m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
+                    m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 1);
                     db.UpdateHiveName(filename, hive_name);
@@ -1543,7 +1553,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                 else 
                 {
                     //Remove From Favorites
-                    m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
+                    m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 0);
                     db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
@@ -1572,7 +1582,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         case MN_DeleteSample:
         {
             wxDataViewItemArray items;
-            int rows = m_SampleListView->GetSelections(items);
+            int rows = m_Library->GetSelections(items);
 
             wxMessageDialog singleMsgDialog(this, wxString::Format(
                                                 "Are you sure you want to delete "
@@ -1600,7 +1610,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             wxDataViewItem container;
             wxDataViewItem child;
 
-            if (m_SampleListView->GetSelectedItemsCount() <= 1)
+            if (m_Library->GetSelectedItemsCount() <= 1)
             {
                 switch (singleMsgDialog.ShowModal())
                 {
@@ -1609,7 +1619,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                         wxLogDebug("Selected row: %d :: Sample: %s", selected_row, filename);
 
                         db.RemoveSampleFromDatabase(filename);
-                        m_SampleListView->DeleteItem(selected_row);
+                        m_Library->DeleteItem(selected_row);
 
                         for (int j = 0; j < m_Hives->GetChildCount(root); j++)
                         {
@@ -1651,15 +1661,15 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
                     {
                         for (int i = 0; i < rows; i++)
                         {
-                            int row = m_SampleListView->ItemToRow(items[i]);
+                            int row = m_Library->ItemToRow(items[i]);
 
-                            wxString text_value = m_SampleListView->GetTextValue(row, 1);
+                            wxString text_value = m_Library->GetTextValue(row, 1);
 
                             std::string multi_selection = settings.IsShowFileExtension() ?
                                 text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
                             db.RemoveSampleFromDatabase(multi_selection);
-                            m_SampleListView->DeleteItem(row);
+                            m_Library->DeleteItem(row);
 
                             for (int j = 0; j < m_Hives->GetChildCount(root); j++)
                             {
@@ -1705,7 +1715,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
             else
             {
                 wxDataViewItemArray items;
-                int rows = m_SampleListView->GetSelections(items);
+                int rows = m_Library->GetSelections(items);
 
                 wxString name;
                 wxFileDataObject file_data;
@@ -1713,13 +1723,13 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
                 for (int i = 0; i < rows; i++)
                 {
-                    int item_row = m_SampleListView->ItemToRow(items[i]);
+                    int item_row = m_Library->ItemToRow(items[i]);
 
-                    wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
+                    wxString text_value = m_Library->GetTextValue(item_row, 1);
 
                     std::string multi_selection = settings.IsShowFileExtension() ?
-                        m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
-                        m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
+                        m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                        m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
                     file_data.AddFile(multi_selection);
 
@@ -1727,7 +1737,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
                     if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                     {
-                        m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
+                        m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
 
                         db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
@@ -1757,7 +1767,7 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
 
                     m_Trash->AppendItem(trash_root, text_value);
 
-                    m_SampleListView->DeleteItem(item_row);
+                    m_Library->DeleteItem(item_row);
 
                     msg = wxString::Format("%s sent to trash", text_value);
                 }
@@ -1797,6 +1807,64 @@ void MainFrame::OnShowSampleListViewContextMenu(wxDataViewEvent& event)
         m_InfoBar->ShowMessage(msg);
 }
 
+void MainFrame::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
+{
+    wxMenu menu;
+
+    wxDataViewColumn* FavoriteColumn = m_Library->GetColumn(0);
+    wxDataViewColumn* FilenameColumn = m_Library->GetColumn(1);
+    wxDataViewColumn* SamplePackColumn = m_Library->GetColumn(2);
+    wxDataViewColumn* TypeColumn = m_Library->GetColumn(3);
+    wxDataViewColumn* ChannelsColumn = m_Library->GetColumn(4);
+    wxDataViewColumn* LengthColumn = m_Library->GetColumn(5);
+    wxDataViewColumn* SampleRateColumn = m_Library->GetColumn(6);
+    wxDataViewColumn* BitrateColumn = m_Library->GetColumn(7);
+    wxDataViewColumn* PathColumn = m_Library->GetColumn(8);
+
+    menu.AppendCheckItem(MN_ColumnFavorite, "Favorites")->Check(FavoriteColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnFilename, "Filename")->Check(FilenameColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnSamplePack, "Sample Pack")->Check(SamplePackColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnType, "Type")->Check(TypeColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnChannels, "Channels")->Check(ChannelsColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnLength, "Length")->Check(LengthColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnSampleRate, "Sample Rate")->Check(SampleRateColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnBitrate, "Bitrate")->Check(BitrateColumn->IsShown());
+    menu.AppendCheckItem(MN_ColumnPath, "Path")->Check(PathColumn->IsShown());
+
+    switch (m_Library->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
+    {
+        case MN_ColumnFavorite:
+            FavoriteColumn->SetHidden(!menu.IsChecked(MN_ColumnFavorite));
+            break;
+        case MN_ColumnFilename:
+            FilenameColumn->SetHidden(!menu.IsChecked(MN_ColumnFilename));
+            break;
+        case MN_ColumnSamplePack:
+            SamplePackColumn->SetHidden(!menu.IsChecked(MN_ColumnSamplePack));
+            break;
+        case MN_ColumnType:
+            TypeColumn->SetHidden(!menu.IsChecked(MN_ColumnType));
+            break;
+        case MN_ColumnChannels:
+            ChannelsColumn->SetHidden(!menu.IsChecked(MN_ColumnChannels));
+            break;
+        case MN_ColumnLength:
+            LengthColumn->SetHidden(!menu.IsChecked(MN_ColumnLength));
+            break;
+        case MN_ColumnSampleRate:
+            SampleRateColumn->SetHidden(!menu.IsChecked(MN_ColumnSampleRate));
+            break;
+        case MN_ColumnBitrate:
+            BitrateColumn->SetHidden(!menu.IsChecked(MN_ColumnBitrate));
+            break;
+        case MN_ColumnPath:
+            PathColumn->SetHidden(!menu.IsChecked(MN_ColumnPath));
+            break;
+        default:
+            break;
+    }
+}
+
 void MainFrame::LoadDatabase()
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
@@ -1817,7 +1885,7 @@ void MainFrame::LoadDatabase()
         {
             for (auto data : dataset)
             {
-                m_SampleListView->AppendItem(data);
+                m_Library->AppendItem(data);
             }
         }
     }
@@ -1899,7 +1967,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
                         {
                             for (auto data : dataset)
                             {
-                                m_SampleListView->AppendItem(data);
+                                m_Library->AppendItem(data);
                             }
                         }
                     }
@@ -1929,7 +1997,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
         wxArrayString files;
 
         wxDataViewItemArray items;
-        int rows = m_SampleListView->GetSelections(items);
+        int rows = m_Library->GetSelections(items);
 
         wxString msg;
 
@@ -1938,13 +2006,13 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
         for (int i = 0; i < rows; i++)
         {
-            int item_row = m_SampleListView->ItemToRow(items[i]);
+            int item_row = m_Library->ItemToRow(items[i]);
 
-            wxString text_value = m_SampleListView->GetTextValue(item_row, 1);
+            wxString text_value = m_Library->GetTextValue(item_row, 1);
 
             std::string multi_selection = settings.IsShowFileExtension() ?
-                m_SampleListView->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
-                m_SampleListView->GetTextValue(item_row, 1).ToStdString() ;
+                m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
             file_data.AddFile(multi_selection);
 
@@ -1952,7 +2020,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
             {
-                m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
+                m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
 
                 db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
@@ -1982,7 +2050,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             m_Trash->AppendItem(trash_root, text_value);
 
-            m_SampleListView->DeleteItem(item_row);
+            m_Library->DeleteItem(item_row);
 
             msg = wxString::Format("%s sent to trash", text_value);
         }
@@ -2147,11 +2215,11 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                 {
                     wxDataViewItem child_item;
 
-                    for (int i = 0; i < m_SampleListView->GetItemCount(); i++)
+                    for (int i = 0; i < m_Library->GetItemCount(); i++)
                     {
                         wxString matched_sample = settings.IsShowFileExtension() ?
-                            m_SampleListView->GetTextValue(i, 1).BeforeLast('.') :
-                            m_SampleListView->GetTextValue(i, 1);
+                            m_Library->GetTextValue(i, 1).BeforeLast('.') :
+                            m_Library->GetTextValue(i, 1);
 
                         for (int j = 0; j < m_Hives->GetChildCount(selected_item); j++)
                         {
@@ -2165,7 +2233,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                             {
                                 wxLogDebug("Found match");
 
-                                m_SampleListView->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                                m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
 
                                 db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                 db.UpdateHiveName(matched_sample.ToStdString(),
@@ -2246,7 +2314,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
             {
                 for (auto data : dataset)
                 {
-                    m_SampleListView->AppendItem(data);
+                    m_Library->AppendItem(data);
                 }
             }
         }
@@ -2276,13 +2344,13 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
         }
         else
         {
-            m_SampleListView->DeleteAllItems();
+            m_Library->DeleteAllItems();
 
             std::cout << search << std::endl;
 
             for (auto data : dataset)
             {
-                m_SampleListView->AppendItem(data);
+                m_Library->AppendItem(data);
             }
         }
     }
@@ -2325,7 +2393,7 @@ void MainFrame::LoadConfigFile()
 
 void MainFrame::RefreshDatabase()
 {
-    m_SampleListView->DeleteAllItems();
+    m_Library->DeleteAllItems();
 
     wxLogDebug("Count: %d", m_Hives->GetChildCount(wxDataViewItem(wxNullPtr)));
 

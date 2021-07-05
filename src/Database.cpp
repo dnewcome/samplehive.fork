@@ -960,6 +960,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                     vec.push_back(wxString::Format("%d", length));
                     vec.push_back(wxString::Format("%d", sample_rate));
                     vec.push_back(wxString::Format("%d", bitrate));
+                    vec.push_back(path);
 
                     vecSet.push_back(vec);
                 }
@@ -1057,6 +1058,7 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
                 vec.push_back(wxString::Format("%d", length));
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
+                vec.push_back(path);
 
                 sampleVec.push_back(vec);
 
@@ -1153,6 +1155,7 @@ Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
                 vec.push_back(wxString::Format("%d", length));
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
+                vec.push_back(path);
 
                 sampleVec.push_back(vec);
 
@@ -1408,6 +1411,7 @@ Database::RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVec
                     vec.push_back(wxString::Format("%d", length));
                     vec.push_back(wxString::Format("%d", sample_rate));
                     vec.push_back(wxString::Format("%d", bitrate));
+                    vec.push_back(path);
 
                     vecSet.push_back(vec);
                 }
