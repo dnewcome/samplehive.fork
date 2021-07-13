@@ -41,6 +41,14 @@ enum ControlIDs
     SD_FontBrowseButton,
 
     // -------------------------------------------------------------------
+    // App Menu items
+    MN_AddFile,
+    MN_AddDirectory,
+    MN_ToggleExtension,
+    MN_ToggleMenuBar,
+    MN_ToggleStatusBar,
+
+    // -------------------------------------------------------------------
     // Library Menu items
     MN_FavoriteSample,
     MN_DeleteSample,

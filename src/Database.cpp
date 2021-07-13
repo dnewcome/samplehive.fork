@@ -832,10 +832,10 @@ std::string Database::GetSampleFileExtension(const std::string& filename)
 
 wxVector<wxVector<wxVariant>>
 Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
-                       // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
-                       wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
-                       wxTreeCtrl& trash_tree, wxTreeItemId& trash_item,
-                       bool show_extension)
+                              // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
+                              wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
+                              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
+                              const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
@@ -881,14 +881,14 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                 }
                 else
                 {
-                    wxVariant icon_c, icon_gs;
-                    icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
-                    icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
+                    wxVariant icon_filled, icon_empty;
+                    icon_filled = wxVariant(wxBitmap(icon_star_filled));
+                    icon_empty = wxVariant(wxBitmap(icon_star_empty));
 
                     if (favorite == 1)
                     {
                         // vec.push_back(true);
-                        vec.push_back(icon_c);
+                        vec.push_back(icon_filled);
 
                         wxLogDebug("Loading hives..");
 
@@ -943,7 +943,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                     }
                     else
                         // vec.push_back(false);
-                        vec.push_back(icon_gs);
+                        vec.push_back(icon_empty);
 
                     if (show_extension)
                     {
@@ -990,7 +990,8 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 
 wxVector<wxVector<wxVariant>>
 Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                     const std::string& sampleName, bool show_extension)
+                                     const std::string& sampleName, bool show_extension,
+                                     const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
@@ -1027,14 +1028,14 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
 
                 wxVector<wxVariant> vec;
 
-                wxVariant icon_c, icon_gs;
-                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
-                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
+                wxVariant icon_filled, icon_empty;
+                icon_filled = wxVariant(wxBitmap(icon_star_filled));
+                icon_empty = wxVariant(wxBitmap(icon_star_empty));
 
                 if (favorite == 1)
-                    vec.push_back(icon_c);
+                    vec.push_back(icon_filled);
                 else
-                    vec.push_back(icon_gs);
+                    vec.push_back(icon_empty);
 
                 // if (favorite == 1)
                 //     vec.push_back(true);
@@ -1087,7 +1088,8 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
 
 wxVector<wxVector<wxVariant>>
 Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                     const std::string& hiveName, bool show_extension)
+                                   const std::string& hiveName, bool show_extension,
+                                   const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
@@ -1124,14 +1126,14 @@ Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
 
                 wxVector<wxVariant> vec;
 
-                wxVariant icon_c, icon_gs;
-                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
-                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
+                wxVariant icon_filled, icon_empty;
+                icon_filled = wxVariant(wxBitmap(icon_star_filled));
+                icon_empty = wxVariant(wxBitmap(icon_star_empty));
 
                 if (favorite == 1)
-                    vec.push_back(icon_c);
+                    vec.push_back(icon_filled);
                 else
-                    vec.push_back(icon_gs);
+                    vec.push_back(icon_empty);
 
                 // if (favorite == 1)
                 //     vec.push_back(true);
@@ -1352,7 +1354,8 @@ void Database::UpdateTrashColumn(const std::string& filename, int value)
 
 wxVector<wxVector<wxVariant>>
 Database::RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
-                                     bool show_extension)
+                                     bool show_extension, const std::string& icon_star_filled,
+                                     const std::string& icon_star_empty)
 {
     try
     {
@@ -1389,16 +1392,16 @@ Database::RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVec
 
                 wxVector<wxVariant> vec;
 
-                wxVariant icon_c, icon_gs;
-                icon_c = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16.png"));
-                icon_gs = wxVariant(wxBitmap("../assets/icons/icon-hive_16x16-gs.png"));
+                wxVariant icon_filled, icon_empty;
+                icon_filled = wxVariant(wxBitmap(icon_star_filled));
+                icon_empty = wxVariant(wxBitmap(icon_star_empty));
 
                 if (trashed == 0)
                 {
                     if (favorite == 1)
-                        vec.push_back(icon_c);
+                        vec.push_back(icon_filled);
                     else
-                        vec.push_back(icon_gs);
+                        vec.push_back(icon_empty);
 
                     if (show_extension)
                         vec.push_back(path.AfterLast('/'));

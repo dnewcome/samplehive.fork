@@ -3,8 +3,10 @@
 #include <deque>
 #include <exception>
 
+#include <wx/aboutdlg.h>
 #include <wx/accel.h>
 #include <wx/arrstr.h>
+#include <wx/artprov.h>
 #include <wx/busyinfo.h>
 #include <wx/dataview.h>
 #include <wx/debug.h>
@@ -12,7 +14,9 @@
 #include <wx/dir.h>
 #include <wx/dnd.h>
 #include <wx/dvrenderers.h>
+#include <wx/filedlg.h>
 #include <wx/filefn.h>
+// #include <wx/fswatcher.h>
 #include <wx/gdicmn.h>
 #include <wx/generic/icon.h>
 #include <wx/gtk/dataobj2.h>
@@ -30,6 +34,7 @@
 #include <wx/variant.h>
 #include <wx/vector.h>
 #include <wx/utils.h>
+#include <wx/unix/stdpaths.h>
 
 #include "MainFrame.hpp"
 #include "ControlID_Enums.hpp"
@@ -41,16 +46,73 @@
 #include "Sample.hpp"
 #include "Serialize.hpp"
 
-#include <wx/fswatcher.h>
-
-#define ICON_APP "../assets/icons/icon-hive_24x24.png"
-#define ICON_COLOURED "../assets/icons/icon-hive_16x16.png"
-#define ICON_GREYSCALE "../assets/icons/icon-hive_16x16-gs.png"
+// Path to all the assets
+#define ICON_HIVE_16px "../assets/icons/icon-hive_16x16.png"
+#define ICON_HIVE_24px "../assets/icons/icon-hive_24x24.png"
+#define ICON_HIVE_32px "../assets/icons/icon-hive_32x32.png"
+#define ICON_HIVE_64px "../assets/icons/icon-hive_64x64.png"
+#define ICON_HIVE_200px "../assets/icons/icon-hive_200x200.png"
+#define ICON_STAR_FILLED_16px "../assets/icons/icon-star_filled_16x16.png"
+#define ICON_STAR_EMPTY_16px "../assets/icons/icon-star_empty_16x16.png"
 
 MainFrame::MainFrame()
     : wxFrame(NULL, wxID_ANY, "Sample Hive", wxDefaultPosition),
       m_ConfigFilepath("config.yaml"), m_DatabaseFilepath("sample.hive")
 {
+    m_StatusBar = CreateStatusBar(4);
+
+    int status_width[4] = { 300, -6, 30, -1 };
+    m_StatusBar->SetStatusWidths(4, status_width);
+
+    m_HiveBitmap = new wxStaticBitmap(m_StatusBar, wxID_ANY, wxBitmap(ICON_HIVE_24px));
+
+    // Initialize menubar and menus
+    m_MenuBar = new wxMenuBar();
+    m_FileMenu = new wxMenu();
+    m_EditMenu = new wxMenu();
+    m_ViewMenu = new wxMenu();
+    m_HelpMenu = new wxMenu();
+
+    // File menu items
+    m_AddFile = new wxMenuItem(m_FileMenu, MN_AddFile, _("Add a file\tCtrl+F"), "Add a file");
+    m_AddFile->SetBitmap(wxArtProvider::GetBitmap(wxART_NORMAL_FILE));
+    m_FileMenu->Append(m_AddFile);
+
+    m_AddDirectory = new wxMenuItem(m_FileMenu, MN_AddDirectory, _("Add a directory\tCtrl+D"), "Add a directory");
+    m_AddDirectory->SetBitmap(wxArtProvider::GetBitmap(wxART_FOLDER));
+    m_FileMenu->Append(m_AddDirectory);
+
+    m_FileMenu->AppendSeparator();
+
+    m_FileMenu->Append(wxID_EXIT, wxEmptyString, _("Exits the application"));
+
+    // Edit menu items
+    m_EditMenu->Append(wxID_PREFERENCES, _("Preferences\tCtrl+P"), _("Open preferences dialog"));
+
+    // View menu items
+    m_ToggleExtension = new wxMenuItem(m_ViewMenu, MN_ToggleExtension,
+                                       _("Toggle Extension\tCtrl+E"), _("Show/Hide Extension"), wxITEM_CHECK);
+    m_ToggleMenuBar = new wxMenuItem(m_ViewMenu, MN_ToggleMenuBar,
+                                     _("Toggle Menu Bar\tCtrl+M"), _("Show/Hide Menu Bar"), wxITEM_CHECK);
+    m_ToggleStatusBar = new wxMenuItem(m_ViewMenu, MN_ToggleStatusBar,
+                                       _("Toggle Status Bar\tCtrl+B"), _("Show/Hide Status Bar"), wxITEM_CHECK);
+
+    m_ViewMenu->Append(m_ToggleExtension)->Check(true);
+    m_ViewMenu->Append(m_ToggleMenuBar)->Check(m_MenuBar->IsShown());
+    m_ViewMenu->Append(m_ToggleStatusBar)->Check(m_StatusBar->IsShown());
+
+    // Help menu items
+    m_HelpMenu->Append(wxID_ABOUT, wxEmptyString, _("Show about the application"));
+
+    // Append all menus to menubar
+    m_MenuBar->Append(m_FileMenu, _("&File"));
+    m_MenuBar->Append(m_EditMenu, _("&Edit"));
+    m_MenuBar->Append(m_ViewMenu, _("&View"));
+    m_MenuBar->Append(m_HelpMenu, _("&Help"));
+
+    // Set the menu bar to use
+    SetMenuBar(m_MenuBar);
+
     // Load default yaml config file.
     LoadConfigFile();
 
@@ -90,7 +152,7 @@ MainFrame::MainFrame()
     m_BottomSplitter = new wxSplitterWindow(m_TopSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                             wxSP_NOBORDER | wxSP_LIVE_UPDATE | wxSP_THIN_SASH);
     m_BottomSplitter->SetMinimumPaneSize(300);
-    m_BottomSplitter->SetSashGravity(0.2);
+    m_BottomSplitter->SetSashGravity(0);
 
     // Left half of the BottomSplitter window
     m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -193,7 +255,7 @@ MainFrame::MainFrame()
                                        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES | wxDV_ROW_LINES);
 
     // Adding columns to wxDataViewListCtrl.
-    m_Library->AppendBitmapColumn(wxBitmap(ICON_COLOURED),
+    m_Library->AppendBitmapColumn(wxBitmap(ICON_STAR_FILLED_16px),
                                   0,
                                   wxDATAVIEW_CELL_ACTIVATABLE,
                                   30,
@@ -272,6 +334,17 @@ MainFrame::MainFrame()
     m_Timer = new wxTimer(this);
 
     // Binding events.
+    Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectAddDirectory, this, MN_AddDirectory);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectToggleExtension, this, MN_ToggleExtension);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectToggleMenuBar, this, MN_ToggleMenuBar);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectToggleStatusBar, this, MN_ToggleStatusBar);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectExit, this, wxID_EXIT);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectPreferences, this, wxID_PREFERENCES);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectAbout, this, wxID_ABOUT);
+
+    m_StatusBar->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeStatusBar), NULL, this);
+
     Bind(wxEVT_DIRCTRL_FILEACTIVATED, &MainFrame::OnClickDirCtrl, this, BC_DirCtrl);
     Bind(wxEVT_TREE_BEGIN_DRAG, &MainFrame::OnDragFromDirCtrl, this, m_DirCtrl->GetTreeCtrl()->GetId());
 
@@ -283,6 +356,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_BUTTON, &MainFrame::OnClickSettings, this, BC_Settings);
     Bind(wxEVT_CHECKBOX, &MainFrame::OnCheckAutoplay, this, BC_Autoplay);
     Bind(wxEVT_SCROLL_THUMBTRACK, &MainFrame::OnSlideVolume, this, BC_Volume);
+    Bind(wxEVT_SCROLL_THUMBRELEASE, &MainFrame::OnReleaseVolumeSlider, this, BC_Volume);
 
     Bind(wxEVT_TIMER, &MainFrame::UpdateElapsedTime, this);
 
@@ -317,7 +391,7 @@ MainFrame::MainFrame()
     m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_LEFT, 2);
     m_BrowserControlSizer->Add(0,0,1, wxALL | wxEXPAND, 0);
     m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(20,0,0, wxALL | wxEXPAND, 0);
+    m_BrowserControlSizer->Add(30,0,0, wxALL | wxEXPAND, 0);
     m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_RIGHT, 2);
     m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
@@ -395,6 +469,8 @@ MainFrame::MainFrame()
 
     // Restore the data previously added to Library
     LoadDatabase();
+
+    CallAfter(&MainFrame::SetAfterFrameCreate);
 }
 
 void MainFrame::OnClickSettings(wxCommandEvent& event)
@@ -406,7 +482,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
         case wxID_OK:
             if (settings->IsAutoImport())
             {
-                OnAutoImportDir();
+                OnAutoImportDir(settings->GetImportDirPath());
                 RefreshDatabase();
             }
             break;
@@ -451,7 +527,7 @@ void MainFrame::AddSamples(wxArrayString& files)
 
     sorted_files = db.CheckDuplicates(files);
     files = sorted_files;
-    
+
     if(files.size() < 1)
     {
         progressDialog->Destroy();
@@ -496,7 +572,7 @@ void MainFrame::AddSamples(wxArrayString& files)
     
         wxVector<wxVariant> data;
 
-        wxVariant icon = wxVariant(wxBitmap(ICON_GREYSCALE));
+        wxVariant icon = wxVariant(wxBitmap(ICON_STAR_EMPTY_16px));
 
         if (tags.IsFileValid())
         {
@@ -632,7 +708,7 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
             {
                 m_Hives->AppendItem(drop_target, files[i]);
 
-                m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), row, 0);
+                m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), row, 0);
 
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
                 db.UpdateHiveName(file_name.ToStdString(), hive_name.ToStdString());
@@ -666,20 +742,17 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
     }
 }
 
-void MainFrame::OnAutoImportDir()
+void MainFrame::OnAutoImportDir(const wxString& pathToDirectory)
 {
     wxLogDebug("Start Importing Samples:");
-    
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
 
-    wxString dir_path = settings.GetImportDirPath();
     wxString filepath;
     wxArrayString filepath_array;
 
-    size_t number_of_files = wxDir::GetAllFiles(dir_path, &filepath_array, wxEmptyString, wxDIR_DEFAULT);
+    size_t number_of_files = wxDir::GetAllFiles(pathToDirectory, &filepath_array, wxEmptyString, wxDIR_DEFAULT);
 
     wxProgressDialog* progressDialog = new wxProgressDialog("Adding files..", "Adding files, please wait...",
                                                             (int)number_of_files, this,
@@ -795,6 +868,9 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
     m_MediaCtrl->Load(sample_path);
+
+    PushStatusText(wxString::Format("Now playing: %s", selection), 1);
+
     m_MediaCtrl->Play();
 
     m_Timer->Start(100, wxTIMER_CONTINUOUS);
@@ -819,6 +895,8 @@ void MainFrame::OnClickStop(wxCommandEvent& event)
 
     m_Timer->Stop();
     m_SamplePosition->SetLabel("--:--/--:--");
+
+    this->SetStatusText("Stopped", 1);
 }
 
 void MainFrame::OnClickMute(wxCommandEvent& event)
@@ -854,6 +932,8 @@ void MainFrame::OnMediaFinished(wxMediaEvent& event)
     {
         m_Timer->Stop();
         m_SamplePosition->SetLabel("--:--/--:--");
+        PopStatusText(1);
+        this->SetStatusText("Stopped", 1);
     }
 }
 
@@ -890,9 +970,28 @@ void MainFrame::OnCheckAutoplay(wxCommandEvent& event)
 
 void MainFrame::OnSlideVolume(wxScrollEvent& event)
 {
-    float get_volume = m_MediaCtrl->GetVolume() * 100.0;
-
     m_MediaCtrl->SetVolume(float(m_VolumeSlider->GetValue()) / 100);
+
+    PushStatusText(wxString::Format("Volume: %d", m_VolumeSlider->GetValue()), 1);
+}
+
+void MainFrame::OnReleaseVolumeSlider(wxScrollEvent& event)
+{
+    int selected_row = m_Library->GetSelectedRow();
+
+    if (selected_row < 0)
+        return;
+
+    wxString selection = m_Library->GetTextValue(selected_row, 1);
+
+    // Wait a second then remove the status from statusbar
+    wxSleep(1);
+    PopStatusText(1);
+
+    if (m_MediaCtrl->GetState() == wxMEDIASTATE_STOPPED)
+        this->SetStatusText("Stopped", 1);
+    else
+        PushStatusText(wxString::Format("Now playing: %s", selection), 1);
 }
 
 void MainFrame::OnClickLibrary(wxDataViewEvent& event)
@@ -955,7 +1054,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
         if (bAutoplay)
         {
-            wxLogDebug("Playing %s", filename);
+            PushStatusText(wxString::Format("Now playing: %s", selection), 1);
 
             m_MediaCtrl->Play();
             m_Timer->Start(100, wxTIMER_CONTINUOUS);
@@ -983,7 +1082,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
         if (db.GetFavoriteColumnValueByFilename(filename) == 0)
         {
-            m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
+            m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 1);
             db.UpdateHiveName(filename, hive_name);
@@ -1003,7 +1102,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
         }
         else
         {
-            m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
+            m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 0);
             db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
@@ -1260,7 +1359,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         {
                                             wxLogDebug("Found match");
 
-                                            m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                                            m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
                                             db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                             db.UpdateHiveName(matched_sample.ToStdString(),
@@ -1303,7 +1402,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                         wxVector<wxVector<wxVariant>> dataset;
 
                         if (db.FilterDatabaseByHiveName(dataset, hive_name.ToStdString(),
-                                                          settings.IsShowFileExtension()).empty())
+                                                        settings.IsShowFileExtension(),
+                                                        ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
                         {
                             wxMessageBox("Error! Database is empty.", "Error!",
                                          wxOK | wxICON_ERROR | wxCENTRE, this);
@@ -1335,7 +1435,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         wxVector<wxVector<wxVariant>> dataset;
 
-                        if (db.FilterDatabaseBySampleName(dataset, "", settings.IsShowFileExtension()).empty())
+                        if (db.FilterDatabaseBySampleName(dataset, "", settings.IsShowFileExtension(),
+                                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
                         {
                             wxMessageBox("Error! Database is empty.", "Error!",
                                          wxOK | wxICON_ERROR | wxCENTRE, this);
@@ -1385,7 +1486,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         wxLogDebug("Found match");
 
-                        m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                        m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
                         db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                         db.UpdateHiveName(matched_sample.ToStdString(),
@@ -1532,7 +1633,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 //Add To Favorites
                 if (favorite_add && db_status == 0)
                 {
-                    m_Library->SetValue(wxVariant(wxBitmap(ICON_COLOURED)), selected_row, 0);
+                    m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 1);
                     db.UpdateHiveName(filename, hive_name);
@@ -1553,7 +1654,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 else 
                 {
                     //Remove From Favorites
-                    m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), selected_row, 0);
+                    m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 0);
                     db.UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
@@ -1737,7 +1838,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                     {
-                        m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
+                        m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
 
                         db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
@@ -1877,7 +1978,8 @@ void MainFrame::LoadDatabase()
         wxVector<wxVector<wxVariant>> dataset;
 
         if (db.LoadSamplesDatabase(dataset, *m_Hives, favorites_hive,
-                                   *m_Trash, trash_root, settings.IsShowFileExtension()).empty())
+                                   *m_Trash, trash_root, settings.IsShowFileExtension(),
+                                   ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
         {
             wxLogInfo("Error! Database is empty.");
         }
@@ -1959,7 +2061,9 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
                         wxVector<wxVector<wxVariant>> dataset;
 
                         if (db.RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
-                                                          settings.IsShowFileExtension()).empty())
+                                                          settings.IsShowFileExtension(),
+                                                          ICON_STAR_FILLED_16px,
+                                                          ICON_STAR_EMPTY_16px).empty())
                         {
                             wxLogDebug("Error! Database is empty.");
                         }
@@ -2020,7 +2124,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
             {
-                m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), item_row, 0);
+                m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
 
                 db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
@@ -2233,7 +2337,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                             {
                                 wxLogDebug("Found match");
 
-                                m_Library->SetValue(wxVariant(wxBitmap(ICON_GREYSCALE)), i, 0);
+                                m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
                                 db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                 db.UpdateHiveName(matched_sample.ToStdString(),
@@ -2306,7 +2410,8 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
             wxVector<wxVector<wxVariant>> dataset;
 
             if (db.RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
-                                              settings.IsShowFileExtension()).empty())
+                                              settings.IsShowFileExtension(),
+                                              ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
             {
                 wxLogDebug("Error! Database is empty.");
             }
@@ -2338,7 +2443,8 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
     {
         wxVector<wxVector<wxVariant>> dataset;
 
-        if (db.FilterDatabaseBySampleName(dataset, search, settings.IsShowFileExtension()).empty())
+        if (db.FilterDatabaseBySampleName(dataset, search, settings.IsShowFileExtension(),
+                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
         {
             wxLogDebug("Error! Database is empty.");
         }
@@ -2387,8 +2493,12 @@ void MainFrame::LoadConfigFile()
 
     this->SetFont(settings.GetFontType());
     this->SetSize(width, height);
+    this->SetMinSize(wxSize(width, height));
     this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon(ICON_APP, wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetIcon(wxIcon(ICON_HIVE_24px, wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetTitle("SampleHive");
+    this->SetStatusText("SampleHive v0.1", 3);
+    this->SetStatusText("Stopped", 1);
 }
 
 void MainFrame::RefreshDatabase()
@@ -2460,6 +2570,157 @@ void MainFrame::OnHiveStartEditing(wxDataViewEvent &event)
 {
     wxLogDebug("Right click on a hive and select rename to rename it..");
     event.Veto();
+}
+
+void MainFrame::OnSelectAddFile(wxCommandEvent& event)
+{
+    wxFileDialog file_dialog(this, wxFileSelectorPromptStr, wxStandardPaths::Get().GetDocumentsDir(),
+                             wxEmptyString, wxFileSelectorDefaultWildcardStr,
+                             wxFD_DEFAULT_STYLE | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE | wxFD_PREVIEW,
+                             wxDefaultPosition, wxDefaultSize);
+
+    switch (file_dialog.ShowModal())
+    {
+        case wxID_OK:
+        {
+            wxArrayString paths;
+            file_dialog.GetPaths(paths);
+
+            for (size_t i = 0; i < (size_t)paths.size(); i++)
+                AddSamples(paths);
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+void MainFrame::OnSelectAddDirectory(wxCommandEvent& event)
+{
+    wxDirDialog dir_dialog(this, wxDirSelectorPromptStr, wxStandardPaths::Get().GetDocumentsDir(),
+                          wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST, wxDefaultPosition, wxDefaultSize);
+
+    switch (dir_dialog.ShowModal())
+    {
+        case wxID_OK:
+        {
+            wxString path = dir_dialog.GetPath();
+
+            OnAutoImportDir(path);
+        }
+        break;
+        default:
+            break;
+    }
+}
+
+void MainFrame::OnSelectToggleExtension(wxCommandEvent& event)
+{
+    wxMessageBox("// TODO", "Toggle extension", wxOK | wxCENTRE, this);
+
+    /* TODO: Toggle Show/Hide Extensions
+     * Perhaps need Refresh()
+     * that just updates all elements
+     * and sample info in all widgets.
+     */
+}
+
+void MainFrame::OnSelectToggleMenuBar(wxCommandEvent& event)
+{
+    if (m_ToggleMenuBar->IsChecked())
+    {
+        m_MenuBar->Show();
+        m_InfoBar->ShowMessage("MenuBar showing, press CTRL+M to toggle show/hide.", wxICON_INFORMATION);
+    }
+    else
+    {
+        m_MenuBar->Hide();
+        m_InfoBar->ShowMessage("MenuBar hidden, press CTRL+M to toggle show/hide.", wxICON_INFORMATION);
+    }
+}
+
+void MainFrame::OnSelectToggleStatusBar(wxCommandEvent& event)
+{
+    if (m_ToggleStatusBar->IsChecked())
+    {
+        m_StatusBar->Show();
+        m_InfoBar->ShowMessage("StatusBar showing, press CTRL+B to toggle show/hide.", wxICON_INFORMATION);
+    }
+    else
+    {
+        m_StatusBar->Hide();
+        m_InfoBar->ShowMessage("StatusBar hidden, press CTRL+B to toggle show/hide.", wxICON_INFORMATION);
+    }
+}
+
+void MainFrame::OnSelectExit(wxCommandEvent& event)
+{
+    Close();
+}
+
+void MainFrame::OnSelectPreferences(wxCommandEvent& event)
+{
+    Settings* settings = new Settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+
+    switch (settings->ShowModal())
+    {
+        case wxID_OK:
+            break;
+        default:
+            break;
+    }
+}
+
+void MainFrame::OnSelectAbout(wxCommandEvent& event)
+{
+    wxAboutDialogInfo aboutInfo;
+
+    aboutInfo.SetName("SampleHive");
+    aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
+    aboutInfo.AddArtist("Apoorv");
+    aboutInfo.SetVersion("0.1", "Version 0.1");
+    aboutInfo.SetDescription("A simple, modern audio sample browser/manager for GNU/Linux.");
+    aboutInfo.SetCopyright("(C) 2020-2021");
+    aboutInfo.SetWebSite("http://samplehive.gitlab.io");
+    aboutInfo.AddDeveloper("Apoorv");
+    aboutInfo.SetLicence(wxString::FromAscii(
+                             "SampleHive\n"
+                             "Copyright (C) 2021  Apoorv Singh\n"
+                             "\n"
+                             "This program is free software: you can redistribute it and/or modify\n"
+                             "it under the terms of the GNU General Public License as published by\n"
+                             "the Free Software Foundation, either version 3 of the License, or\n"
+                             "(at your option) any later version.\n"
+                             "\n"
+                             "This program is distributed in the hope that it will be useful,\n"
+                             "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+                             "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+                             "GNU General Public License for more details.\n"
+                             "\n"
+                             "You should have received a copy of the GNU General Public License\n"
+                             "along with this program.  If not, see <https://www.gnu.org/licenses/>.\n"
+                         ));
+
+    wxAboutBox(aboutInfo);
+}
+
+void MainFrame::OnResizeStatusBar(wxSizeEvent& event)
+{
+    wxRect rect;
+    m_StatusBar->GetFieldRect(2, rect);
+
+    wxSize bitmap_size = m_HiveBitmap->GetSize();
+
+    m_HiveBitmap->Move(rect.x + (rect.width - bitmap_size.x),
+                       rect.y + (rect.height - bitmap_size.y));
+
+    event.Skip();
+}
+
+void MainFrame::SetAfterFrameCreate()
+{
+    m_TopSplitter->SetSashPosition(200);
+    m_BottomSplitter->SetSashPosition(300);
 }
 
 MainFrame::~MainFrame(){}

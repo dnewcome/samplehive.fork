@@ -7,7 +7,7 @@
 #include <wx/collpane.h>
 #include <wx/dataview.h>
 #include <wx/dirctrl.h>
-#include <wx/dirdlg.h>
+// #include <wx/dirdlg.h>
 #include <wx/event.h>
 #include <wx/frame.h>
 #include <wx/fswatcher.h>
@@ -21,6 +21,8 @@
 #include <wx/sizer.h>
 #include <wx/slider.h>
 #include <wx/splitter.h>
+#include <wx/statbmp.h>
+#include <wx/statusbr.h>
 #include <wx/string.h>
 #include <wx/stringimpl.h>
 #include <wx/tglbtn.h>
@@ -56,7 +58,30 @@ class MainFrame : public wxFrame
         wxPanel* m_MainPanel;
         wxBoxSizer* m_MainSizer;
 
-    private:
+        // -------------------------------------------------------------------
+        // Hive bitmap icon for the statusbar
+        wxStaticBitmap* m_HiveBitmap;
+
+        // -------------------------------------------------------------------
+        // App statusbar
+        wxStatusBar* m_StatusBar;
+
+        // -------------------------------------------------------------------
+        // App menubar
+        wxMenuBar* m_MenuBar;
+
+        // -------------------------------------------------------------------
+        // Menu and menu items for the menubar
+        wxMenu* m_FileMenu;
+        wxMenu* m_EditMenu;
+        wxMenu* m_ViewMenu;
+        wxMenu* m_HelpMenu;
+        wxMenuItem* m_AddFile;
+        wxMenuItem* m_AddDirectory;
+        wxMenuItem* m_ToggleExtension;
+        wxMenuItem* m_ToggleMenuBar;
+        wxMenuItem* m_ToggleStatusBar;
+
         // -------------------------------------------------------------------
         // Splitter windows
         wxSplitterWindow* m_TopSplitter;
@@ -143,6 +168,7 @@ class MainFrame : public wxFrame
         void OnMediaFinished(wxMediaEvent& event);
         void OnCheckAutoplay(wxCommandEvent& event);
         void OnSlideVolume(wxScrollEvent& event);
+        void OnReleaseVolumeSlider(wxScrollEvent& event);
         void OnClickSettings(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
@@ -178,12 +204,27 @@ class MainFrame : public wxFrame
         void OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
+        // App menu items event handlers
+        void OnSelectAddFile(wxCommandEvent& event);
+        void OnSelectAddDirectory(wxCommandEvent& event);
+        void OnSelectToggleExtension(wxCommandEvent& event);
+        void OnSelectToggleMenuBar(wxCommandEvent& event);
+        void OnSelectToggleStatusBar(wxCommandEvent& event);
+        void OnSelectExit(wxCommandEvent& event);
+        void OnSelectPreferences(wxCommandEvent& event);
+        void OnSelectAbout(wxCommandEvent& event);
+
+        // -------------------------------------------------------------------
+        // Statusbar event handler
+        void OnResizeStatusBar(wxSizeEvent& event);
+
+        // -------------------------------------------------------------------
         // Timer update event handler
         void UpdateElapsedTime(wxTimerEvent& event);
 
         // -------------------------------------------------------------------
         void AddSamples(wxArrayString& files);
-        void OnAutoImportDir();
+        void OnAutoImportDir(const wxString& pathToDirectory);
 
         // -------------------------------------------------------------------
         void LoadDatabase();
@@ -201,6 +242,10 @@ class MainFrame : public wxFrame
         void CreateWatcher();
 
         // wxString TagLibTowx(const TagLib::String& in);
+
+        // -------------------------------------------------------------------
+        // Call after frame creation
+        void SetAfterFrameCreate();
 
         // -------------------------------------------------------------------
         friend class App;

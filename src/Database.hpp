@@ -74,15 +74,19 @@ class Database
         //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
                             wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
-                            wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
+                            wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
+                            const std::string& icon_star_filled, const std::string& icon_star_emtpy);
         void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
         RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
-                                   bool show_extension);
+                                   bool show_extension, const std::string& icon_star_filled,
+                                   const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                   const std::string& sampleName, bool show_extension);
+                                   const std::string& sampleName, bool show_extension,
+                                   const std::string& icon_star_filled, const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
         FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                 const std::string& hiveName, bool show_extension);
+                                 const std::string& hiveName, bool show_extension,
+                                 const std::string& icon_star_filled, const std::string& icon_star_empty);
 };
