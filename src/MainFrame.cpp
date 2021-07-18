@@ -72,7 +72,8 @@
 #define ICON_HIVE_24px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_24x24.png"
 #define ICON_HIVE_32px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_32x32.png"
 #define ICON_HIVE_64px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_64x64.png"
-#define ICON_HIVE_200px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_200x200.png"
+#define ICON_HIVE_128px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_128x128.png"
+#define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_256x256.png"
 #define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_filled_16x16.png"
 #define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_empty_16x16.png"
 #define WAVEFORM_SVG SAMPLEHIVE_DATADIR "/assets/waveform.svg"
@@ -595,7 +596,11 @@ void MainFrame::AddSamples(wxArrayString& files)
         sample.SetLength(tags.GetAudioInfo().length);
         sample.SetSampleRate(tags.GetAudioInfo().sample_rate);
         sample.SetBitrate(tags.GetAudioInfo().bitrate);
-    
+
+        wxLongLong llLength = sample.GetLength();
+        int total_min = static_cast<int>((llLength / 60000).GetValue());
+        int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+
         wxVector<wxVariant> data;
 
         wxVariant icon = wxVariant(wxBitmap(ICON_STAR_EMPTY_16px));
@@ -608,7 +613,7 @@ void MainFrame::AddSamples(wxArrayString& files)
             data.push_back(sample.GetSamplePack());
             data.push_back("");
             data.push_back(wxString::Format("%d", sample.GetChannels()));
-            data.push_back(wxString::Format("%d", sample.GetLength()));
+            data.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
             data.push_back(wxString::Format("%d", sample.GetSampleRate()));
             data.push_back(wxString::Format("%d", sample.GetBitrate()));
             data.push_back(path);
@@ -972,12 +977,12 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
     wxLongLong llLength, llTell;
 
     llLength = m_MediaCtrl->Length();
-    int total_min = (int) (llLength / 60000).GetValue();
-    int total_sec = (int) ((llLength % 60000)/1000).GetValue();
+    int total_min = static_cast<int>((llLength / 60000).GetValue());
+    int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
 
     llTell = m_MediaCtrl->Tell();
-    int current_min = (int) (llTell / 60000).GetValue();
-    int current_sec = (int) ((llTell % 60000)/1000).GetValue();
+    int current_min = static_cast<int>((llTell / 60000).GetValue());
+    int current_sec = static_cast<int>(((llTell % 60000) / 1000).GetValue());
 
     duration.Printf(wxT("%2i:%02i"), total_min, total_sec);
     position.Printf(wxT("%2i:%02i"), current_min, current_sec);
@@ -2080,7 +2085,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
                     selected_item_text = m_Trash->GetItemText(selected_item_ids[i]);
 
                     wxLogDebug("Count: %d :: Selected item text: %s",
-                               (int)selected_item_ids.GetCount(), selected_item_text);
+                               static_cast<int>(selected_item_ids.GetCount()), selected_item_text);
 
                     filename = GetFilenamePathAndExtension(selected_item_text).Filename;
 
@@ -2435,7 +2440,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
         selected_item_text = m_Trash->GetItemText(selected_item_ids[i]);
 
         wxLogDebug("Count: %d :: Selected item text: %s",
-                   (int)selected_item_ids.GetCount(), selected_item_text);
+                   static_cast<int>(selected_item_ids.GetCount()), selected_item_text);
 
         filename = GetFilenamePathAndExtension(selected_item_text).Filename;
 
@@ -2561,7 +2566,7 @@ void MainFrame::LoadConfigFile()
     this->SetSize(width, height);
     this->SetMinSize(wxSize(width, height));
     this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon(ICON_HIVE_24px, wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
     this->SetTitle("SampleHive");
     this->SetStatusText("SampleHive v0.8.4_alpha.1", 3);
     this->SetStatusText(_("Stopped"), 1);

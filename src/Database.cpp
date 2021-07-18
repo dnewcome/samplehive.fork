@@ -890,6 +890,10 @@ Database::LoadSamplesDatabase(const std::string& dbPath, wxVector<wxVector<wxVar
                 int trashed = sqlite3_column_int(m_Stmt, 10);
                 wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 11)));
 
+                wxLongLong llLength = length;
+                int total_min = static_cast<int>((llLength / 60000).GetValue());
+                int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+
                 wxVector<wxVariant> vec;
 
                 if (trashed == 1)
@@ -977,7 +981,7 @@ Database::LoadSamplesDatabase(const std::string& dbPath, wxVector<wxVector<wxVar
                     vec.push_back(sample_pack);
                     vec.push_back(sample_type);
                     vec.push_back(wxString::Format("%d", channels));
-                    vec.push_back(wxString::Format("%d", length));
+                    vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
                     vec.push_back(wxString::Format("%d", sample_rate));
                     vec.push_back(wxString::Format("%d", bitrate));
                     vec.push_back(path);
@@ -1046,6 +1050,10 @@ Database::FilterDatabaseBySampleName(const std::string& dbPath, wxVector<wxVecto
                 int bitrate = sqlite3_column_int(m_Stmt, 7);
                 wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 8))));
 
+                wxLongLong llLength = length;
+                int total_min = static_cast<int>((llLength / 60000).GetValue());
+                int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+
                 wxVector<wxVariant> vec;
 
                 wxVariant icon_filled, icon_empty;
@@ -1076,7 +1084,7 @@ Database::FilterDatabaseBySampleName(const std::string& dbPath, wxVector<wxVecto
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(wxString::Format("%d", length));
+                vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);
@@ -1144,6 +1152,10 @@ Database::FilterDatabaseByHiveName(const std::string& dbPath, wxVector<wxVector<
                 int bitrate = sqlite3_column_int(m_Stmt, 7);
                 wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 8))));
 
+                wxLongLong llLength = length;
+                int total_min = static_cast<int>((llLength / 60000).GetValue());
+                int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+
                 wxVector<wxVariant> vec;
 
                 wxVariant icon_filled, icon_empty;
@@ -1174,7 +1186,7 @@ Database::FilterDatabaseByHiveName(const std::string& dbPath, wxVector<wxVector<
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(wxString::Format("%d", length));
+                vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);
@@ -1410,6 +1422,10 @@ Database::RestoreFromTrashByFilename(const std::string& dbPath, const std::strin
                 int trashed = sqlite3_column_int(m_Stmt, 10);
                 wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 11)));
 
+                wxLongLong llLength = length;
+                int total_min = static_cast<int>((llLength / 60000).GetValue());
+                int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+
                 wxVector<wxVariant> vec;
 
                 wxVariant icon_filled, icon_empty;
@@ -1431,7 +1447,7 @@ Database::RestoreFromTrashByFilename(const std::string& dbPath, const std::strin
                     vec.push_back(sample_pack);
                     vec.push_back(sample_type);
                     vec.push_back(wxString::Format("%d", channels));
-                    vec.push_back(wxString::Format("%d", length));
+                    vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
                     vec.push_back(wxString::Format("%d", sample_rate));
                     vec.push_back(wxString::Format("%d", bitrate));
                     vec.push_back(path);

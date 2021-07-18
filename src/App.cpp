@@ -26,7 +26,7 @@
 #include <wx/gdicmn.h>
 #include <wx/splash.h>
 
-#define SPLASH_LOGO SAMPLEHIVE_DATADIR "/assets/logo/logo-hive_768x432.png"
+#define SPLASH_LOGO SAMPLEHIVE_DATADIR "/assets/logo/logo-samplehive_768x432.png"
 
 wxIMPLEMENT_APP(App);
 
