@@ -1,3 +1,23 @@
+/* SampleHive
+ * Copyright (C) 2021  Apoorv Singh
+ * A simple, modern audio sample browser/manager for GNU/Linux.
+ *
+ * This file is a part of SampleHive
+ *
+ * SampleHive is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <deque>
@@ -69,7 +89,7 @@ MainFrame::MainFrame()
     m_StatusBar = CreateStatusBar(4);
 
     // Set width for each section of the statusbar
-    int status_width[4] = { 300, -6, 30, -1 };
+    int status_width[4] = { 300, -6, -1, -2 };
     m_StatusBar->SetStatusWidths(4, status_width);
 
     m_HiveBitmap = new wxStaticBitmap(m_StatusBar, wxID_ANY, wxBitmap(ICON_HIVE_24px));
@@ -2543,7 +2563,7 @@ void MainFrame::LoadConfigFile()
     this->CenterOnScreen(wxBOTH);
     this->SetIcon(wxIcon(ICON_HIVE_24px, wxICON_DEFAULT_TYPE, -1, -1));
     this->SetTitle("SampleHive");
-    this->SetStatusText("SampleHive v0.1", 3);
+    this->SetStatusText("SampleHive v0.8.4_alpha.1", 3);
     this->SetStatusText(_("Stopped"), 1);
 }
 
@@ -2746,13 +2766,13 @@ void MainFrame::OnSelectAbout(wxCommandEvent& event)
     aboutInfo.SetName("SampleHive");
     aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
     aboutInfo.AddArtist("Apoorv");
-    aboutInfo.SetVersion("0.1", _("Version 0.1"));
+    aboutInfo.SetVersion("v0.8.4_alpha.1", _("Version 0.8.4_alpha.1"));
     aboutInfo.SetDescription(_("A simple, modern audio sample browser/manager for GNU/Linux."));
     aboutInfo.SetCopyright("(C) 2020-2021");
     aboutInfo.SetWebSite("http://samplehive.gitlab.io");
     aboutInfo.AddDeveloper("Apoorv");
     aboutInfo.SetLicence(wxString::FromAscii(
-                             "SampleHive\n"
+                             "SampleHive v0.8.4_alpha.1\n"
                              "Copyright (C) 2021  Apoorv Singh\n"
                              "\n"
                              "This program is free software: you can redistribute it and/or modify\n"
