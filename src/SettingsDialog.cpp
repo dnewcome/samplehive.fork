@@ -107,9 +107,9 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
 
     m_DisplayTopSizer->Add(m_DisplayFontSizer, 1, wxALL | wxEXPAND, 2);
 
-    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_LEFT, 2);
-    m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL, 2);
-    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_RIGHT, 2);
+    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT, 2);
+    m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 2);
 
     m_ShowFileExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL | wxALIGN_LEFT, 2);
 

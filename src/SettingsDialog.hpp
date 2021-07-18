@@ -125,6 +125,6 @@ class Settings : public wxDialog
         wxString GetImportDirPath();
 
         inline wxFont GetFontType() { return m_Font; };
-        inline bool IsAutoImport() { return bAutoImport; };
-        inline bool IsShowFileExtension() { return bShowExtension; };
+        inline bool CanAutoImport() { return bAutoImport; };
+        inline bool ShouldShowFileExtension() { return bShowExtension; };
 };

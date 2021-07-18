@@ -32,61 +32,61 @@ class Database
     public:
         // -------------------------------------------------------------------
         // Create the table
-        void CreateTableSamples();
-        void CreateTableHives();
+        void CreateTableSamples(const std::string& dbPath);
+        void CreateTableHives(const std::string& dbPath);
 
         // -------------------------------------------------------------------
         // Insert into database
-        void InsertIntoSamples(std::vector<Sample>);
-        void InsertIntoHives(const std::string& hiveName);
+        void InsertIntoSamples(const std::string& dbPath, std::vector<Sample>);
+        void InsertIntoHives(const std::string& dbPath, const std::string& hiveName);
         
         // -------------------------------------------------------------------
         // Update database
-        void UpdateFavoriteColumn(const std::string& filename, int value);
-        void UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName);
-        void UpdateHiveName(const std::string& filename, const std::string& hiveName);
-        void UpdateTrashColumn(const std::string& filename, int value);
-        void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
-        void UpdateSampleType(const std::string& filename, const std::string& type);
+        void UpdateFavoriteColumn(const std::string& dbPath, const std::string& filename, int value);
+        void UpdateHive(const std::string& dbPath, const std::string& hiveOldName, const std::string& hiveNewName);
+        void UpdateHiveName(const std::string& dbPath, const std::string& filename, const std::string& hiveName);
+        void UpdateTrashColumn(const std::string& dbPath, const std::string& filename, int value);
+        void UpdateSamplePack(const std::string& dbPath, const std::string& filename, const std::string& samplePack);
+        void UpdateSampleType(const std::string& dbPath, const std::string& filename, const std::string& type);
 
         // -------------------------------------------------------------------
         // Get from database
-        int GetFavoriteColumnValueByFilename(const std::string& filename);
-        std::string GetHiveByFilename(const std::string& filename);
-        std::string GetSamplePathByFilename(const std::string& filename);
-        std::string GetSampleFileExtension(const std::string& filename);
-        std::string GetSampleType(const std::string& filename);
+        int GetFavoriteColumnValueByFilename(const std::string& dbPath, const std::string& filename);
+        std::string GetHiveByFilename(const std::string& dbPath, const std::string& filename);
+        std::string GetSamplePathByFilename(const std::string& dbPath, const std::string& filename);
+        std::string GetSampleFileExtension(const std::string& dbPath, const std::string& filename);
+        std::string GetSampleType(const std::string& dbPath, const std::string& filename);
 
         // -------------------------------------------------------------------
         // Check database
-        bool IsTrashed(const std::string& filename);
-        wxArrayString CheckDuplicates(const wxArrayString& files);
+        bool IsTrashed(const std::string& dbPath, const std::string& filename);
+        wxArrayString CheckDuplicates(const std::string& dbPath, const wxArrayString& files);
 
         // -------------------------------------------------------------------
         // Remove from database
-        void RemoveSampleFromDatabase(const std::string& filename);
-        void RemoveHiveFromDatabase(const std::string& hiveName);
+        void RemoveSampleFromDatabase(const std::string& dbPath, const std::string& filename);
+        void RemoveHiveFromDatabase(const std::string& dbPath, const std::string& hiveName);
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>>
         // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
         //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
         //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
-        LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
+        LoadSamplesDatabase(const std::string& dbPath, wxVector<wxVector<wxVariant>>& vecSet,
                             wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                             wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
                             const std::string& icon_star_filled, const std::string& icon_star_emtpy);
-        void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree);
+        void LoadHivesDatabase(const std::string& dbPath, wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
-        RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
-                                   bool show_extension, const std::string& icon_star_filled,
-                                   const std::string& icon_star_empty);
+        RestoreFromTrashByFilename(const std::string& dbPath, const std::string& filename,
+                                   wxVector<wxVector<wxVariant>>& vecSet, bool show_extension,
+                                   const std::string& icon_star_filled, const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
+        FilterDatabaseBySampleName(const std::string& dbPath, wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& sampleName, bool show_extension,
                                    const std::string& icon_star_filled, const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
+        FilterDatabaseByHiveName(const std::string& dbPath, wxVector<wxVector<wxVariant>>& sampleVec,
                                  const std::string& hiveName, bool show_extension,
                                  const std::string& icon_star_filled, const std::string& icon_star_empty);
 };

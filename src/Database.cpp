@@ -23,7 +23,7 @@ Database::~Database()
 
 }
 
-void Database::CreateTableSamples()
+void Database::CreateTableSamples(const std::string& dbPath)
 {
     /* Create SQL statement */
     std::string samples = "CREATE TABLE IF NOT EXISTS SAMPLES("
@@ -42,7 +42,7 @@ void Database::CreateTableSamples()
 
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -63,7 +63,7 @@ void Database::CreateTableSamples()
         }
         else
         {
-            wxLogDebug("Table created successfully.");
+            wxLogDebug("Samples table created successfully.");
         }
 
         rc = sqlite3_close(m_Database);
@@ -79,14 +79,14 @@ void Database::CreateTableSamples()
     }
 }
 
-void Database::CreateTableHives()
+void Database::CreateTableHives(const std::string& dbPath)
 {
     /* Create SQL statement */
     std::string hives = "CREATE TABLE IF NOT EXISTS HIVES(HIVE TEXT NOT NULL);";
 
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -107,7 +107,7 @@ void Database::CreateTableHives()
         }
         else
         {
-            wxLogDebug("Table created successfully.");
+            wxLogDebug("Hives table created successfully.");
         }
 
         rc = sqlite3_close(m_Database);
@@ -124,11 +124,11 @@ void Database::CreateTableHives()
 }
 
 //Loops through a Sample array and adds them to the database
-void Database::InsertIntoSamples(std::vector<Sample> samples)
+void Database::InsertIntoSamples(const std::string& dbPath, std::vector<Sample> samples)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -235,11 +235,11 @@ void Database::InsertIntoSamples(std::vector<Sample> samples)
     }
 }
 
-void Database::InsertIntoHives(const std::string& hiveName)
+void Database::InsertIntoHives(const std::string& dbPath, const std::string& hiveName)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -333,11 +333,11 @@ void Database::InsertIntoHives(const std::string& hiveName)
     }
 }
 
-void Database::UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName)
+void Database::UpdateHive(const std::string& dbPath, const std::string& hiveOldName, const std::string& hiveNewName)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE HIVES SET HIVE = ? WHERE HIVE = ?;";
 
@@ -374,11 +374,11 @@ void Database::UpdateHive(const std::string& hiveOldName, const std::string& hiv
     }
 }
 
-void Database::UpdateHiveName(const std::string& filename, const std::string& hiveName)
+void Database::UpdateHiveName(const std::string& dbPath, const std::string& filename, const std::string& hiveName)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE SAMPLES SET HIVE = ? WHERE FILENAME = ?;";
 
@@ -413,11 +413,11 @@ void Database::UpdateHiveName(const std::string& filename, const std::string& hi
     }
 }
 
-void Database::UpdateFavoriteColumn(const std::string& filename, int value)
+void Database::UpdateFavoriteColumn(const std::string& dbPath, const std::string& filename, int value)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE SAMPLES SET FAVORITE = ? WHERE FILENAME = ?;";
 
@@ -452,11 +452,11 @@ void Database::UpdateFavoriteColumn(const std::string& filename, int value)
     }
 }
 
-void Database::UpdateSamplePack(const std::string& filename, const std::string& samplePack)
+void Database::UpdateSamplePack(const std::string& dbPath, const std::string& filename, const std::string& samplePack)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE SAMPLES SET SAMPLEPACK = ? WHERE FILENAME = ?;";
 
@@ -491,11 +491,11 @@ void Database::UpdateSamplePack(const std::string& filename, const std::string& 
     }
 }
 
-void Database::UpdateSampleType(const std::string& filename, const std::string& type)
+void Database::UpdateSampleType(const std::string& dbPath, const std::string& filename, const std::string& type)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE SAMPLES SET TYPE = ? WHERE FILENAME = ?;";
 
@@ -530,13 +530,13 @@ void Database::UpdateSampleType(const std::string& filename, const std::string& 
     }
 }
 
-std::string Database::GetSampleType(const std::string& filename)
+std::string Database::GetSampleType(const std::string& dbPath, const std::string& filename)
 {
     std::string type;
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT TYPE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -575,13 +575,13 @@ std::string Database::GetSampleType(const std::string& filename)
     return type;
 }
 
-int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
+int Database::GetFavoriteColumnValueByFilename(const std::string& dbPath, const std::string& filename)
 {
     int value = 0;
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT FAVORITE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -619,13 +619,13 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& filename)
     return value;
 }
 
-std::string Database::GetHiveByFilename(const std::string& filename)
+std::string Database::GetHiveByFilename(const std::string& dbPath, const std::string& filename)
 {
     std::string hive;
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT HIVE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -664,11 +664,11 @@ std::string Database::GetHiveByFilename(const std::string& filename)
     return hive;
 }
 
-void Database::RemoveSampleFromDatabase(const std::string& filename)
+void Database::RemoveSampleFromDatabase(const std::string& dbPath, const std::string& filename)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string remove = "DELETE FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -703,11 +703,11 @@ void Database::RemoveSampleFromDatabase(const std::string& filename)
     }
 }
 
-void Database::RemoveHiveFromDatabase(const std::string& hiveName)
+void Database::RemoveHiveFromDatabase(const std::string& dbPath, const std::string& hiveName)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string remove = "DELETE FROM HIVES WHERE HIVE = ?;";
 
@@ -742,13 +742,13 @@ void Database::RemoveHiveFromDatabase(const std::string& hiveName)
     }
 }
 
-std::string Database::GetSamplePathByFilename(const std::string& filename)
+std::string Database::GetSamplePathByFilename(const std::string& dbPath, const std::string& filename)
 {
     std::string path;
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT PATH FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -786,13 +786,13 @@ std::string Database::GetSamplePathByFilename(const std::string& filename)
     return path;
 }
 
-std::string Database::GetSampleFileExtension(const std::string& filename)
+std::string Database::GetSampleFileExtension(const std::string& dbPath, const std::string& filename)
 {
     std::string extension;
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT EXTENSION FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -831,7 +831,7 @@ std::string Database::GetSampleFileExtension(const std::string& filename)
 }
 
 wxVector<wxVector<wxVariant>>
-Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
+Database::LoadSamplesDatabase(const std::string& dbPath, wxVector<wxVector<wxVariant>>& vecSet,
                               // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
                               wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                               wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
@@ -839,7 +839,7 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -989,13 +989,13 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
+Database::FilterDatabaseBySampleName(const std::string& dbPath, wxVector<wxVector<wxVariant>>& sampleVec,
                                      const std::string& sampleName, bool show_extension,
                                      const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -1087,13 +1087,13 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
+Database::FilterDatabaseByHiveName(const std::string& dbPath, wxVector<wxVector<wxVariant>>& sampleVec,
                                    const std::string& hiveName, bool show_extension,
                                    const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -1184,11 +1184,11 @@ Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
     return sampleVec;
 }
 
-void Database::LoadHivesDatabase(wxDataViewTreeCtrl& treeCtrl)
+void Database::LoadHivesDatabase(const std::string& dbPath, wxDataViewTreeCtrl& treeCtrl)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);
@@ -1227,7 +1227,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl& treeCtrl)
 }
 
 //Compares the input array with the database and removes duplicates.
-wxArrayString Database::CheckDuplicates(const wxArrayString& files)
+wxArrayString Database::CheckDuplicates(const std::string& dbPath, const wxArrayString& files)
 {
     wxArrayString sorted_files;
 
@@ -1236,7 +1236,7 @@ wxArrayString Database::CheckDuplicates(const wxArrayString& files)
 
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT * FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -1268,11 +1268,11 @@ wxArrayString Database::CheckDuplicates(const wxArrayString& files)
     return sorted_files; 
 }
 
-bool Database::IsTrashed(const std::string& filename)
+bool Database::IsTrashed(const std::string& dbPath, const std::string& filename)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string select = "SELECT TRASHED FROM SAMPLES WHERE FILENAME = ?;";
 
@@ -1312,11 +1312,11 @@ bool Database::IsTrashed(const std::string& filename)
     return false;
 }
 
-void Database::UpdateTrashColumn(const std::string& filename, int value)
+void Database::UpdateTrashColumn(const std::string& dbPath, const std::string& filename, int value)
 {
     try
     {
-        rc = sqlite3_open("sample.hive", &m_Database);
+        rc = sqlite3_open(dbPath.c_str(), &m_Database);
 
         std::string update = "UPDATE SAMPLES SET TRASHED = ? WHERE FILENAME = ?;";
 
@@ -1353,13 +1353,13 @@ void Database::UpdateTrashColumn(const std::string& filename, int value)
 }
 
 wxVector<wxVector<wxVariant>>
-Database::RestoreFromTrashByFilename(const std::string& filename, wxVector<wxVector<wxVariant>>& vecSet,
-                                     bool show_extension, const std::string& icon_star_filled,
-                                     const std::string& icon_star_empty)
+Database::RestoreFromTrashByFilename(const std::string& dbPath, const std::string& filename,
+                                     wxVector<wxVector<wxVariant>>& vecSet, bool show_extension,
+                                     const std::string& icon_star_filled, const std::string& icon_star_empty)
 {
     try
     {
-        if (sqlite3_open("sample.hive", &m_Database) != SQLITE_OK)
+        if (sqlite3_open(dbPath.c_str(), &m_Database) != SQLITE_OK)
         {
             wxLogDebug("Error opening DB");
             throw sqlite3_errmsg(m_Database);

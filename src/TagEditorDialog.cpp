@@ -9,10 +9,10 @@
 #include "Database.hpp"
 #include "TagEditorDialog.hpp"
 
-TagEditor::TagEditor(wxWindow* window, const std::string& filename, wxInfoBar& info_bar)
+TagEditor::TagEditor(wxWindow* window, const std::string& dbPath, const std::string& filename, wxInfoBar& info_bar)
     : wxDialog(window, wxID_ANY, "Edit tags", wxDefaultPosition,
                wxSize(640, 360), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
-      m_Window(window), m_Filename(filename), m_InfoBar(info_bar), tags(filename)
+     m_Window(window), m_DatabaseFilepath(dbPath), m_Filename(filename), m_InfoBar(info_bar), tags(filename)
 {
     m_Panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -215,7 +215,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
     wxString comment = m_CommentText->GetValue();
     wxString type = m_SampleTypeChoice->GetStringSelection();
 
-    std::string sampleType = db.GetSampleType(m_Filename);
+    std::string sampleType = db.GetSampleType(m_DatabaseFilepath, m_Filename);
 
     std::string filename = wxString(m_Filename).AfterLast('/').BeforeLast('.').ToStdString();
 
@@ -245,7 +245,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
                 wxLogDebug("Changing artist tag..");
                 tags.SetArtist(artist.ToStdString());
 
-                db.UpdateSamplePack(m_Filename, artist.ToStdString());
+                db.UpdateSamplePack(m_DatabaseFilepath, m_Filename, artist.ToStdString());
 
                 wxLogDebug("SAMPLE FILENAME HERE: %s", m_Filename);
 
@@ -279,7 +279,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             if (m_SampleTypeCheck->GetValue() && m_SampleTypeChoice->GetStringSelection() != sampleType)
             {
                 wxLogDebug("Changing type tag..");
-                db.UpdateSampleType(filename, type.ToStdString());
+                db.UpdateSampleType(m_DatabaseFilepath, filename, type.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed type tag to %s", type);
             }

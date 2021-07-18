@@ -19,12 +19,13 @@
 class TagEditor : public wxDialog
 {
     public:
-        TagEditor(wxWindow* window, const std::string& filename, wxInfoBar& info_bar);
+        TagEditor(wxWindow* window, const std::string& dbPath, const std::string& filename, wxInfoBar& info_bar);
         ~TagEditor();
 
     private:
         // -------------------------------------------------------------------
         wxWindow* m_Window;
+        const std::string m_DatabaseFilepath;
         const std::string m_Filename;
 
         wxInfoBar& m_InfoBar;

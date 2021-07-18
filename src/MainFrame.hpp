@@ -7,7 +7,6 @@
 #include <wx/collpane.h>
 #include <wx/dataview.h>
 #include <wx/dirctrl.h>
-// #include <wx/dirdlg.h>
 #include <wx/event.h>
 #include <wx/frame.h>
 #include <wx/fswatcher.h>

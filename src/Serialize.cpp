@@ -3,6 +3,7 @@
 
 #include <wx/log.h>
 #include <wx/stdpaths.h>
+#include <wx/filename.h>
 
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/node/parse.h>
@@ -22,8 +23,10 @@ Serializer::Serializer(const std::string& filepath)
 
     if (!ifstrm)
     {
-        m_Emitter << YAML::Comment("This is the configuration file for the Sample Browser,"
-                                   "feel free to edit this file as needed");
+        wxLogDebug("Genrating configuration file..");
+
+        m_Emitter << YAML::Comment("This is the configuration file for SampleHive,"
+                                   "feel free to edit the file as needed");
         m_Emitter << YAML::Newline;
 
         m_Emitter << YAML::BeginMap;
@@ -61,6 +64,8 @@ Serializer::Serializer(const std::string& filepath)
 
         std::ofstream ofstrm(m_Filepath);
         ofstrm << m_Emitter.c_str();
+
+        wxLogDebug("Generated %s successfully!", m_Filepath);
     }
     else
     {
@@ -106,7 +111,7 @@ int Serializer::DeserializeWinSize(std::string key, int size) const
         std::cout << ex.what() << std::endl;
     }
 
-    wxLogDebug("size: %d", size);
+    wxLogDebug("Window size: %d", size);
 
     return size;
 }
@@ -149,7 +154,10 @@ bool Serializer::DeserializeBrowserControls(std::string key, bool control) const
         std::cout << ex.what() << std::endl;
     }
 
-    wxLogDebug("Control: %d", control);
+    wxLogDebug("Autoplay: %s, Loop: %s, Muted: %s",
+               autoplay ? "enabled" : "disabled",
+               loop ? "enabled" : "disabled",
+               muted ? "muted" : "unmuted");
 
     return control;
 }
