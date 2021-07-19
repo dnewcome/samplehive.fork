@@ -51,9 +51,6 @@
 #include <wx/treectrl.h>
 #include <wx/window.h>
 
-#include <wxSVG/svgctrl.h>
-#include <wxSVG/SVGDocument.h>
-
 #include <taglib/taglib.h>
 #include <taglib/fileref.h>
 #include <taglib/tstring.h>
@@ -112,7 +109,7 @@ class MainFrame : public wxFrame
         wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
-        wxSVGCtrl* m_WaveformViewer;
+        wxStaticBitmap* m_WaveformViewer;
         wxBoxSizer* m_BrowserControlSizer;
         wxButton* m_PlayButton;
         wxToggleButton* m_LoopButton;

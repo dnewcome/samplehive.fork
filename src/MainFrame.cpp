@@ -255,9 +255,7 @@ MainFrame::MainFrame()
 
     // Temporary widget to show a waveform sample image
     // TODO: Replace with actual waveform display
-    m_WaveformViewer = new wxSVGCtrl(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
-    m_WaveformViewer->Load(WAVEFORM_SVG);
-    m_WaveformViewer->Show();
+    m_WaveformViewer = new wxStaticBitmap(m_TopPanel, wxID_ANY, wxBitmap(WAVEFORM_SVG));
 
     // Initialize browser control buttons
     m_PlayButton = new wxButton(m_TopPanel, BC_Play, _("Play"), wxDefaultPosition, wxDefaultSize, 0);

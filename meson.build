@@ -72,7 +72,6 @@ endforeach
 
 # Dependencies
 wx = dependency('wxwidgets', version: '>=3.0.4')
-wxsvg = dependency('libwxsvg')
 taglib = dependency('taglib', version: '>=1.11')
 sqlite3 = dependency('sqlite3')
 yaml = dependency('yaml-cpp')
@@ -87,5 +86,5 @@ executable('SampleHive',
            sources: src,
            cpp_args: [wx_cxx_flags],
            link_args: [wx_libs],
-           dependencies: [wx, wxsvg, taglib, sqlite3, yaml],
+           dependencies: [wx, taglib, sqlite3, yaml],
            install: true)
