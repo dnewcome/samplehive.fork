@@ -65,6 +65,8 @@
     #include <taglib/tstring.h>
 #endif
 
+#include "IDatabase.hpp"
+
 struct FileInfo
 {
     wxString Path;
@@ -180,6 +182,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
+        std::unique_ptr<IDatabase> m_pDatabase;
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
