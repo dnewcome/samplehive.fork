@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#pragma once
 
 #include "Sample.hpp"
 
@@ -33,9 +34,7 @@
 
 #include <sqlite3.h>
 
-#include "IDatabase.hpp"
-
-class Database : public IDatabase
+class Database
 {
     public:
         Database(wxInfoBar& infoBar, const std::string& dbPath);
@@ -56,61 +55,58 @@ class Database : public IDatabase
     public:
         // -------------------------------------------------------------------
         // Create the table
-        void CreateTableSamples() override;
-        void CreateTableHives() override;
+        void CreateTableSamples();
+        void CreateTableHives();
 
         // -------------------------------------------------------------------
         // Insert into database
-        void InsertIntoSamples(std::vector<Sample>) override;
-        void InsertIntoHives(const std::string& hiveName) override;
+        void InsertIntoSamples(const std::vector<Sample>&);
+        void InsertIntoHives(const std::string& hiveName);
         
         // -------------------------------------------------------------------
         // Update database
-        void UpdateFavoriteColumn(const std::string& filename, int value) override;
-        void UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName) override;
-        void UpdateHiveName(const std::string& filename, const std::string& hiveName) override;
-        void UpdateTrashColumn(const std::string& filename, int value) override;
-        void UpdateSamplePack(const std::string& filename, const std::string& samplePack) override;
-        void UpdateSampleType(const std::string& filename, const std::string& type) override;
+        void UpdateFavoriteColumn(const std::string& filename, int value);
+        void UpdateHive(const std::string& hiveOldName, const std::string& hiveNewName);
+        void UpdateHiveName(const std::string& filename, const std::string& hiveName);
+        void UpdateTrashColumn(const std::string& filename, int value);
+        void UpdateSamplePack(const std::string& filename, const std::string& samplePack);
+        void UpdateSampleType(const std::string& filename, const std::string& type);
 
         // -------------------------------------------------------------------
         // Get from database
-        int GetFavoriteColumnValueByFilename(const std::string& filename) override;
-        std::string GetHiveByFilename(const std::string& filename) override;
-        std::string GetSamplePathByFilename(const std::string& filename) override;
-        std::string GetSampleFileExtension(const std::string& filename) override;
-        std::string GetSampleType(const std::string& filename) override;
+        int GetFavoriteColumnValueByFilename(const std::string& filename);
+        std::string GetHiveByFilename(const std::string& filename);
+        std::string GetSamplePathByFilename(const std::string& filename);
+        std::string GetSampleFileExtension(const std::string& filename);
+        std::string GetSampleType(const std::string& filename);
 
         // -------------------------------------------------------------------
         // Check database
-        bool IsTrashed(const std::string& filename) override;
-        wxArrayString CheckDuplicates(const wxArrayString& files) override;
+        bool IsTrashed(const std::string& filename);
+        wxArrayString CheckDuplicates(const wxArrayString& files);
 
         // -------------------------------------------------------------------
         // Remove from database
-        void RemoveSampleFromDatabase(const std::string& filename) override;
-        void RemoveHiveFromDatabase(const std::string& hiveName) override;
+        void RemoveSampleFromDatabase(const std::string& filename);
+        void RemoveHiveFromDatabase(const std::string& hiveName);
 
         // -------------------------------------------------------------------
-        wxVector<wxVector<wxVariant>>
         // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
         //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
-        //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension) override;
-        LoadSamplesDatabase(wxVector<wxVector<wxVariant>>& vecSet,
-                            wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
+        //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
+        wxVector<wxVector<wxVariant>> 
+        LoadSamplesDatabase(wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                             wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
-                            const std::string& icon_star_filled, const std::string& icon_star_emtpy) override;
-        void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree) override;
+                            const std::string& icon_star_filled, const std::string& icon_star_emtpy);
+        void LoadHivesDatabase(wxDataViewTreeCtrl& favorite_tree);
         wxVector<wxVector<wxVariant>>
         RestoreFromTrashByFilename(const std::string& filename,
                                    wxVector<wxVector<wxVariant>>& vecSet, bool show_extension,
-                                   const std::string& icon_star_filled, const std::string& icon_star_empty) override;
+                                   const std::string& icon_star_filled, const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                   const std::string& sampleName, bool show_extension,
-                                   const std::string& icon_star_filled, const std::string& icon_star_empty) override;
+        FilterDatabaseBySampleName(const std::string& sampleName, bool show_extension,
+                                   const std::string& icon_star_filled, const std::string& icon_star_empty);
         wxVector<wxVector<wxVariant>>
-        FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>>& sampleVec,
-                                 const std::string& hiveName, bool show_extension,
-                                 const std::string& icon_star_filled, const std::string& icon_star_empty) override;
+        FilterDatabaseByHiveName(const std::string& hiveName, bool show_extension,
+                                 const std::string& icon_star_filled, const std::string& icon_star_empty);
 };

@@ -53,17 +53,6 @@ public:
     sqlite3_stmt *stmt = nullptr;
 };
 
-std::unique_ptr<IDatabase> createSqlDatabase(DatabaseType type, wxInfoBar &infoBar, const std::string &dbPath)
-{
-    switch (type)
-    {
-    case DatabaseType::SqlLite:
-        return std::make_unique<Database>(infoBar, dbPath);
-    default:
-        return std::unique_ptr<Database>();
-    }
-}
-
 Database::Database(wxInfoBar &infoBar, const std::string &dbPath)
     : m_InfoBar(infoBar)
 {
@@ -142,7 +131,7 @@ void Database::CreateTableHives()
 }
 
 //Loops through a Sample array and adds them to the database
-void Database::InsertIntoSamples(std::vector<Sample> samples)
+void Database::InsertIntoSamples(const std::vector<Sample> &samples)
 {
     try
     {
@@ -780,13 +769,13 @@ std::string Database::GetSampleFileExtension(const std::string &filename)
     return extension;
 }
 
-wxVector<wxVector<wxVariant>>
-Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>> &vecSet,
+wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(
                               // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
                               wxDataViewTreeCtrl &favorite_tree, wxDataViewItem &favorite_item,
                               wxTreeCtrl &trash_tree, wxTreeItemId &trash_item, bool show_extension,
                               const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
+    wxVector<wxVector<wxVariant>> vecSet;
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
@@ -932,10 +921,10 @@ Database::LoadSamplesDatabase(wxVector<wxVector<wxVariant>> &vecSet,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,
-                                     const std::string &sampleName, bool show_extension,
+Database::FilterDatabaseBySampleName(const std::string &sampleName, bool show_extension,
                                      const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
+    wxVector<wxVector<wxVariant>> sampleVec;
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
@@ -1026,10 +1015,10 @@ Database::FilterDatabaseBySampleName(wxVector<wxVector<wxVariant>> &sampleVec,
 }
 
 wxVector<wxVector<wxVariant>>
-Database::FilterDatabaseByHiveName(wxVector<wxVector<wxVariant>> &sampleVec,
-                                   const std::string &hiveName, bool show_extension,
+Database::FilterDatabaseByHiveName(const std::string &hiveName, bool show_extension,
                                    const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
+    wxVector<wxVector<wxVariant>> sampleVec;
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
@@ -1382,3 +1371,4 @@ void Database::close()
 {
     throw_on_sqlite3_error(sqlite3_close(m_Database));
 }
+
