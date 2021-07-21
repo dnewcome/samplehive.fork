@@ -228,6 +228,7 @@ class MainFrame : public wxFrame
         void OnSelectToggleStatusBar(wxCommandEvent& event);
         void OnSelectExit(wxCommandEvent& event);
         void OnSelectPreferences(wxCommandEvent& event);
+        void OnSelectResetAppData(wxCommandEvent& event);
         void OnSelectAbout(wxCommandEvent& event);
 
         // -------------------------------------------------------------------

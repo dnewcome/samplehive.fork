@@ -131,6 +131,7 @@ MainFrame::MainFrame()
     m_ViewMenu->Append(m_ToggleStatusBar)->Check(m_StatusBar->IsShown());
 
     // Help menu items
+    m_HelpMenu->Append(wxID_REFRESH, _("Reset app data"), _("Clear the application data revert to default configuration"));
     m_HelpMenu->Append(wxID_ABOUT, wxEmptyString, _("Show about the application"));
 
     // Append all menus to menubar
@@ -371,6 +372,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_MENU, &MainFrame::OnSelectToggleStatusBar, this, MN_ToggleStatusBar);
     Bind(wxEVT_MENU, &MainFrame::OnSelectExit, this, wxID_EXIT);
     Bind(wxEVT_MENU, &MainFrame::OnSelectPreferences, this, wxID_PREFERENCES);
+    Bind(wxEVT_MENU, &MainFrame::OnSelectResetAppData, this, wxID_REFRESH);
     Bind(wxEVT_MENU, &MainFrame::OnSelectAbout, this, wxID_ABOUT);
 
     m_StatusBar->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeStatusBar), NULL, this);
@@ -2756,6 +2758,48 @@ void MainFrame::OnSelectPreferences(wxCommandEvent& event)
                 OnAutoImportDir(settings->GetImportDirPath());
                 RefreshDatabase();
             }
+            break;
+        default:
+            break;
+    }
+}
+
+void MainFrame::OnSelectResetAppData(wxCommandEvent& event)
+{
+    wxMessageDialog clearDataDialog(this, wxString::Format(_("Warning! This will delete configuration file \"%s\" and database file \"%s\" permanently, "
+                                                             "are you sure you want to delete these files?"), m_ConfigFilepath, m_DatabaseFilepath),
+                                    _("Clear app data"), wxYES_NO | wxNO_DEFAULT | wxCENTRE, wxDefaultPosition);
+
+    bool remove = false;
+
+    switch (clearDataDialog.ShowModal())
+    {
+        case wxID_YES:
+            remove = true;
+
+            if (remove)
+            {
+                bool configIsDeleted = wxRemoveFile(m_ConfigFilepath);
+
+                if (configIsDeleted)
+                    wxLogDebug("Deleted %s", m_ConfigFilepath);
+                else
+                    wxLogDebug("Could not delete %s", m_ConfigFilepath);
+
+                bool dbIsDeleted = wxRemoveFile(m_DatabaseFilepath);
+
+                if (dbIsDeleted)
+                    wxLogDebug("Deleted %s", m_DatabaseFilepath);
+                else
+                    wxLogDebug("Could not delete %s", m_DatabaseFilepath);
+
+                if (configIsDeleted && dbIsDeleted)
+                    m_InfoBar->ShowMessage(_("Successfully cleared app data"), wxICON_INFORMATION);
+                else
+                    wxMessageBox(_("Error! Could not clear app data"), _("Error!"), wxOK | wxCENTRE | wxICON_ERROR, this);
+            }
+            break;
+        case wxID_NO:
             break;
         default:
             break;
