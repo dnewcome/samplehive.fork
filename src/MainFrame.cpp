@@ -2533,7 +2533,7 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
 
             std::cout << search << std::endl;
 
-            for (auto data : dataset)
+            for (const auto& data : dataset)
             {
                 m_Library->AppendItem(data);
             }
