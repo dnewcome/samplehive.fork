@@ -21,6 +21,7 @@
 #pragma once
 
 #include <wx/app.h>
+#include <wx/cmdline.h>
 
 #include "MainFrame.hpp"
 
@@ -35,4 +36,6 @@ class App : public wxApp
 
     private:
         virtual bool OnInit();
+        virtual void OnInitCmdLine(wxCmdLineParser& parser);
+        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 };

@@ -63,3 +63,25 @@ bool App::OnInit()
     m_Frame->Show(true);
     return true;
 }
+
+void App::OnInitCmdLine(wxCmdLineParser& parser)
+{
+    wxApp::OnInitCmdLine(parser);
+
+    parser.AddSwitch("v", "version", "Shows the application version", 0);
+    parser.Parse(true);
+}
+
+bool App::OnCmdLineParsed(wxCmdLineParser& parser)
+{
+    if (!wxApp::OnCmdLineParsed(parser))
+        return false;
+
+    if (parser.Found("version"))
+    {
+        std::cout << "SampleHive v0.8.4_alpha.1" << std::endl;
+        return false;
+    }
+
+    return true;
+}
