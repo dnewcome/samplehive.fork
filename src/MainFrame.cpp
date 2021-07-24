@@ -398,7 +398,12 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_InfoBar,
+    // Initialize the database
+    m_database = std::make_unique<Database>(*m_InfoBar, m_DatabaseFilepath);
+    m_database->CreateTableSamples();
+    m_database->CreateTableHives();
+
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_database,
                                             m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
@@ -542,11 +547,6 @@ MainFrame::MainFrame()
     m_BottomRightPanelMainSizer->Fit(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->SetSizeHints(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->Layout();
-
-    // Initialize the database
-    m_database = std::make_unique<Database>(*m_InfoBar, m_DatabaseFilepath);
-    m_database->CreateTableSamples();
-    m_database->CreateTableHives();
 
     // Restore the data previously added to Library
     LoadDatabase();
