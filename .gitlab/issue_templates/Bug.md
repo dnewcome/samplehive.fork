@@ -1,6 +1,6 @@
 ## Quick Information
 <!-- This is to help replicate the issue as closely as possible !-->
-- **Operating System:**
+- **Operating System**
 - **Application version**
 
 ## What Happened?
