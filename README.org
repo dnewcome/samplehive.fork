@@ -25,6 +25,7 @@
   - [[#how-to-run-samplehive][How to run SampleHive?]]
   - [[#are-there-any-keybindings-for-samplehive][Are there any keybindings for SampleHive?]]
   - [[#can-i-configure-samplehive][Can I configure SampleHive?]]
+  - [[#how-do-i-contribute-to-the-samplehive][How do I contribute to the SampleHive?]]
 
 ** What is SampleHive?
 :PROPERTIES:
@@ -105,3 +106,9 @@ If you didn't provide a prefix, you can find SampleHive in your menu system or r
 :CUSTOM_ID: can-i-configure-samplehive
 :END:
 SampleHive comes with a =config.yaml= file, that is placed under =~/.config/SampleHive/config.yaml=, that you can edit to change some settings for it.
+
+** How do I contribute to the SampleHive?
+:PROPERTIES:
+:CUSTOM_ID: how-do-i-contribute-to-samplehive
+:END:
+Want to help by contributing to =SampleHive=, please check out [[https://gitlab.com/samplehive/sample-hive/-/blob/testing/CONTRIBUTING.org][CONTRIBUTING.org]] for more details.
