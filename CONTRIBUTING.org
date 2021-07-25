@@ -1,0 +1,229 @@
+#+TITLE: Contributing to SampleHive
+#+AUTHOR: Apoorv Singh
+#+DESCRIPTION: A simple, modern audio sample browser/manager for GNU/Linux.
+
+* Table Of Contents :toc:
+:PROPERTIES:
+:CUSTOM_ID: table-of-contents
+:END:
+- [[#contributing-to-samplehive][Contributing to SampleHive]]
+  - [[#what-should-i-know-before-i-get-started][What should I know before I get started?]]
+  - [[#how-can-i-contribute][How Can I Contribute?]]
+  - [[#styleguides][Styleguides]]
+  - [[#additional-notes][Additional Notes]]
+
+* Contributing to SampleHive
+:PROPERTIES:
+:CUSTOM_ID: contributing-to-samplehive
+:END:
+First off, thanks for taking the time to contribute!
+
+The following is a set of guidelines for contributing to [[https://gitlab.com/samplehive/sample-hive][SampleHive]], which is hosted on [[https://about.gitlab.com/][GitLab]]. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+
+** What should I know before I get started?
+:PROPERTIES:
+:CUSTOM_ID: what-should-i-know-before-i-get-started
+:END:
+** How Can I Contribute?
+:PROPERTIES:
+:CUSTOM_ID: how-can-i-contribute
+:END:
+*** Reporting Bugs
+:PROPERTIES:
+:CUSTOM_ID: reporting-bugs
+:END:
+This section guides you through submitting a bug report for [[https://gitlab.com/samplehive/sample-hive][SampleHive]]. Following these guidelines helps me and the community understand your report, reproduce the behavior, and find related reports.
+
+Before creating bug reports, please check [[#before-submitting-a-bug-report][this list]] as you might find out that you don't need to create one. When you are creating a bug report, please [[#how-do-i-submit-a-good-bug-report][include as many details as possible]]. Fill out [[https://gitlab.com/samplehive/sample-hive/-/blob/testing/.gitlab/issue_templates/Bug.md][the required template]], the information it asks for helps us resolve issues faster.
+
+#+begin_quote
+*Note:* If you find a *Closed* issue that seems like it is the same thing that you're experiencing, do not open a new issue, instead re-open the the old one, and add a comment there, stating any additional details you want to add.
+#+end_quote
+
+**** Before Submitting A Bug Report
+:PROPERTIES:
+:CUSTOM_ID: before-submitting-a-bug-report
+:END:
+- *Perform a cursory search* to see if the bug has already been reported. If it has, add a comment to the existing issue instead of opening a new one.
+
+**** How Do I Submit A (Good) Bug Report?
+:PROPERTIES:
+:CUSTOM_ID: how-do-i-submit-a-good-bug-report
+:END:
+Explain the problem and include additional details to help me reproduce the problem:
+- *Use a clear and descriptive title* for the issue to identify the problem.
+- *Describe the exact steps which reproduce the problem* in as many details as possible.
+- *Describe the behavior you observed after following the steps* and point out what exactly is the problem with that behavior.
+- *Explain which behavior you expected to see instead and why.*
+- *Include screenshots and animated GIFs* which show you following the described steps and clearly demonstrate the problem. *You can record the GIF using* [[https://github.com/phw/peek][Peek]]
+- *If you're reporting that SampleHive crashed*, include a crash report with a stack trace from the operating system.
+
+Include details about your configuration and environment:
+- *Which version of SampleHive are you using?* You can get the exact version by opening up the about dialog inside the application or you can run =SampleHive --version= in your terminal.
+- *What's the name and version of the Operating System you're using*?
+
+*** Suggesting Enhancements
+:PROPERTIES:
+:CUSTOM_ID: suggesting-enhancements
+:END:
+This section guides you through submitting an enhancement suggestion for SampleHive, including completely new features and minor improvements to existing functionality. Following these guidelines helps me and the community understand your suggestion and find related suggestions.
+
+Before creating enhancement suggestions, please check [[#before-submitting-an-enhancement-suggestion][this list]] as you might find out that you don't need to create one. When you are creating an enhancement suggestion, please [[#how-do-i-submit-a-good-enhancement-suggestion][include as many details as possible]]. Fill out [[https://gitlab.com/samplehive/sample-hive/-/blob/testing/.gitlab/issue_templates/FeatureRequest.md][the required template]], including the steps that you imagine you would take if the feature you're requesting existed.
+
+**** Before Submitting An Enhancement Suggestion
+:PROPERTIES:
+:CUSTOM_ID: before-submitting-an-enhancement-suggestion
+:END:
+- *Perform a cursory search* to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
+
+**** How Do I Submit A (Good) Enhancement Suggestion?
+:PROPERTIES:
+:CUSTOM_ID: how-do-i-submit-a-good-enhancement-suggestion
+:END:
+Enhancement suggestions are tracked as [[https://docs.gitlab.com/ee/user/project/issues/][GitLab issues]]. Create an issue and provide the following information:
+
+- *Use a clear and descriptive title* for the issue to identify the suggestion.
+- *Provide a step-by-step description of the suggested enhancement* in as many details as possible.
+- *Provide specific examples to demonstrate the steps*. Include copy/pasteable snippets which you use in those examples, as [[https://about.gitlab.com/handbook/markdown-guide/][Markdown code blocks]].
+- *Describe the current behavior* and *explain which behavior you expected to see instead* and why.
+- *Include screenshots and animated GIFs* which help you demonstrate the steps or point out the part of SampleHive which the suggestion is related to. You can use [[https://github.com/phw/peek][Peek]] to record GIFs.
+- *Explain why this enhancement would be useful* to most SampleHive users.
+- *List some other sample manager/browsers or similar applications where this enhancement exists.*
+- *Specify which version of SampleHive you're using.* You can get the exact version by opening up the about dialog inside the application or you can run =SampleHive --version= in your terminal.
+- *Specify the name and version of the Operating System you're using.*
+
+*** Pull Requests
+:PROPERTIES:
+:CUSTOM_ID: pull-requests
+:END:
+Please follow these steps to have your contribution considered by the maintainers:
+
+1. Follow the [[#styleguides][styleguides]]
+
+** Styleguides
+:PROPERTIES:
+:CUSTOM_ID: styleguides
+:END:
+*** Git Commit Messages
+:PROPERTIES:
+:CUSTOM_ID: git-commit-messages
+:END:
+- Use the present tense ("Add feature" not "Added feature")
+
+*** C++ Styleguide
+:PROPERTIES:
+:CUSTOM_ID: c-styleguide
+:END:
+- Formatting the body, spacing and where to put the reference or pointer symbol
+
+#+begin_src c++
+  // Use this
+  int Function(int* param, std::string& anotherParam)
+  {
+      // 4 spaces
+  }
+
+  // Instead of
+  int function ( int *param, std::string &another_param ) {
+      // Tabs
+  }
+#+end_src
+
+- Using =if= =else= =for= =while= or any of the similar statements
+
+  - You can leave the ={}= if there is only a single line of code after
+    the statements
+
+#+begin_src c++
+  // Use this:
+  if (condition)
+  {
+      // some code here
+  }
+  else
+  {
+      // some code here
+  }
+
+  // Instead of
+  if( condition ) {
+      // some code here
+  }
+  else {
+      // some code here
+  }
+#+end_src
+
+- Variable names
+
+#+begin_src c++
+  // Member variables
+  int m_SomeVar;    // for stack allocated
+  int* m_pSomeVar;  // for heap allocated
+  bool m_bSomeVar;  // for booleans
+
+  // Local variables
+  int some_var;   // for stack allocated
+  int* someVar;   // for heap allocated
+  bool some_var;  // for booleans
+#+end_src
+
+- Classes and structs
+
+#+begin_src c++
+  // Use this
+  class cMyClass : public cSomeOtherClass
+  {
+      public:
+          MyClass();
+          ~MyClass();
+      private:
+          // private stuff
+  };
+
+  // Instead of
+  class myClass : public someOtherClass {
+  public:
+      MyClass();
+      ~MyClass();
+  private:
+      // private stuff
+  };
+#+end_src
+
+** Additional Notes
+:PROPERTIES:
+:CUSTOM_ID: additional-notes
+:END:
+*** Issue and Pull Request Labels
+:PROPERTIES:
+:CUSTOM_ID: issue-and-pull-request-labels
+:END:
+This section lists the labels I use to help me track and manage issues and pull requests.
+
+**** Issue Labels
+:PROPERTIES:
+:CUSTOM_ID: issue-labels
+:END:
+| Label name                | Description                                                                                                |
+|---------------------------+------------------------------------------------------------------------------------------------------------|
+| =Enhancement=             | Issues related to improving the project in some way.                                                       |
+| =Bug=                     | Confirmed bugs or reports that are very likely to be bugs.                                                 |
+| =Question=                | Questions more than bug reports or feature requests (e.g. how do I do X).                                  |
+| =Feedback=                | General feedback more than bug reports or feature requests.                                                |
+| =Help wanted=             | Issues about user(s) needing help.                                                                         |
+| =More information needed= | More information needs to be collected about these problems or feature requests (e.g. steps to reproduce). |
+| =Needs reproduction=      | Likely bugs, but haven't been reliably reproduced.                                                         |
+| =Duplicate=               | Issues which are duplicates of other issues, i.e. they have been reported before.                          |
+
+**** Pull Request Labels
+:PROPERTIES:
+:CUSTOM_ID: pull-request-labels
+:END:
+| Label name         | Description                                                                              |
+|--------------------+------------------------------------------------------------------------------------------|
+| =Work in progress= | Pull requests which are still being worked on, more changes will follow.                 |
+| =Needs review=     | Pull requests which need code review, and approval from maintainers.                     |
+| =Under review=     | Pull requests being reviewed by maintainers.                                             |
+| =Requires changes= | Pull requests which need to be updated based on review comments and then reviewed again. |
+| =Needs testing=    | Pull requests which need manual testing.                                                 |
