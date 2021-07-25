@@ -23,4 +23,4 @@
 - [ ] Medium (This will bring a good increase in performance/productivity/usability)
 - [ ] Low (anything else e.g., trivial, minor improvements)
 
-/label ~Feature request
+/label ~"Feature request"
