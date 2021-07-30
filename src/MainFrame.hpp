@@ -106,16 +106,22 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel controls
         wxPanel* m_TopPanel;
+        wxPanel* m_TopWaveformPanel;
+        wxPanel* m_TopControlsPanel;
         wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
-        wxStaticBitmap* m_WaveformViewer;
+        wxBitmap m_WaveformBitmap ;
         wxBoxSizer* m_BrowserControlSizer;
         wxButton* m_PlayButton;
         wxToggleButton* m_LoopButton;
         wxButton* m_StopButton;
         wxButton* m_SettingsButton;
         wxToggleButton* m_MuteButton;
+        wxToggleButton* m_LoopPointAButton;
+        wxToggleButton* m_LoopPointBButton;
+        wxTextCtrl* m_LoopPointAText;
+        wxTextCtrl* m_LoopPointBText;
         wxStaticText* m_SamplePosition;
         wxSlider* m_VolumeSlider;
         wxCheckBox* m_AutoPlayCheck;
@@ -186,6 +192,8 @@ class MainFrame : public wxFrame
         void OnSlideVolume(wxScrollEvent& event);
         void OnReleaseVolumeSlider(wxScrollEvent& event);
         void OnClickSettings(wxCommandEvent& event);
+        void OnClickLoopPointsButton(wxCommandEvent& event);
+        void OnEnterLoopPoints(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // DirCtrl event handlers
@@ -263,6 +271,12 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Call after frame creation
         void SetAfterFrameCreate();
+
+        // Drawing playhead and waveform
+        void OnPaint(wxPaintEvent& event);
+        void RenderPlayhead(wxDC& dc);
+        void UpdateWaveformBitmap();
+        void OnHoverPlayhead(wxMouseEvent& event);
 
         // -------------------------------------------------------------------
         friend class App;

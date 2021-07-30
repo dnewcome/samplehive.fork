@@ -75,6 +75,7 @@ wx = dependency('wxwidgets', version: '>=3.0.4')
 taglib = dependency('taglib', version: '>=1.11')
 sqlite3 = dependency('sqlite3')
 yaml = dependency('yaml-cpp')
+snd = dependency('sndfile')
 
 install_subdir(
   'assets',
@@ -86,5 +87,5 @@ executable('SampleHive',
            sources: src,
            cpp_args: [wx_cxx_flags],
            link_args: [wx_libs],
-           dependencies: [wx, taglib, sqlite3, yaml],
+           dependencies: [wx, taglib, sqlite3, yaml, snd],
            install: true)

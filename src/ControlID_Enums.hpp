@@ -35,6 +35,8 @@ enum ControlIDs
     BC_Settings,
     BC_Loop,
     BC_Stop,
+    BC_LoopPointButton,
+    BC_LoopPointText,
     BC_Mute,
     BC_Autoplay,
     BC_Volume,
