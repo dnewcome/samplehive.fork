@@ -30,7 +30,6 @@
 #include <wx/variant.h>
 
 #include "Database.hpp"
-#include "SettingsDialog.hpp"
 
 Database::Database(wxInfoBar& infoBar)
     : m_InfoBar(infoBar)

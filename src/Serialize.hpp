@@ -76,6 +76,8 @@ class Serializer
         // Display settings
         void SerializeDisplaySettings(wxFont& font);
         FontType DeserializeDisplaySettings() const;
+        void SerializeWaveformColour(wxColour& colour);
+        wxColour DeserializeWaveformColour() const;
 
         // -------------------------------------------------------------------
         // Auto import settings

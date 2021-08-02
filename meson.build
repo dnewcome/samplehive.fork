@@ -57,6 +57,7 @@ src = [
   'src/Sample.cpp',
   'src/Serialize.cpp',
   'src/Tags.cpp',
+  'src/WaveformViewer.cpp',
 
 ]
 

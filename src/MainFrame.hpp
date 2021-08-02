@@ -55,6 +55,8 @@
 #include <taglib/fileref.h>
 #include <taglib/tstring.h>
 
+#include "WaveformViewer.hpp"
+
 struct FileInfo
 {
     wxString Path;
@@ -106,12 +108,11 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel controls
         wxPanel* m_TopPanel;
-        wxPanel* m_TopWaveformPanel;
+        WaveformViewer* m_TopWaveformPanel;
         wxPanel* m_TopControlsPanel;
         wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
-        wxBitmap m_WaveformBitmap ;
         wxBoxSizer* m_BrowserControlSizer;
         wxButton* m_PlayButton;
         wxToggleButton* m_LoopButton;
@@ -271,12 +272,6 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Call after frame creation
         void SetAfterFrameCreate();
-
-        // Drawing playhead and waveform
-        void OnPaint(wxPaintEvent& event);
-        void RenderPlayhead(wxDC& dc);
-        void UpdateWaveformBitmap();
-        void OnHoverPlayhead(wxMouseEvent& event);
 
         // -------------------------------------------------------------------
         friend class App;

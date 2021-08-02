@@ -61,6 +61,7 @@ enum ControlIDs
     SD_FontType,
     SD_FontSize,
     SD_FontBrowseButton,
+    SD_WaveformColourPickerCtrl,
 
     // -------------------------------------------------------------------
     // App Menu items

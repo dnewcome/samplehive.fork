@@ -51,8 +51,10 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
 
     m_DisplayTopSizer = new wxBoxSizer(wxVERTICAL);
     m_DisplayFontSizer = new wxBoxSizer(wxHORIZONTAL);
+    m_WaveformColourSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxString fontChoices[] = {"System default"};
+    Serializer serializer(m_ConfigFilepath);
     // m_RowHeightText = new wxStaticText();
     m_FontTypeText = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Font", wxDefaultPosition, wxDefaultSize, 0);
     // m_RowHeight = new wxChoice();
@@ -61,6 +63,9 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_FontSize = new wxSpinCtrl(m_DisplaySettingPanel, SD_FontSize, "Default", wxDefaultPosition, wxDefaultSize);
     m_FontSize->SetValue(window->GetFont().GetPointSize());
     m_FontBrowseButton = new wxButton(m_DisplaySettingPanel, SD_FontBrowseButton, "Select font", wxDefaultPosition, wxDefaultSize, 0);
+    m_WaveformColourLabel = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Waveform colour", wxDefaultPosition, wxDefaultSize, 0);
+    m_WaveformColourPickerCtrl = new wxColourPickerCtrl(m_DisplaySettingPanel, SD_WaveformColourPickerCtrl, serializer.DeserializeWaveformColour(),
+                                                        wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE);
 
     m_CollectionSettingPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -108,6 +113,7 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     Bind(wxEVT_BUTTON, &Settings::OnClickBrowseAutoImportDir, this, SD_BrowseAutoImportDir);
     Bind(wxEVT_BUTTON, &Settings::OnClickConfigBrowse, this, SD_BrowseConfigDir);
     Bind(wxEVT_BUTTON, &Settings::OnClickDatabaseBrowse, this, SD_BrowseDatabaseDir);
+    Bind(wxEVT_COLOURPICKER_CHANGED, &Settings::OnChangeWaveformColour, this, SD_WaveformColourPickerCtrl);
 
     // Adding controls to sizers
     m_NotebookSizer->Add(m_Notebook, 1, wxALL | wxEXPAND, 2);
@@ -124,8 +130,11 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_DisplayFontSizer->Add(m_FontType, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_DisplayFontSizer->Add(m_FontSize, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_DisplayFontSizer->Add(m_FontBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 2);
+    m_WaveformColourSizer->Add(m_WaveformColourLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_WaveformColourSizer->Add(m_WaveformColourPickerCtrl, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
-    m_DisplayTopSizer->Add(m_DisplayFontSizer, 1, wxALL | wxEXPAND, 2);
+    m_DisplayTopSizer->Add(m_DisplayFontSizer, 0, wxALL | wxEXPAND, 2);
+    m_DisplayTopSizer->Add(m_WaveformColourSizer, 0, wxALL | wxEXPAND, 2);
 
     m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT, 2);
     m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
@@ -424,6 +433,27 @@ wxString Settings::GetImportDirPath()
         dir = m_ImportDirLocation->GetValue();
 
     return dir;
+}
+
+void Settings::OnChangeWaveformColour(wxColourPickerEvent& event)
+{
+    Serializer serializer(m_ConfigFilepath);
+    wxColour colour = m_WaveformColourPickerCtrl->GetColour();
+
+    wxColour wave_colour = serializer.DeserializeWaveformColour();
+
+    if (colour != wave_colour)
+    {
+        wxLogDebug("Waveform colour changed.");
+        bWaveformColourChanged = true;
+
+        serializer.SerializeWaveformColour(colour);
+    }
+    else
+    {
+        wxLogDebug("Waveform colour not changed.");
+        bWaveformColourChanged = false;
+    }
 }
 
 Settings::~Settings(){}

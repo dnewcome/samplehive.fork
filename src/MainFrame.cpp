@@ -31,9 +31,6 @@
 #include <wx/artprov.h>
 #include <wx/busyinfo.h>
 #include <wx/dataview.h>
-#include <wx/dcclient.h>
-#include <wx/dcbuffer.h>
-#include <wx/dc.h>
 #include <wx/debug.h>
 #include <wx/defs.h>
 #include <wx/dir.h>
@@ -52,20 +49,15 @@
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 #include <wx/object.h>
-#include <wx/pen.h>
 #include <wx/progdlg.h>
 #include <wx/stdpaths.h>
 #include <wx/stringimpl.h>
-#include <wx/textctrl.h>
 #include <wx/textdlg.h>
 #include <wx/valtext.h>
 #include <wx/variant.h>
 #include <wx/vector.h>
 #include <wx/utils.h>
 #include <wx/unix/stdpaths.h>
-#include <wx/wxcrt.h>
-
-#include <sndfile.hh>
 
 #include "MainFrame.hpp"
 #include "ControlID_Enums.hpp"
@@ -86,7 +78,6 @@
 #define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_256x256.png"
 #define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_filled_16x16.png"
 #define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_empty_16x16.png"
-#define WAVEFORM_SVG SAMPLEHIVE_DATADIR "/assets/waveform.svg"
 #define APP_CONFIG_DIR wxStandardPaths::Get().GetUserConfigDir() + "/.config/SampleHive"
 #define APP_DATA_DIR wxStandardPaths::Get().GetDocumentsDir() + "/.local/share/SampleHive"
 #define CONFIG_FILEPATH APP_CONFIG_DIR + "/config.yaml"
@@ -254,7 +245,6 @@ MainFrame::MainFrame()
     m_TopSplitter->SplitHorizontally(m_TopPanel, m_BottomSplitter);
     m_BottomSplitter->SplitVertically(m_BottomLeftPanel, m_BottomRightPanel);
 
-    m_TopWaveformPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER);
     m_TopControlsPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER);
 
     // Looping region controls
@@ -282,11 +272,6 @@ MainFrame::MainFrame()
     m_VolumeSlider->SetMaxSize(wxSize(120, -1));
     m_SamplePosition = new wxStaticText(m_TopControlsPanel, BC_SamplePosition, "--:--/--:--",
                                         wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
-
-    // Temporary widget to show a waveform sample image
-    // TODO: Replace with actual waveform display
-    // m_WaveformBitmap.LoadFile(WAVEFORM_SVG);
-    // m_WaveformViewer = new wxStaticBitmap(m_TopWaveformPanel, wxID_ANY, m_WaveformBitmap);
 
     // Initialize browser control buttons
     m_PlayButton = new wxButton(m_TopControlsPanel, BC_Play, _("Play"), wxDefaultPosition, wxDefaultSize, 0);
@@ -394,6 +379,8 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar, m_ConfigFilepath, m_DatabaseFilepath);
+
     // Binding events.
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddDirectory, this, MN_AddDirectory);
@@ -446,9 +433,6 @@ MainFrame::MainFrame()
     Bind(wxEVT_BUTTON, &MainFrame::OnClickAddHive, this, BC_HiveAdd);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickRemoveHive, this, BC_HiveRemove);
 
-    m_TopWaveformPanel->Bind(wxEVT_PAINT, &MainFrame::OnPaint, this);
-    m_TopWaveformPanel->Bind(wxEVT_MOTION, &MainFrame::OnHoverPlayhead, this);
-
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);
 
@@ -468,8 +452,6 @@ MainFrame::MainFrame()
     m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-
-    // m_WaveformDisplaySizer->Add(m_WaveformViewer, 1, wxALL | wxEXPAND, 2);
 
     m_TopPanelMainSizer->Add(m_TopWaveformPanel, 1, wxALL | wxEXPAND, 2);
     m_TopPanelMainSizer->Add(m_TopControlsPanel, 0, wxALL | wxEXPAND, 2);
@@ -568,6 +550,11 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
             {
                 OnAutoImportDir(settings->GetImportDirPath());
                 RefreshDatabase();
+            }
+            if (settings->IsWaveformColourChanged())
+            {
+                m_TopWaveformPanel->SetBitmapDirty(true);
+                m_TopWaveformPanel->Refresh();
             }
             break;
         case wxID_CANCEL:
@@ -957,6 +944,10 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 
     PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
 
+    // Update waveform bitmap
+    m_TopWaveformPanel->SetBitmapDirty(true);
+    m_TopWaveformPanel->Refresh();
+
     m_MediaCtrl->Play();
 
     m_Timer->Start(100, wxTIMER_CONTINUOUS);
@@ -1045,7 +1036,7 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
 
     m_SamplePosition->SetLabel(wxString::Format(wxT("%s/%s"), position.c_str(), duration.c_str()));
 
-    Refresh();
+    m_TopWaveformPanel->Refresh();
 }
 
 void MainFrame::OnCheckAutoplay(wxCommandEvent& event)
@@ -1104,6 +1095,10 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
         wxLogDebug("Triggered");
         return;
     }
+
+    // Update the waveform bitmap
+    m_TopWaveformPanel->SetBitmapDirty(true);
+    m_TopWaveformPanel->Refresh();
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
@@ -2945,236 +2940,6 @@ void MainFrame::OnClickLoopPointsButton(wxCommandEvent& event)
 void MainFrame::OnEnterLoopPoints(wxCommandEvent& event)
 {
     wxLogDebug("Loop point text changed");
-}
-
-void MainFrame::OnPaint(wxPaintEvent& event)
-{
-    wxPaintDC dc(m_TopWaveformPanel);
-
-    const wxSize size = m_TopWaveformPanel->GetClientSize();
-
-    if(!m_WaveformBitmap.IsOk()
-       || m_WaveformBitmap.IsNull()
-       || m_WaveformBitmap.GetWidth() != size.x
-       || m_WaveformBitmap.GetHeight() != size.y)
-    {
-        m_WaveformBitmap = wxBitmap(wxImage(size.x, size.y), 32);
-        // m_WaveformBitmap.Create(size.x, size.y, 32);
-        wxLogDebug("Updating waveform bitmap..");
-        UpdateWaveformBitmap();
-    }
-    else
-        wxLogDebug("Cannot update waveform bitmap..");
-
-    dc.DrawBitmap(m_WaveformBitmap, 0, 0, false);
-    // m_WaveformBitmap.SaveFile("waveform.png", wxBITMAP_TYPE_PNG);
-
-    RenderPlayhead(dc);
-}
-
-void MainFrame::RenderPlayhead(wxDC& dc)
-{
-    int selected_row = m_Library->GetSelectedRow();
-
-    if (selected_row < 0)
-        return;
-
-    wxString selected = m_Library->GetTextValue(selected_row, 1);
-    std::string path = GetFilenamePathAndExtension(selected).Path.ToStdString();
-
-    Tags tags(path);
-
-    int length = tags.GetAudioInfo().length;
-    wxLogDebug("Len: %d", length);
-
-    double position = m_MediaCtrl->Tell();
-    wxLogDebug("Pos: %f", position);
-
-    m_Timer->Start(1, wxTIMER_CONTINUOUS);
-
-    int panel_width = m_TopWaveformPanel->GetSize().GetWidth();
-    double line_pos = panel_width * (position / length);
-
-    wxLogDebug("Drawing at: %f", line_pos);
-
-    // Draw the triangle
-    dc.SetPen(wxPen(wxColor(255, 0, 0, 255), 8, wxPENSTYLE_SOLID));
-    dc.DrawLine(line_pos - 5, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-                line_pos, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1) + 5);
-    dc.DrawLine(line_pos + 5, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-                line_pos, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight()- 1) + 5);
-
-    // Draw the line
-    dc.SetPen(wxPen(wxColor(255, 0, 0, 255), 2, wxPENSTYLE_SOLID));
-    dc.DrawLine(line_pos, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-                line_pos, m_TopWaveformPanel->GetSize().GetHeight() - 1);
-
-    // For testing only
-    // dc.DrawLine(100 - 5, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-    //             100, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1) + 5);
-    // dc.DrawLine(100 + 5, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-    //             100, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight()- 1) + 5);
-
-    // // Draw the line
-    // dc.SetPen(wxPen(wxColor(255, 0, 0, 255), 2, wxPENSTYLE_SOLID));
-    // dc.DrawLine(100, m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-    //             100, m_TopWaveformPanel->GetSize().GetHeight() - 1);
-}
-
-void MainFrame::UpdateWaveformBitmap()
-{
-    Database db(*m_InfoBar);
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-
-    int selected_row = m_Library->GetSelectedRow();
-
-    if (selected_row < 0)
-        return;
-
-    wxString selection = m_Library->GetTextValue(selected_row, 1);
-
-    wxString filepath_with_extension = db.GetSamplePathByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                  selection.BeforeLast('.').ToStdString());
-    wxString filepath_without_extension = db.GetSamplePathByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                     selection.ToStdString());
-
-    std::string extension = settings.ShouldShowFileExtension() ?
-        db.GetSampleFileExtension(static_cast<std::string>(DATABASE_FILEPATH), selection.ToStdString()) :
-        db.GetSampleFileExtension(static_cast<std::string>(DATABASE_FILEPATH), selection.BeforeLast('.').ToStdString());
-
-    wxString path = selection.Contains(wxString::Format(".%s", extension)) ?
-        filepath_with_extension : filepath_without_extension;
-
-    SndfileHandle snd_file(path);
-
-    int channels = snd_file.channels();
-    double sample_rate = snd_file.samplerate();
-    sf_count_t frames = snd_file.frames();
-
-    std::vector<float> sample;
-    sample.resize(frames * channels);
-
-    std::vector<signed char> waveform;
-
-    snd_file.read(&sample.at(0), frames * channels);
-
-    float display_width = m_TopWaveformPanel->GetSize().GetWidth();
-    float display_height = m_TopWaveformPanel->GetSize().GetHeight();
-
-    double max_value;
-    snd_file.command(SFC_CALC_NORM_SIGNAL_MAX, &max_value, sizeof(max_value));
-
-    float normalized_value = max_value > 1.0f ? 1.0f : 1.0f / max_value;
-
-    float samples_per_pixel = static_cast<float>(frames) / (float)display_width;
-    // float samples_per_pixel = waveform.size() / float(display_width);
-
-    if (channels == 2)
-    {
-        for (int i = 0, j = 0 ; i < frames; i++)
-        {
-            float sum = (((sample[j] + sample[j + 1]) * 0.5f) * normalized_value) * float(display_height / 2.0f);
-            waveform.push_back(sum);
-            j += 2;
-        }
-    }
-    else
-    {
-        waveform.resize(frames);
-
-        for (int i = 0; i < frames; i++)
-        {
-            waveform[i] = (sample[i] * normalized_value) * float(display_height / 2.0f);
-        }
-    }
-
-    // float minimap_height = 0.0f;
-    // // make minimap
-    // std::vector<char> miniMap;
-    // miniMap.resize(display_width);
-    // // float samples_per_pixel = static_cast<float>(sampleLength) / (float)display_width;
-    // float fIndex;
-    // uint iIndex;
-    // for (uint16_t i = 0; i < display_width; i++)
-    // {
-    //     fIndex = float(i) * samples_per_pixel;
-    //     iIndex = fIndex;
-    //     auto minmax = std::minmax_element(waveform.begin() + iIndex, waveform.begin() + iIndex + int(samples_per_pixel));
-    //     signed char min = std::abs(*minmax.first);
-    //     signed char max = std::abs(*minmax.second);
-    //     signed char maxValue = std::max(min, max);
-    //     miniMap[i] = (float)maxValue / (float)(display_height / 2) * (float)minimap_height;
-    // }
-
-    /*===========================Draw code============================*/
-    wxMemoryDC mdc(m_WaveformBitmap);
-
-    if (!mdc.IsOk())
-    {
-        wxLogDebug("MDC NOT OK");
-        return;
-    }
-    else
-        wxLogDebug("MDC OK");
-
-    mdc.SetPen(wxPen(wxColour(255, 255, 255, 255), 2, wxPENSTYLE_SOLID));
-
-    for(int i = 0; i < waveform.size() - 1; i++)
-    {
-        // dc.DrawPoint((display_width * static_cast<float>(i)) / waveform.size(),
-        //              (waveform[i] / samples_per_pixel) + float(display_height / 2.0f));
-
-        // dc.DrawLine((display_width * static_cast<float>(i)) / waveform.size(),
-        //             waveform[i] + float(display_height / 2.0f),
-        //             (display_width * static_cast<float>(i)) / waveform.size(),
-        //             waveform[i] + float(display_height / 2.0f));
-
-        mdc.DrawLine((display_width * i) / waveform.size(), waveform[i] + display_height / 2.0f,
-                     (display_width * i) / waveform.size(), (waveform[i] / samples_per_pixel) + display_height / 2.0f);
-    }
-
-    // if (!mdc.IsOk())
-    //     return;
-
-    // dc.Blit(m_TopWaveformPanel->GetSize().GetWidth() - (m_TopWaveformPanel->GetSize().GetWidth() - 1),
-    //         m_TopWaveformPanel->GetSize().GetHeight() - (m_TopWaveformPanel->GetSize().GetHeight() - 1),
-    //         m_WaveformBitmap.GetWidth(), m_WaveformBitmap.GetHeight(), &mdc, 0, 0);
-}
-
-void MainFrame::OnHoverPlayhead(wxMouseEvent& event)
-{
-    int selected_row = m_Library->GetSelectedRow();
-
-    if (selected_row < 0)
-        return;
-
-    wxString selected = m_Library->GetTextValue(selected_row, 1);
-    std::string path = GetFilenamePathAndExtension(selected).Path.ToStdString();
-
-    Tags tags(path);
-
-    int length = tags.GetAudioInfo().length;
-
-    double position = m_MediaCtrl->Tell();
-
-    int panel_width = m_TopWaveformPanel->GetSize().GetWidth();
-    double line_pos = panel_width * (position / length);
-
-    wxPoint pos = event.GetPosition();
-
-    if (pos.x >= line_pos - (line_pos - 5) && pos.x >= line_pos - (line_pos + 5) && pos.y <= line_pos + 5 && pos.y >= line_pos - 5)
-    {
-        this->SetCursor(wxCursor(wxCURSOR_CROSS));
-        wxLogDebug("Capturing mouse..");
-        // SetBackgroundColour("Green");
-    }
-    else
-    {
-        SetCursor(wxCursor(wxCURSOR_ARROW));
-        // SetBackgroundColour("Brown");
-    }
-
-    wxLogDebug("Mouse at: '(%d, %d)'", pos.x, pos.y);
 }
 
 MainFrame::~MainFrame(){}

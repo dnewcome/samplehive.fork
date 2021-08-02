@@ -21,6 +21,7 @@
 #include <fstream>
 #include <sstream>
 
+#include <wx/colour.h>
 #include <wx/log.h>
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
@@ -38,6 +39,8 @@ Serializer::Serializer(const std::string& filepath)
     wxFont font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
     std::string system_font_face = font.GetFaceName().ToStdString();
     int system_font_size = font.GetPointSize();
+
+    wxColour colour = "#FE9647";
 
     std::string dir = wxStandardPaths::Get().GetDocumentsDir().ToStdString();
 
@@ -71,6 +74,11 @@ Serializer::Serializer(const std::string& filepath)
         m_Emitter << YAML::Key << "Family" << YAML::Value << system_font_face;
         m_Emitter << YAML::Key << "Size" << YAML::Value << system_font_size;
         m_Emitter << YAML::EndMap;
+        m_Emitter << YAML::EndMap << YAML::Newline;
+
+        m_Emitter << YAML::Newline << YAML::Key << "Waveform";
+        m_Emitter << YAML::BeginMap;
+        m_Emitter << YAML::Key << "Colour" << YAML::Value << colour.GetAsString().ToStdString();
         m_Emitter << YAML::EndMap << YAML::Newline;
 
         m_Emitter << YAML::Newline << YAML::Key << "Collection";
@@ -247,6 +255,64 @@ FontType Serializer::DeserializeDisplaySettings() const
     }
 
     return { face, size };
+}
+
+void Serializer::SerializeWaveformColour(wxColour& colour)
+{
+    YAML::Emitter out;
+
+    std::string colour_string = colour.GetAsString(wxC2S_HTML_SYNTAX).ToStdString();
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto waveform = config["Waveform"])
+        {
+            wxLogDebug("Changing waveform colour");
+            wxLogDebug("Waveform colour: %s", colour_string);
+
+            waveform["Colour"] = colour_string;
+
+            out << config;
+
+            std::ofstream ofstrm(m_Filepath);
+            ofstrm << out.c_str();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot store waveform colour.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+wxColour Serializer::DeserializeWaveformColour() const
+{
+    std::string colour;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto waveform = config["Waveform"])
+        {
+            colour = waveform["Colour"].as<std::string>();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot fetch waveform colour.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+    return static_cast<wxString>(colour);
 }
 
 void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& checkBox)
