@@ -22,6 +22,7 @@
 
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
+#include <wx/filefn.h>
 #include <wx/gdicmn.h>
 #include <wx/log.h>
 
@@ -32,13 +33,12 @@
 #include "SettingsDialog.hpp"
 #include "Serialize.hpp"
 #include "Tags.hpp"
-#include "wx/filefn.h"
 
-WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
+WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxStatusBar& statusbar, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
                                wxTimer& timer, wxInfoBar& infoBar, const std::string& configFilepath, const std::string& databaseFilepath)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_MediaCtrl(mediaCtrl), m_Timer(timer),
-      m_InfoBar(infoBar), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl), m_Timer(timer),
+      m_StatusBar(statusbar), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     Bind(wxEVT_PAINT, &WaveformViewer::OnPaint, this);
     Bind(wxEVT_MOTION, &WaveformViewer::OnHoverPlayhead, this);
@@ -93,17 +93,17 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
     Tags tags(path);
 
     int length = tags.GetAudioInfo().length;
-    // wxLogDebug("Sample length: %d", length);
+    wxLogDebug("Sample length: %d", length);
 
     double position = m_MediaCtrl.Tell();
-    // wxLogDebug("Current Sample Position: %f", position);
+    wxLogDebug("Current Sample Position: %f", position);
 
     m_Timer.Start(5, wxTIMER_CONTINUOUS);
 
     int panel_width = this->GetSize().GetWidth();
     double line_pos = panel_width * (position / length);
 
-    // wxLogDebug("Drawing playhead at: %f", line_pos);
+    wxLogDebug("Drawing playhead at: %f", line_pos);
 
     m_PlayheadColour = wxColor(255, 0, 0, 255);
 
@@ -193,7 +193,6 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     m_WaveformColour = serializer.DeserializeWaveformColour();
 
-    wxLogDebug("Changing waveform colour to: %s", m_WaveformColour.GetAsString());
     mdc.SetPen(wxPen(wxColour(m_WaveformColour), 2, wxPENSTYLE_SOLID));
 
     wxLogDebug("Drawing bitmap..");
@@ -238,16 +237,14 @@ void WaveformViewer::OnHoverPlayhead(wxMouseEvent& event)
 
     if (abs(pos.x - line_pos) <= 5 && pos.y <= 5)
     {
-        SetCursor(wxCursor(wxCURSOR_CLOSED_HAND));
+        SetCursor(wxCursor(wxCURSOR_HAND));
         wxLogDebug("Cursor on playhead..");
     }
     else
     {
         SetCursor(wxCURSOR_ARROW);
-        return;
+        wxLogDebug("Mouse at: '(%d, %d)'", pos.x, pos.y);
     }
-
-    wxLogDebug("Mouse at: '(%d, %d)'", pos.x, pos.y);
 }
 
 void WaveformViewer::OnGrabPlayhead(wxMouseEvent& event)
@@ -311,10 +308,19 @@ void WaveformViewer::OnReleasePlayhead(wxMouseEvent& event)
 
     double seek_to = ((double)pos.x / panel_width) * length;
 
+    if (!wxWindow::HasCapture())
+    {
+        wxLogDebug("Window doesn't have capture skipping..");
+        return;
+    }
+
     wxWindow::ReleaseMouse();
     SetCursor(wxCURSOR_ARROW);
     wxLogDebug("Mouse released playhead..");
 
-    m_MediaCtrl.Seek(seek_to, wxFromCurrent);
-    // m_MediaCtrl.Play();
+    m_MediaCtrl.Seek(seek_to, wxFromStart);
+
+    m_StatusBar.PushStatusText(wxString::Format(_("Now playing: %s"), selected), 1);
+
+    m_MediaCtrl.Play();
 }

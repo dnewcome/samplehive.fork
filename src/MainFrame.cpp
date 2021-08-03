@@ -379,7 +379,7 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar, m_ConfigFilepath, m_DatabaseFilepath);
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_StatusBar, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar, m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);

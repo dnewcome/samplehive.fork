@@ -29,13 +29,14 @@
 #include <wx/mediactrl.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
+#include <wx/statusbr.h>
 #include <wx/timer.h>
 #include <wx/window.h>
 
 class WaveformViewer : public wxPanel
 {
     public:
-        WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
+        WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxStatusBar& statusbar, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
                        wxTimer& timer, wxInfoBar& infoBar, const std::string& configFilepath, const std::string& databaseFilepath);
         ~WaveformViewer();
 
@@ -48,6 +49,7 @@ class WaveformViewer : public wxPanel
         wxInfoBar& m_InfoBar;
         wxMediaCtrl& m_MediaCtrl;
         wxTimer& m_Timer;
+        wxStatusBar& m_StatusBar;
 
         const std::string& m_ConfigFilepath;
         const std::string& m_DatabaseFilepath;
