@@ -42,6 +42,13 @@ class WaveformViewer : public wxPanel
 
     private:
         // -------------------------------------------------------------------
+        struct LoopPoints
+        {
+            double A, B;
+        };
+
+    private:
+        // -------------------------------------------------------------------
         wxWindow* m_ParentFrame;
         wxWindow* m_Window;
 
@@ -60,20 +67,38 @@ class WaveformViewer : public wxPanel
         wxColour m_PlayheadColour;
         wxColour m_WaveformColour;
 
+        // -------------------------------------------------------------------
+        // Selection area coordinates
+        wxPoint m_AnchorPoint;
+        wxPoint m_CurrentPoint;
+
     private:
         // -------------------------------------------------------------------
-        bool bBitmapDirty;
+        bool bBitmapDirty = false;
+        bool bSelectRange = false;
+        bool bDrawSelectedArea = false;
+        bool bAreaSelected = false;
 
     private:
         // -------------------------------------------------------------------
         void OnPaint(wxPaintEvent& event);
         void RenderPlayhead(wxDC& dc);
         void UpdateWaveformBitmap();
-        void OnHoverPlayhead(wxMouseEvent& event);
-        void OnGrabPlayhead(wxMouseEvent& event);
-        void OnReleasePlayhead(wxMouseEvent& event);
+
+        // -------------------------------------------------------------------
+        void OnMouseMotion(wxMouseEvent& event);
+        void OnMouseLeftButtonDown(wxMouseEvent& event);
+        void OnMouseLeftButtonUp(wxMouseEvent& event);
+
+        // -------------------------------------------------------------------
+        void OnControlKeyUp(wxKeyEvent& event);
+        void OnControlKeyDown(wxKeyEvent& event);
+
+    public:
+        LoopPoints GetLoopPoints();
 
     public:
         inline bool IsBitmapDirty() { return bBitmapDirty; }
         inline void SetBitmapDirty(bool dirty) { bBitmapDirty = dirty; }
+        inline bool IsAreaSelected() { return bAreaSelected; }
 };

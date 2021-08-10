@@ -20,11 +20,14 @@
 
 #include <vector>
 
+#include <wx/brush.h>
 #include <wx/dcclient.h>
+#include <wx/defs.h>
 #include <wx/dcmemory.h>
 #include <wx/filefn.h>
 #include <wx/gdicmn.h>
 #include <wx/log.h>
+#include <wx/pen.h>
 
 #include <sndfile.hh>
 
@@ -40,10 +43,14 @@ WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxStatus
       m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl), m_Timer(timer),
       m_StatusBar(statusbar), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
+    this->SetDoubleBuffered(true);
+
     Bind(wxEVT_PAINT, &WaveformViewer::OnPaint, this);
-    Bind(wxEVT_MOTION, &WaveformViewer::OnHoverPlayhead, this);
-    Bind(wxEVT_LEFT_DOWN, &WaveformViewer::OnGrabPlayhead, this);
-    Bind(wxEVT_LEFT_UP, &WaveformViewer::OnReleasePlayhead, this);
+    Bind(wxEVT_MOTION, &WaveformViewer::OnMouseMotion, this);
+    Bind(wxEVT_LEFT_DOWN, &WaveformViewer::OnMouseLeftButtonDown, this);
+    Bind(wxEVT_LEFT_UP, &WaveformViewer::OnMouseLeftButtonUp, this);
+    // Bind(wxEVT_KEY_DOWN, &WaveformViewer::OnControlKeyDown, this);
+    Bind(wxEVT_KEY_UP, &WaveformViewer::OnControlKeyUp, this);
 }
 
 WaveformViewer::~WaveformViewer()
@@ -57,10 +64,10 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
 
     const wxSize& size = m_Window->GetClientSize();
 
-    if(!m_WaveformBitmap.IsOk()
-       || m_WaveformBitmap.GetWidth() != size.x
-       || m_WaveformBitmap.GetHeight() != size.y
-       || bBitmapDirty)
+    if (!m_WaveformBitmap.IsOk()
+        || m_WaveformBitmap.GetWidth() != size.x
+        || m_WaveformBitmap.GetHeight() != size.y
+        || bBitmapDirty)
     {
         wxLogDebug("Updating waveform bitmap..");
 
@@ -76,6 +83,26 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
     // m_WaveformBitmap.SaveFile("waveform.png", wxBITMAP_TYPE_PNG);
 
     RenderPlayhead(dc);
+
+    if (bSelectRange)
+    {
+        wxRect rect(m_CurrentPoint, m_AnchorPoint);
+
+        dc.SetPen(wxPen(wxColour(200, 200, 200), 2, wxPENSTYLE_SOLID));
+        dc.SetBrush(wxBrush(wxColour(200, 200, 200, 80), wxBRUSHSTYLE_SOLID));
+        dc.DrawRectangle(rect);
+    }
+
+    if (!bSelectRange && bDrawSelectedArea && !bBitmapDirty)
+    {
+        dc.SetPen(wxPen(wxColour(200, 200, 200, 255), 4, wxPENSTYLE_SOLID));
+        dc.SetBrush(wxBrush(wxColour(200, 200, 200, 80), wxBRUSHSTYLE_SOLID));
+        dc.DrawRectangle(wxRect(m_AnchorPoint.x, -2, m_CurrentPoint.x - m_AnchorPoint.x, this->GetSize().GetHeight() + 5));
+
+        bAreaSelected = true;
+    }
+    else
+        bAreaSelected = false;
 }
 
 void WaveformViewer::RenderPlayhead(wxDC& dc)
@@ -197,7 +224,7 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     wxLogDebug("Drawing bitmap..");
 
-    for(int i = 0; i < waveform.size() - 1; i++)
+    for (int i = 0; i < waveform.size() - 1; i++)
     {
         mdc.DrawLine((display_width * i) / waveform.size(), waveform[i] + display_height / 2.0f,
                      (display_width * i) / waveform.size(), (waveform[i] / samples_per_pixel) + display_height / 2.0f);
@@ -206,7 +233,43 @@ void WaveformViewer::UpdateWaveformBitmap()
     wxLogDebug("Done drawing bitmap..");
 }
 
-void WaveformViewer::OnHoverPlayhead(wxMouseEvent& event)
+void WaveformViewer::OnControlKeyDown(wxKeyEvent &event)
+{
+    switch (event.GetKeyCode())
+    {
+        case WXK_CONTROL:
+            SetCursor(wxCURSOR_IBEAM);
+            break;
+        default:
+            SetCursor(wxCURSOR_ARROW);
+            break;
+    }
+
+    event.Skip();
+}
+
+void WaveformViewer::OnControlKeyUp(wxKeyEvent &event)
+{
+    switch (event.GetKeyCode())
+    {
+        case WXK_CONTROL:
+            if (bSelectRange)
+            {
+                SetCursor(wxCURSOR_ARROW);
+                bSelectRange = false;
+                bDrawSelectedArea = false;
+                ReleaseMouse();
+                return;
+            }
+            break;
+        default:
+            break;
+    }
+
+    event.Skip();
+}
+
+void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
 {
     Database db(m_InfoBar);
 
@@ -221,33 +284,32 @@ void WaveformViewer::OnHoverPlayhead(wxMouseEvent& event)
     Tags tags(path);
 
     int length = tags.GetAudioInfo().length;
-    // wxLogDebug("Sample length: %d", length);
 
     double position = m_MediaCtrl.Tell();
-    // wxLogDebug("Current Sample Position: %f", position);
 
     int panel_width = this->GetSize().GetWidth();
     double line_pos = panel_width * (position / length);
 
     wxPoint pos = event.GetPosition();
-    // wxLogDebug("PosX: %d", pos.x);
 
     double seek_to = ((double)pos.x / panel_width) * length;
-    // wxLogDebug("Seeking to: %f", seek_to);
 
     if (abs(pos.x - line_pos) <= 5 && pos.y <= 5)
     {
         SetCursor(wxCursor(wxCURSOR_HAND));
         wxLogDebug("Cursor on playhead..");
     }
-    else
+    else if (bSelectRange)
     {
-        SetCursor(wxCURSOR_ARROW);
-        wxLogDebug("Mouse at: '(%d, %d)'", pos.x, pos.y);
+        m_CurrentPoint = wxPoint(pos.x , pos.y);
+
+        wxLogDebug("CTRL pressed, pressing LMB will draw selection range at %d, %d", pos.x, pos.y);
     }
+    else
+        return;
 }
 
-void WaveformViewer::OnGrabPlayhead(wxMouseEvent& event)
+void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 {
     Database db(m_InfoBar);
     int selected_row = m_Library.GetSelectedRow();
@@ -271,19 +333,33 @@ void WaveformViewer::OnGrabPlayhead(wxMouseEvent& event)
 
     if (abs(pos.x - line_pos) <= 5 && pos.y <= 5)
     {
-        wxWindow::CaptureMouse();
+        SetCursor(wxCURSOR_CLOSED_HAND);
+        CaptureMouse();
+
+        wxLogDebug("Mouse Captured playhead..");
+    }
+    else if (event.ControlDown())
+    {
+        wxLogDebug("LMB pressed");
 
         SetCursor(wxCURSOR_CLOSED_HAND);
-        wxLogDebug("Mouse Captured playhead..");
+        CaptureMouse();
+
+        bSelectRange = true;
+
+        m_AnchorPoint = wxPoint(pos.x, pos.y);
+        m_CurrentPoint = m_AnchorPoint;
     }
     else
     {
         SetCursor(wxCURSOR_ARROW);
         return;
     }
+
+    event.Skip();
 }
 
-void WaveformViewer::OnReleasePlayhead(wxMouseEvent& event)
+void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
 {
     Database db(m_InfoBar);
 
@@ -314,13 +390,56 @@ void WaveformViewer::OnReleasePlayhead(wxMouseEvent& event)
         return;
     }
 
-    wxWindow::ReleaseMouse();
-    SetCursor(wxCURSOR_ARROW);
-    wxLogDebug("Mouse released playhead..");
+    if (bSelectRange)
+    {
+        wxLogDebug("LMB released");
 
-    m_MediaCtrl.Seek(seek_to, wxFromStart);
+        m_CurrentPoint = wxPoint(pos.x, pos.y);
 
-    m_StatusBar.PushStatusText(wxString::Format(_("Now playing: %s"), selected), 1);
+        ReleaseMouse();
+        SetCursor(wxCURSOR_ARROW);
 
-    m_MediaCtrl.Play();
+        bSelectRange = false;
+
+        if (!bSelectRange)
+            bDrawSelectedArea = true;
+    }
+    else
+    {
+        ReleaseMouse();
+        SetCursor(wxCURSOR_ARROW);
+
+        m_MediaCtrl.Seek(seek_to, wxFromStart);
+        m_StatusBar.PushStatusText(wxString::Format(_("Now playing: %s"), selected), 1);
+        m_MediaCtrl.Play();
+    }
+}
+
+WaveformViewer::LoopPoints WaveformViewer::GetLoopPoints()
+{
+    Database db(m_InfoBar);
+
+    int selected_row = m_Library.GetSelectedRow();
+
+    if (selected_row < 0)
+        return { 0.0f, 0.0f };
+
+    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+
+    Tags tags(path);
+
+    int length = tags.GetAudioInfo().length;
+
+    // double position = m_MediaCtrl.Tell();
+
+    int panel_width = this->GetSize().GetWidth();
+    // double line_pos = panel_width * (position / length);
+
+    int a = m_AnchorPoint.x, b = m_CurrentPoint.x;
+
+    double loopA = ((double)a / panel_width) * length;
+    double loopB = ((double)b / panel_width) * length;
+
+    return { loopA, loopB };
 }
