@@ -36,12 +36,14 @@
 #include "SettingsDialog.hpp"
 #include "Serialize.hpp"
 #include "Tags.hpp"
+#include "SH_Event.hpp"
 
-WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxStatusBar& statusbar, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
-                               wxTimer& timer, wxInfoBar& infoBar, const std::string& configFilepath, const std::string& databaseFilepath)
+WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
+                               wxMediaCtrl& mediaCtrl, wxTimer& timer, wxInfoBar& infoBar,
+                               const std::string& configFilepath, const std::string& databaseFilepath)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl), m_Timer(timer),
-      m_StatusBar(statusbar), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl),
+      m_Timer(timer), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     this->SetDoubleBuffered(true);
 
@@ -84,6 +86,7 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
 
     RenderPlayhead(dc);
 
+    // Draw selection range
     if (bSelectRange)
     {
         wxRect rect(m_CurrentPoint, m_AnchorPoint);
@@ -93,6 +96,7 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
         dc.DrawRectangle(rect);
     }
 
+    // Draw selected area
     if (!bSelectRange && bDrawSelectedArea && !bBitmapDirty)
     {
         dc.SetPen(wxPen(wxColour(200, 200, 200, 255), 4, wxPENSTYLE_SOLID));
@@ -100,6 +104,7 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
         dc.DrawRectangle(wxRect(m_AnchorPoint.x, -2, m_CurrentPoint.x - m_AnchorPoint.x, this->GetSize().GetHeight() + 5));
 
         bAreaSelected = true;
+        SendLoopPoints();
     }
     else
         bAreaSelected = false;
@@ -410,19 +415,33 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         SetCursor(wxCURSOR_ARROW);
 
         m_MediaCtrl.Seek(seek_to, wxFromStart);
-        m_StatusBar.PushStatusText(wxString::Format(_("Now playing: %s"), selected), 1);
+        SendStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
         m_MediaCtrl.Play();
     }
 }
 
-WaveformViewer::LoopPoints WaveformViewer::GetLoopPoints()
+void WaveformViewer::ResetDC()
 {
+    bBitmapDirty = true;
+    bSelectRange = false;
+    bDrawSelectedArea = false;
+
+    Refresh();
+}
+
+void WaveformViewer::SendLoopPoints()
+{
+    wxLogDebug("%s Called", __FUNCTION__);
+
+    SampleHive::SH_LoopPointsEvent event(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, this->GetId());
+    event.SetEventObject(this);
+
     Database db(m_InfoBar);
 
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
-        return { 0.0f, 0.0f };
+        return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
     std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
@@ -431,15 +450,26 @@ WaveformViewer::LoopPoints WaveformViewer::GetLoopPoints()
 
     int length = tags.GetAudioInfo().length;
 
-    // double position = m_MediaCtrl.Tell();
-
     int panel_width = this->GetSize().GetWidth();
-    // double line_pos = panel_width * (position / length);
 
     int a = m_AnchorPoint.x, b = m_CurrentPoint.x;
 
     double loopA = ((double)a / panel_width) * length;
     double loopB = ((double)b / panel_width) * length;
 
-    return { loopA, loopB };
+    event.SetLoopPoints({ loopA, loopB });
+
+    HandleWindowEvent(event);
+
+    wxLogDebug("%s processed event, sending loop points..", __FUNCTION__);
+}
+
+void WaveformViewer::SendStatusBarStatus(const wxString& msg, int section)
+{
+    SampleHive::SH_SetStatusBarMessageEvent event(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, this->GetId());
+    event.SetEventObject(this);
+
+    event.SetMessageAndSection({ msg, section });
+
+    HandleWindowEvent(event);
 }

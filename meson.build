@@ -58,6 +58,7 @@ src = [
   'src/Serialize.cpp',
   'src/Tags.cpp',
   'src/WaveformViewer.cpp',
+  'src/SH_Event.cpp',
 
 ]
 

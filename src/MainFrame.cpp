@@ -379,7 +379,8 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_StatusBar, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar, m_ConfigFilepath, m_DatabaseFilepath);
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar,
+                                            m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);
@@ -432,6 +433,9 @@ MainFrame::MainFrame()
     Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &MainFrame::OnHiveStartEditing, this, BC_Hives);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickAddHive, this, BC_HiveAdd);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickRemoveHive, this, BC_HiveRemove);
+
+    Bind(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, &MainFrame::OnRecieveLoopPoints, this);
+    Bind(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, &MainFrame::OnRecieveStatusBarStatus, this);
 
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);
@@ -553,8 +557,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_TopWaveformPanel->SetBitmapDirty(true);
-                m_TopWaveformPanel->Refresh();
+                m_TopWaveformPanel->ResetDC();
             }
             break;
         case wxID_CANCEL:
@@ -945,8 +948,7 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
 
     // Update waveform bitmap
-    m_TopWaveformPanel->SetBitmapDirty(true);
-    m_TopWaveformPanel->Refresh();
+    m_TopWaveformPanel->ResetDC();
 
     m_MediaCtrl->Play();
 
@@ -1097,8 +1099,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     }
 
     // Update the waveform bitmap
-    m_TopWaveformPanel->SetBitmapDirty(true);
-    m_TopWaveformPanel->Refresh();
+    m_TopWaveformPanel->ResetDC();
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
@@ -2940,6 +2941,38 @@ void MainFrame::OnClickLoopPointsButton(wxCommandEvent& event)
 void MainFrame::OnEnterLoopPoints(wxCommandEvent& event)
 {
     wxLogDebug("Loop point text changed");
+}
+
+void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
+{
+    wxLogDebug("%s called and recieved loop points", __FUNCTION__);
+
+    std::pair<double, double> loop_points = event.GetLoopPoints();
+
+    wxLongLong loopA = loop_points.first;
+    wxLongLong loopB = loop_points.second;
+
+    int loopA_min = static_cast<int>((loopA / 60000).GetValue());
+    int loopA_sec = static_cast<int>(((loopA % 60000) / 1000).GetValue());
+    int loopB_min = static_cast<int>((loopB / 60000).GetValue());
+    int loopB_sec = static_cast<int>(((loopB % 60000) / 1000).GetValue());
+
+    wxLogDebug(wxString::Format("LoopA: %2i:%02i, LoopB: %2i:%02i",
+                                loopA_min, loopA_sec, loopB_min, loopB_sec));
+
+    m_LoopPointAText->SetValue(wxString::Format("%2i:%02i", loopA_min, loopA_sec));
+    m_LoopPointBText->SetValue(wxString::Format("%2i:%02i", loopB_min, loopB_sec));
+
+    // TODO Looping the selected section
+
+    wxLogDebug("%s Event processed successfully..", __FUNCTION__);
+}
+
+void MainFrame::OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent& event)
+{
+    std::pair<wxString, int> status = event.GetMessageAndSection();
+
+    m_StatusBar->PushStatusText(status.first, status.second);
 }
 
 MainFrame::~MainFrame(){}

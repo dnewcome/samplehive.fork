@@ -36,16 +36,10 @@
 class WaveformViewer : public wxPanel
 {
     public:
-        WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxStatusBar& statusbar, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl,
-                       wxTimer& timer, wxInfoBar& infoBar, const std::string& configFilepath, const std::string& databaseFilepath);
+        WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
+                       wxMediaCtrl& mediaCtrl, wxTimer& timer, wxInfoBar& infoBar,
+                       const std::string& configFilepath, const std::string& databaseFilepath);
         ~WaveformViewer();
-
-    private:
-        // -------------------------------------------------------------------
-        struct LoopPoints
-        {
-            double A, B;
-        };
 
     private:
         // -------------------------------------------------------------------
@@ -56,7 +50,6 @@ class WaveformViewer : public wxPanel
         wxInfoBar& m_InfoBar;
         wxMediaCtrl& m_MediaCtrl;
         wxTimer& m_Timer;
-        wxStatusBar& m_StatusBar;
 
         const std::string& m_ConfigFilepath;
         const std::string& m_DatabaseFilepath;
@@ -94,11 +87,12 @@ class WaveformViewer : public wxPanel
         void OnControlKeyUp(wxKeyEvent& event);
         void OnControlKeyDown(wxKeyEvent& event);
 
-    public:
-        LoopPoints GetLoopPoints();
+        // -------------------------------------------------------------------
+        // Send custom events
+        void SendLoopPoints();
+        void SendStatusBarStatus(const wxString& msg, int section);
 
     public:
-        inline bool IsBitmapDirty() { return bBitmapDirty; }
-        inline void SetBitmapDirty(bool dirty) { bBitmapDirty = dirty; }
-        inline bool IsAreaSelected() { return bAreaSelected; }
+        // -------------------------------------------------------------------
+        void ResetDC();
 };

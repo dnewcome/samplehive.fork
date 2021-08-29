@@ -56,6 +56,7 @@
 #include <taglib/tstring.h>
 
 #include "WaveformViewer.hpp"
+#include "SH_Event.hpp"
 
 struct FileInfo
 {
@@ -251,6 +252,9 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         void AddSamples(wxArrayString& files);
         void OnAutoImportDir(const wxString& pathToDirectory);
+
+        void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
+        void OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent& event);
 
         // -------------------------------------------------------------------
         void LoadDatabase();
