@@ -170,6 +170,8 @@ class MainFrame : public wxFrame
         // FileSystemWatcher
         wxFileSystemWatcher* m_FsWatcher;
 
+        wxLongLong m_LoopA, m_LoopB;
+
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
@@ -276,6 +278,9 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Call after frame creation
         void SetAfterFrameCreate();
+
+        // -------------------------------------------------------------------
+        void ClearLoopPoints();
 
         // -------------------------------------------------------------------
         friend class App;

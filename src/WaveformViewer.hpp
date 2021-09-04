@@ -94,5 +94,5 @@ class WaveformViewer : public wxPanel
 
     public:
         // -------------------------------------------------------------------
-        void ResetDC();
+        void ResetDC(bool playing);
 };

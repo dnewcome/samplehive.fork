@@ -420,13 +420,16 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
     }
 }
 
-void WaveformViewer::ResetDC()
+void WaveformViewer::ResetDC(bool playing)
 {
-    bBitmapDirty = true;
-    bSelectRange = false;
-    bDrawSelectedArea = false;
+    if (!playing)
+    {
+        bBitmapDirty = true;
+        bSelectRange = false;
+        bDrawSelectedArea = false;
 
-    Refresh();
+        Refresh();
+    }
 }
 
 void WaveformViewer::SendLoopPoints()

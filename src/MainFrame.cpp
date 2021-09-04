@@ -557,7 +557,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_TopWaveformPanel->ResetDC();
+                m_TopWaveformPanel->ResetDC(m_MediaCtrl->GetState() == wxMEDIASTATE_PLAYING);
             }
             break;
         case wxID_CANCEL:
@@ -948,9 +948,15 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
 
     // Update waveform bitmap
-    m_TopWaveformPanel->ResetDC();
+    // m_TopWaveformPanel->ResetDC();
 
-    m_MediaCtrl->Play();
+    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
+    {
+        m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
+        m_MediaCtrl->Play();
+    }
+    else
+        m_MediaCtrl->Play();
 
     m_Timer->Start(100, wxTIMER_CONTINUOUS);
 }
@@ -1099,7 +1105,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     }
 
     // Update the waveform bitmap
-    m_TopWaveformPanel->ResetDC();
+    m_TopWaveformPanel->ResetDC(m_MediaCtrl->GetState() == wxMEDIASTATE_PLAYING);
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
@@ -1138,13 +1144,22 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
     if (CurrentColumn != FavoriteColumn)
     {
+        ClearLoopPoints();
+
         m_MediaCtrl->Load(sample_path);
 
         if (bAutoplay)
         {
             PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
 
-            m_MediaCtrl->Play();
+            if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
+            {
+                m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
+                m_MediaCtrl->Play();
+            }
+            else
+                m_MediaCtrl->Play();
+
             m_Timer->Start(100, wxTIMER_CONTINUOUS);
         }
     }
@@ -2949,13 +2964,13 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
 
     std::pair<double, double> loop_points = event.GetLoopPoints();
 
-    wxLongLong loopA = loop_points.first;
-    wxLongLong loopB = loop_points.second;
+    m_LoopA = wxLongLong(loop_points.first);
+    m_LoopB = wxLongLong(loop_points.second);
 
-    int loopA_min = static_cast<int>((loopA / 60000).GetValue());
-    int loopA_sec = static_cast<int>(((loopA % 60000) / 1000).GetValue());
-    int loopB_min = static_cast<int>((loopB / 60000).GetValue());
-    int loopB_sec = static_cast<int>(((loopB % 60000) / 1000).GetValue());
+    int loopA_min = static_cast<int>((m_LoopA / 60000).GetValue());
+    int loopA_sec = static_cast<int>(((m_LoopA % 60000) / 1000).GetValue());
+    int loopB_min = static_cast<int>((m_LoopB / 60000).GetValue());
+    int loopB_sec = static_cast<int>(((m_LoopB % 60000) / 1000).GetValue());
 
     wxLogDebug(wxString::Format("LoopA: %2i:%02i, LoopB: %2i:%02i",
                                 loopA_min, loopA_sec, loopB_min, loopB_sec));
@@ -2963,7 +2978,9 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
     m_LoopPointAText->SetValue(wxString::Format("%2i:%02i", loopA_min, loopA_sec));
     m_LoopPointBText->SetValue(wxString::Format("%2i:%02i", loopB_min, loopB_sec));
 
-    // TODO Looping the selected section
+    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
+        if (static_cast<double>(m_MediaCtrl->Tell()) >= static_cast<double>(m_LoopB.GetValue()))
+            m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
 
     wxLogDebug("%s Event processed successfully..", __FUNCTION__);
 }
@@ -2973,6 +2990,18 @@ void MainFrame::OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent
     std::pair<wxString, int> status = event.GetMessageAndSection();
 
     m_StatusBar->PushStatusText(status.first, status.second);
+}
+
+void MainFrame::ClearLoopPoints()
+{
+    m_LoopPointAText->SetValue("00:00");
+    m_LoopPointBText->SetValue("00:00");
+
+    m_LoopPointAButton->Disable();
+    m_LoopPointBButton->Disable();
+
+    m_LoopA = 0;
+    m_LoopB = 0;
 }
 
 MainFrame::~MainFrame(){}
