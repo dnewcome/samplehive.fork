@@ -186,35 +186,47 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     std::vector<float> waveform;
 
+    // TODO, FIXME: Don't reload file on every window resize
     snd_file.read(&sample.at(0), frames * channels);
 
     float display_width = this->GetSize().GetWidth();
     float display_height = this->GetSize().GetHeight();
 
-    double max_value;
-    snd_file.command(SFC_CALC_NORM_SIGNAL_MAX, &max_value, sizeof(max_value));
+    wxLogDebug("Calculating Waveform bars RMS..");
 
-    float normalized_value = max_value > 1.0f ? 1.0f : 1.0f / max_value;
+    float chunk_size = (float)(frames) / (float)display_width;
+    int number_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
 
-    float samples_per_pixel = static_cast<float>(frames) / (float)display_width;
+    // Start with low non-zero value
+    float normalize = 0.00001;
 
-    if (channels == 2)
-    {
-        for (int i = 0, j = 0 ; i < frames; i++)
-        {
-            float sum = (((sample[j] + sample[j + 1]) * 0.5f) * normalized_value) * float(display_height / 2.0f);
-            waveform.push_back(sum);
-            j += 2;
+    for (int i=0; i<number_chunks; i++) {
+        double sum = 0, mono = 0;
+        int start_point = static_cast<int>(i*chunk_size*channels);
+
+        // Iterate on the chunk, get the square of sum of monos
+        for (int j=0; j<chunk_size; j++) {
+            if (channels == 2) {
+                mono = 0.5f * (sample[start_point+(2*j)] + sample[start_point+(2*j)+1]);
+            } else {
+                mono = sample[start_point+j];
+            }
+            sum += mono * mono; // Square
         }
+        sum /= chunk_size;      // Mean
+        sum = pow(sum, 0.5);    // Root
+
+        // We might bleed a bit on the end and get some near infs, dunno
+        // what is causing astronomically big numbers from sample[]
+        if ((sum < 200.0) && (sum > normalize)) {
+            normalize = sum;
+        }
+        waveform.push_back(sum);
     }
-    else
-    {
-        waveform.resize(frames);
 
-        for (int i = 0; i < frames; i++)
-        {
-            waveform[i] = (sample[i] * normalized_value) * float(display_height / 2.0f);
-        }
+    // Actually normalize
+    for (int i=0; i<waveform.size(); i++) {
+        waveform[i] /= normalize;
     }
 
     // Draw code
@@ -231,8 +243,17 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     for (int i = 0; i < waveform.size() - 1; i++)
     {
-        mdc.DrawLine((display_width * i) / waveform.size(), waveform[i] + display_height / 2.0f,
-                     (display_width * i) / waveform.size(), (waveform[i] / samples_per_pixel) + display_height / 2.0f);
+        float half_vertical = static_cast<float>(display_height) / 2.0f;
+
+        // X is percentage of i relative to waveform.size() multiplied by
+        // the width, Y is the half height times the value up or down
+        float X = display_width * ((float)i / waveform.size());
+        float Y = waveform[i] * half_vertical;
+
+        mdc.DrawLine(
+            X, half_vertical + Y,
+            X, half_vertical - Y
+        );
     }
 
     wxLogDebug("Done drawing bitmap..");
