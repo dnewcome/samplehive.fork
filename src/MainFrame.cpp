@@ -379,7 +379,7 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_Timer, *m_InfoBar,
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_InfoBar,
                                             m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
@@ -557,7 +557,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_TopWaveformPanel->ResetDC(m_MediaCtrl->GetState() == wxMEDIASTATE_PLAYING);
+                m_TopWaveformPanel->ResetDC();
             }
             break;
         case wxID_CANCEL:
@@ -943,22 +943,10 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
-    m_MediaCtrl->Load(sample_path);
-
-    PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
-
-    // Update waveform bitmap
-    // m_TopWaveformPanel->ResetDC();
-
-    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
-    {
-        m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
-        m_MediaCtrl->Play();
-    }
+    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+        PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
     else
-        m_MediaCtrl->Play();
-
-    m_Timer->Start(100, wxTIMER_CONTINUOUS);
+        PlaySample(sample_path.ToStdString(), selection.ToStdString());
 }
 
 void MainFrame::OnClickLoop(wxCommandEvent& event)
@@ -982,7 +970,9 @@ void MainFrame::OnClickStop(wxCommandEvent& event)
     m_MediaCtrl->Stop();
     bStopped = true;
 
-    m_Timer->Stop();
+    if  (m_Timer->IsRunning())
+        m_Timer->Stop();
+
     m_SamplePosition->SetLabel("--:--/--:--");
 
     this->SetStatusText(_("Stopped"), 1);
@@ -1012,14 +1002,16 @@ void MainFrame::OnMediaFinished(wxMediaEvent& event)
             msgDialog.ShowModal();
         }
         else
-        {
             m_MediaCtrl->Play();
-            m_Timer->Start(100, wxTIMER_CONTINUOUS);
-        }
     }
     else
     {
-        m_Timer->Stop();
+        if (m_Timer->IsRunning())
+        {
+            m_Timer->Stop();
+            wxLogDebug("TIMER STOPPED");
+        }
+
         m_SamplePosition->SetLabel("--:--/--:--");
         PopStatusText(1);
         this->SetStatusText(_("Stopped"), 1);
@@ -1028,6 +1020,8 @@ void MainFrame::OnMediaFinished(wxMediaEvent& event)
 
 void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
 {
+    wxLogDebug("TIMER IS RUNNING..");
+
     wxString duration, position;
     wxLongLong llLength, llTell;
 
@@ -1044,7 +1038,12 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
 
     m_SamplePosition->SetLabel(wxString::Format(wxT("%s/%s"), position.c_str(), duration.c_str()));
 
+    m_TopControlsPanel->Refresh();
     m_TopWaveformPanel->Refresh();
+
+    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+        if (static_cast<double>(m_MediaCtrl->Tell()) >= m_LoopB.ToDouble())
+            m_MediaCtrl->Seek(m_LoopA.ToDouble(), wxFromStart);
 }
 
 void MainFrame::OnCheckAutoplay(wxCommandEvent& event)
@@ -1105,7 +1104,13 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     }
 
     // Update the waveform bitmap
-    m_TopWaveformPanel->ResetDC(m_MediaCtrl->GetState() == wxMEDIASTATE_PLAYING);
+    m_TopWaveformPanel->ResetDC();
+
+    if (m_Timer->IsRunning())
+    {
+        m_Timer->Stop();
+        wxLogDebug("TIMER STOPPED");
+    }
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
@@ -1146,21 +1151,12 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     {
         ClearLoopPoints();
 
-        m_MediaCtrl->Load(sample_path);
-
         if (bAutoplay)
         {
-            PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
-
-            if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
-            {
-                m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
-                m_MediaCtrl->Play();
-            }
+            if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+                PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
             else
-                m_MediaCtrl->Play();
-
-            m_Timer->Start(100, wxTIMER_CONTINUOUS);
+                PlaySample(sample_path.ToStdString(), selection.ToStdString());
         }
     }
     else
@@ -2978,10 +2974,6 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
     m_LoopPointAText->SetValue(wxString::Format("%2i:%02i", loopA_min, loopA_sec));
     m_LoopPointBText->SetValue(wxString::Format("%2i:%02i", loopB_min, loopB_sec));
 
-    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointAButton->GetValue())
-        if (static_cast<double>(m_MediaCtrl->Tell()) >= static_cast<double>(m_LoopB.GetValue()))
-            m_MediaCtrl->Seek(m_LoopA.GetValue(), wxFromStart);
-
     wxLogDebug("%s Event processed successfully..", __FUNCTION__);
 }
 
@@ -3002,6 +2994,27 @@ void MainFrame::ClearLoopPoints()
 
     m_LoopA = 0;
     m_LoopB = 0;
+}
+
+void MainFrame::PlaySample(const std::string& filepath, const std::string& sample, bool seek, wxFileOffset where, wxSeekMode mode)
+{
+    wxLogDebug("TIMER STARTING FROM %s", __FUNCTION__);
+
+    if (m_MediaCtrl->Load(filepath))
+    {
+        if (seek)
+            m_MediaCtrl->Seek(where, mode);
+
+        if (!m_MediaCtrl->Play())
+            wxLogDebug(_("Error! Cannot play sample."));
+
+        PushStatusText(wxString::Format(_("Now playing: %s"), sample), 1);
+
+        if (!m_Timer->IsRunning())
+            m_Timer->Start(20, wxTIMER_CONTINUOUS);
+    }
+    else
+        wxLogDebug(_("Error! Cannot load sample."));
 }
 
 MainFrame::~MainFrame(){}

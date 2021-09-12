@@ -255,6 +255,11 @@ class MainFrame : public wxFrame
         void AddSamples(wxArrayString& files);
         void OnAutoImportDir(const wxString& pathToDirectory);
 
+        // -------------------------------------------------------------------
+        void PlaySample(const std::string& filepath, const std::string& sample, bool seek = false, wxFileOffset where = NULL, wxSeekMode mode = wxFromStart);
+
+        // Recieve custom events
+        // -------------------------------------------------------------------
         void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
         void OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent& event);
 

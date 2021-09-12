@@ -2,8 +2,7 @@
 
 #include <utility>
 
-// #include "wx/arrstr.h"
-#include "wx/event.h"
+#include <wx/event.h>
 
 namespace SampleHive
 {
@@ -75,7 +74,7 @@ namespace SampleHive
             virtual wxEvent* Clone() const { return new SH_SetStatusBarMessageEvent(*this); }
 
         public:
-            std::pair<wxString, int> GetMessageAndSection() const { return {m_Msg, m_Section }; }
+            std::pair<wxString, int> GetMessageAndSection() const { return { m_Msg, m_Section }; }
             void SetMessageAndSection(std::pair<const wxString&, int> status) { m_Msg = status.first; m_Section = status.second; }
 
         private:
@@ -84,4 +83,24 @@ namespace SampleHive
     };
 
     wxDECLARE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_SetStatusBarMessageEvent);
+
+//     class SH_TimerEvent : public wxCommandEvent
+//     {
+//         public:
+//             SH_TimerEvent(wxEventType eventType, int winId);
+//             ~SH_TimerEvent();
+
+//         public:
+//             virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+
+//         public:
+//             std::pair<int, bool> GetSecondsAndMode() const { return { m_Seconds, m_Mode }; }
+//             void SetSecondsAndMode(std::pair<int, bool> timerStatus) { m_Seconds = timerStatus.first; m_Mode = timerStatus.second; }
+
+//         private:
+//             int m_Seconds;
+//             bool m_Mode;
+//     };
+
+//     wxDECLARE_EVENT(SH_EVT_TIMER_STATUS_UPDATED, SH_TimerEvent);
 }

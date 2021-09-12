@@ -39,11 +39,11 @@
 #include "SH_Event.hpp"
 
 WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
-                               wxMediaCtrl& mediaCtrl, wxTimer& timer, wxInfoBar& infoBar,
+                               wxMediaCtrl& mediaCtrl, wxInfoBar& infoBar,
                                const std::string& configFilepath, const std::string& databaseFilepath)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
       m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl),
-      m_Timer(timer), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+      m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     this->SetDoubleBuffered(true);
 
@@ -130,8 +130,6 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
     double position = m_MediaCtrl.Tell();
     wxLogDebug("Current Sample Position: %f", position);
 
-    m_Timer.Start(5, wxTIMER_CONTINUOUS);
-
     int panel_width = this->GetSize().GetWidth();
     double line_pos = panel_width * (position / length);
 
@@ -195,39 +193,42 @@ void WaveformViewer::UpdateWaveformBitmap()
     wxLogDebug("Calculating Waveform bars RMS..");
 
     float chunk_size = (float)(frames) / (float)display_width;
-    int number_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
+    int number_of_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
 
     // Start with low non-zero value
     float normalize = 0.00001;
 
-    for (int i=0; i<number_chunks; i++) {
+    for (int i = 0; i < number_of_chunks; i++)
+    {
         double sum = 0, mono = 0;
-        int start_point = static_cast<int>(i*chunk_size*channels);
+
+        int start_point = static_cast<int>(i * chunk_size * channels);
 
         // Iterate on the chunk, get the square of sum of monos
-        for (int j=0; j<chunk_size; j++) {
-            if (channels == 2) {
-                mono = 0.5f * (sample[start_point+(2*j)] + sample[start_point+(2*j)+1]);
-            } else {
-                mono = sample[start_point+j];
-            }
+        for (int j = 0; j < chunk_size; j++)
+        {
+            if (channels == 2)
+                mono = 0.5f * (sample[start_point + (2 * j)] + sample[start_point + (2 * j) + 1]);
+            else
+                mono = sample[start_point + j];
+
             sum += mono * mono; // Square
         }
+
         sum /= chunk_size;      // Mean
         sum = pow(sum, 0.5);    // Root
 
         // We might bleed a bit on the end and get some near infs, dunno
         // what is causing astronomically big numbers from sample[]
-        if ((sum < 200.0) && (sum > normalize)) {
+        if ((sum < 200.0) && (sum > normalize))
             normalize = sum;
-        }
+
         waveform.push_back(sum);
     }
 
     // Actually normalize
-    for (int i=0; i<waveform.size(); i++) {
+    for (int i = 0; i < waveform.size(); i++)
         waveform[i] /= normalize;
-    }
 
     // Draw code
     wxMemoryDC mdc(m_WaveformBitmap);
@@ -243,17 +244,14 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     for (int i = 0; i < waveform.size() - 1; i++)
     {
-        float half_vertical = static_cast<float>(display_height) / 2.0f;
+        float half_display_height = static_cast<float>(display_height) / 2.0f;
 
         // X is percentage of i relative to waveform.size() multiplied by
         // the width, Y is the half height times the value up or down
         float X = display_width * ((float)i / waveform.size());
-        float Y = waveform[i] * half_vertical;
+        float Y = waveform[i] * half_display_height;
 
-        mdc.DrawLine(
-            X, half_vertical + Y,
-            X, half_vertical - Y
-        );
+        mdc.DrawLine(X, half_display_height + Y, X, half_display_height - Y);
     }
 
     wxLogDebug("Done drawing bitmap..");
@@ -328,6 +326,8 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
     else if (bSelectRange)
     {
         m_CurrentPoint = wxPoint(pos.x , pos.y);
+
+        Refresh();
 
         wxLogDebug("CTRL pressed, pressing LMB will draw selection range at %d, %d", pos.x, pos.y);
     }
@@ -425,6 +425,8 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         ReleaseMouse();
         SetCursor(wxCURSOR_ARROW);
 
+        Refresh();
+
         bSelectRange = false;
 
         if (!bSelectRange)
@@ -441,16 +443,13 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
     }
 }
 
-void WaveformViewer::ResetDC(bool playing)
+void WaveformViewer::ResetDC()
 {
-    if (!playing)
-    {
-        bBitmapDirty = true;
-        bSelectRange = false;
-        bDrawSelectedArea = false;
+    bBitmapDirty = true;
+    bSelectRange = false;
+    bDrawSelectedArea = false;
 
-        Refresh();
-    }
+    Refresh();
 }
 
 void WaveformViewer::SendLoopPoints()

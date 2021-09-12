@@ -37,7 +37,7 @@ class WaveformViewer : public wxPanel
 {
     public:
         WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
-                       wxMediaCtrl& mediaCtrl, wxTimer& timer, wxInfoBar& infoBar,
+                       wxMediaCtrl& mediaCtrl, wxInfoBar& infoBar,
                        const std::string& configFilepath, const std::string& databaseFilepath);
         ~WaveformViewer();
 
@@ -49,7 +49,6 @@ class WaveformViewer : public wxPanel
         wxDataViewListCtrl& m_Library;
         wxInfoBar& m_InfoBar;
         wxMediaCtrl& m_MediaCtrl;
-        wxTimer& m_Timer;
 
         const std::string& m_ConfigFilepath;
         const std::string& m_DatabaseFilepath;
@@ -94,5 +93,5 @@ class WaveformViewer : public wxPanel
 
     public:
         // -------------------------------------------------------------------
-        void ResetDC(bool playing);
+        void ResetDC();
 };
