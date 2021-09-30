@@ -21,7 +21,7 @@
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
 #include <wx/log.h>
-#include <wx/stdpaths.h>
+// #include <wx/stdpaths.h>
 #include <wx/stringimpl.h>
 
 #include "ControlID_Enums.hpp"
@@ -73,7 +73,7 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_CollectionImportDirSizer = new wxBoxSizer(wxHORIZONTAL);
     m_ShowFileExtensionSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxString defaultDir = wxStandardPaths::Get().GetDocumentsDir();
+    wxString defaultDir = wxGetHomeDir();
 
     m_AutoImportCheck = new wxCheckBox(m_CollectionSettingPanel, SD_AutoImport, "Auto import", wxDefaultPosition, wxDefaultSize, 0);
     m_ImportDirLocation = new wxTextCtrl(m_CollectionSettingPanel, wxID_ANY, defaultDir, wxDefaultPosition, wxDefaultSize, 0);
@@ -118,29 +118,29 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     // Adding controls to sizers
     m_NotebookSizer->Add(m_Notebook, 1, wxALL | wxEXPAND, 2);
 
-    m_GeneralMainSizer->Add(m_ConfigLabel, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
+    m_GeneralMainSizer->Add(m_ConfigLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_GeneralMainSizer->Add(m_ConfigText, 1, wxALL | wxALIGN_CENTER_VERTICAL | wxEXPAND, 2);
-    m_GeneralMainSizer->Add(m_ConfigBrowse, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
+    m_GeneralMainSizer->Add(m_ConfigBrowse, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
-    m_GeneralMainSizer->Add(m_DatabaseLabel, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
+    m_GeneralMainSizer->Add(m_DatabaseLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_GeneralMainSizer->Add(m_DatabaseText, 1, wxALL | wxALIGN_CENTER_VERTICAL | wxEXPAND, 2);
-    m_GeneralMainSizer->Add(m_DatabaseBrowse, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
+    m_GeneralMainSizer->Add(m_DatabaseBrowse, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
     m_DisplayFontSizer->Add(m_FontTypeText, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_DisplayFontSizer->Add(m_FontType, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_DisplayFontSizer->Add(m_FontSize, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_DisplayFontSizer->Add(m_FontBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 2);
+    m_DisplayFontSizer->Add(m_FontBrowseButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_WaveformColourSizer->Add(m_WaveformColourLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_WaveformColourSizer->Add(m_WaveformColourPickerCtrl, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
     m_DisplayTopSizer->Add(m_DisplayFontSizer, 0, wxALL | wxEXPAND, 2);
     m_DisplayTopSizer->Add(m_WaveformColourSizer, 0, wxALL | wxEXPAND, 2);
 
-    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT, 2);
+    m_CollectionImportDirSizer->Add(m_AutoImportCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT, 2);
+    m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
-    m_ShowFileExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL | wxALIGN_LEFT, 2);
+    m_ShowFileExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL, 2);
 
     m_CollectionTopSizer->Add(m_CollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
     m_CollectionTopSizer->Add(m_ShowFileExtensionSizer, 0, wxALL | wxEXPAND, 2);
@@ -178,7 +178,7 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
 
 void Settings::OnClickConfigBrowse(wxCommandEvent& event)
 {
-    wxString initial_dir = wxStandardPaths::Get().GetDocumentsDir();
+    wxString initial_dir = wxGetHomeDir();
 
     m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
                                   wxDD_DEFAULT_STYLE |
@@ -201,7 +201,7 @@ void Settings::OnClickConfigBrowse(wxCommandEvent& event)
 
 void Settings::OnClickDatabaseBrowse(wxCommandEvent& event)
 {
-    wxString initial_dir = wxStandardPaths::Get().GetDocumentsDir();
+    wxString initial_dir = wxGetHomeDir();
 
     m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
                                   wxDD_DEFAULT_STYLE |
@@ -264,7 +264,7 @@ void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
 {
     Serializer serializer(m_ConfigFilepath);
 
-    wxString initial_dir = wxStandardPaths::Get().GetDocumentsDir();
+    wxString initial_dir = wxGetHomeDir();
 
     m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
                                   wxDD_DEFAULT_STYLE |

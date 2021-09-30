@@ -23,7 +23,7 @@
 
 #include <wx/colour.h>
 #include <wx/log.h>
-#include <wx/stdpaths.h>
+// #include <wx/stdpaths.h>
 #include <wx/filename.h>
 
 #include <yaml-cpp/emittermanip.h>
@@ -42,7 +42,7 @@ Serializer::Serializer(const std::string& filepath)
 
     wxColour colour = "#FE9647";
 
-    std::string dir = wxStandardPaths::Get().GetDocumentsDir().ToStdString();
+    std::string dir = wxGetHomeDir().ToStdString();
 
     if (!ifstrm)
     {

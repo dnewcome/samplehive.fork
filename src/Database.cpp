@@ -382,7 +382,7 @@ void Database::UpdateHive(const std::string& dbPath, const std::string& hiveOldN
         }
         else
         {
-            wxLogInfo("Hive updated successfully. %s", m_ErrMsg);
+            wxLogDebug("Hive updated successfully. %s", m_ErrMsg);
         }
 
         sqlite3_close(m_Database);
@@ -565,7 +565,7 @@ std::string Database::GetSampleType(const std::string& dbPath, const std::string
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
 
             type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
@@ -581,7 +581,7 @@ std::string Database::GetSampleType(const std::string& dbPath, const std::string
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);
@@ -610,7 +610,7 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& dbPath, const 
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
             value = sqlite3_column_int(m_Stmt, 0);
         }
 
@@ -625,7 +625,7 @@ int Database::GetFavoriteColumnValueByFilename(const std::string& dbPath, const 
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);
@@ -654,7 +654,7 @@ std::string Database::GetHiveByFilename(const std::string& dbPath, const std::st
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
 
             hive = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
@@ -670,7 +670,7 @@ std::string Database::GetHiveByFilename(const std::string& dbPath, const std::st
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);
@@ -777,7 +777,7 @@ std::string Database::GetSamplePathByFilename(const std::string& dbPath, const s
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
             path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
@@ -792,7 +792,7 @@ std::string Database::GetSamplePathByFilename(const std::string& dbPath, const s
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);
@@ -821,7 +821,7 @@ std::string Database::GetSampleFileExtension(const std::string& dbPath, const st
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
             extension = std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0)));
         }
 
@@ -836,7 +836,7 @@ std::string Database::GetSampleFileExtension(const std::string& dbPath, const st
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);
@@ -1038,7 +1038,7 @@ Database::FilterDatabaseBySampleName(const std::string& dbPath, wxVector<wxVecto
 
             while (SQLITE_ROW == sqlite3_step(m_Stmt))
             {
-                wxLogInfo("Record found, fetching..");
+                wxLogDebug("Record found, fetching..");
                 int favorite = sqlite3_column_int(m_Stmt, 0);
                 wxString filename = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1))));
                 wxString sample_pack = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2))));
@@ -1140,7 +1140,7 @@ Database::FilterDatabaseByHiveName(const std::string& dbPath, wxVector<wxVector<
 
             while (SQLITE_ROW == sqlite3_step(m_Stmt))
             {
-                wxLogInfo("Record found, fetching..");
+                wxLogDebug("Record found, fetching..");
                 int favorite = sqlite3_column_int(m_Stmt, 0);
                 wxString filename = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 1))));
                 wxString sample_pack = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 2))));
@@ -1233,7 +1233,7 @@ void Database::LoadHivesDatabase(const std::string& dbPath, wxDataViewTreeCtrl& 
         {
             while (SQLITE_ROW == sqlite3_step(m_Stmt))
             {
-                wxLogInfo("Record found, fetching..");
+                wxLogDebug("Record found, fetching..");
                 wxString hive = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_Stmt, 0))));
 
                 treeCtrl.AppendContainer(wxDataViewItem(wxNullPtr), hive);
@@ -1313,7 +1313,7 @@ bool Database::IsTrashed(const std::string& dbPath, const std::string& filename)
 
         if (sqlite3_step(m_Stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
+            wxLogDebug("Record found, fetching..");
 
             if (sqlite3_column_int(m_Stmt, 0) == 1)
                 return true;
@@ -1330,7 +1330,7 @@ bool Database::IsTrashed(const std::string& dbPath, const std::string& filename)
         }
         else
         {
-            wxLogInfo("Selected data from table successfully.");
+            wxLogDebug("Selected data from table successfully.");
         }
 
         sqlite3_close(m_Database);

@@ -23,6 +23,7 @@
 #include <string>
 
 #include <wx/button.h>
+#include <wx/bmpbuttn.h>
 #include <wx/checkbox.h>
 #include <wx/collpane.h>
 #include <wx/dataview.h>
@@ -40,6 +41,7 @@
 #include <wx/sizer.h>
 #include <wx/slider.h>
 #include <wx/splitter.h>
+#include <wx/settings.h>
 #include <wx/statbmp.h>
 #include <wx/statusbr.h>
 #include <wx/string.h>
@@ -51,9 +53,9 @@
 #include <wx/treectrl.h>
 #include <wx/window.h>
 
-#include <taglib/taglib.h>
+#include <taglib/tag.h>
 #include <taglib/fileref.h>
-#include <taglib/tstring.h>
+#include <taglib/toolkit/tstring.h>
 
 #include "WaveformViewer.hpp"
 #include "SH_Event.hpp"
@@ -115,15 +117,12 @@ class MainFrame : public wxFrame
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
         wxBoxSizer* m_BrowserControlSizer;
-        wxButton* m_PlayButton;
-        wxToggleButton* m_LoopButton;
-        wxButton* m_StopButton;
+        wxBitmapButton* m_PlayButton;
+        wxBitmapToggleButton* m_LoopButton;
+        wxBitmapButton* m_StopButton;
         wxButton* m_SettingsButton;
-        wxToggleButton* m_MuteButton;
-        wxToggleButton* m_LoopPointAButton;
-        wxToggleButton* m_LoopPointBButton;
-        wxTextCtrl* m_LoopPointAText;
-        wxTextCtrl* m_LoopPointBText;
+        wxBitmapToggleButton* m_MuteButton;
+        wxBitmapToggleButton* m_LoopABButton;
         wxStaticText* m_SamplePosition;
         wxSlider* m_VolumeSlider;
         wxCheckBox* m_AutoPlayCheck;
@@ -179,6 +178,10 @@ class MainFrame : public wxFrame
         bool bMuted = false;
         bool bStopped = false;
         bool bFiltered = false;
+        bool bLoopPointsSet = false;
+
+        // -------------------------------------------------------------------
+        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
         // -------------------------------------------------------------------
         const std::string m_ConfigFilepath;
@@ -196,8 +199,7 @@ class MainFrame : public wxFrame
         void OnSlideVolume(wxScrollEvent& event);
         void OnReleaseVolumeSlider(wxScrollEvent& event);
         void OnClickSettings(wxCommandEvent& event);
-        void OnClickLoopPointsButton(wxCommandEvent& event);
-        void OnEnterLoopPoints(wxCommandEvent& event);
+        void OnClickLoopABButton(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // DirCtrl event handlers

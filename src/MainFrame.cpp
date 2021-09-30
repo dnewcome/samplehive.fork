@@ -50,14 +50,14 @@
 #include <wx/msgdlg.h>
 #include <wx/object.h>
 #include <wx/progdlg.h>
-#include <wx/stdpaths.h>
+// #include <wx/stdpaths.h>
 #include <wx/stringimpl.h>
 #include <wx/textdlg.h>
 #include <wx/valtext.h>
 #include <wx/variant.h>
 #include <wx/vector.h>
 #include <wx/utils.h>
-#include <wx/unix/stdpaths.h>
+// #include <wx/unix/stdpaths.h>
 
 #include "MainFrame.hpp"
 #include "ControlID_Enums.hpp"
@@ -78,8 +78,18 @@
 #define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_256x256.png"
 #define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_filled_16x16.png"
 #define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_empty_16x16.png"
-#define APP_CONFIG_DIR wxStandardPaths::Get().GetUserConfigDir() + "/.config/SampleHive"
-#define APP_DATA_DIR wxStandardPaths::Get().GetDocumentsDir() + "/.local/share/SampleHive"
+#define ICON_PLAY_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-play-dark_16x16.png"
+#define ICON_STOP_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-stop-dark_16x16.png"
+#define ICON_AB_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-ab-dark_16x16.png"
+#define ICON_LOOP_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-loop-dark_16x16.png"
+#define ICON_MUTE_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-mute-dark_16x16.png"
+#define ICON_PLAY_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-play-light_16x16.png"
+#define ICON_STOP_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-stop-light_16x16.png"
+#define ICON_AB_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-ab-light_16x16.png"
+#define ICON_LOOP_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-loop-light_16x16.png"
+#define ICON_MUTE_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-mute-light_16x16.png"
+#define APP_CONFIG_DIR wxGetHomeDir() + "/.config/SampleHive"
+#define APP_DATA_DIR wxGetHomeDir() + "/.local/share/SampleHive"
 #define CONFIG_FILEPATH APP_CONFIG_DIR + "/config.yaml"
 #define DATABASE_FILEPATH APP_DATA_DIR "/sample.hive"
 
@@ -197,7 +207,7 @@ MainFrame::MainFrame()
                               _("All files|*|Ogg files (*.ogg)|*.ogg|Wav files (*.wav)|*.wav|"
                                 "Flac files (*.flac)|*.flac"), 0);
 
-    wxString path = wxStandardPaths::Get().GetDocumentsDir();
+    wxString path = wxGetHomeDir();
     m_DirCtrl->SetPath(path);
 
     // This panel will hold 2nd page of wxNotebook
@@ -248,20 +258,12 @@ MainFrame::MainFrame()
     m_TopControlsPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER);
 
     // Looping region controls
-    m_LoopPointAButton = new wxToggleButton(m_TopControlsPanel, BC_LoopPointButton, _("A"), wxDefaultPosition, wxDefaultSize, 0);
-    m_LoopPointAButton->SetToolTip("Set Loop point A");
-    m_LoopPointAButton->Disable();
-    m_LoopPointAText = new wxTextCtrl(m_TopControlsPanel, BC_LoopPointText, _("00:00"), wxDefaultPosition, wxDefaultSize, wxTE_RIGHT | wxTE_PROCESS_ENTER);
-    m_LoopPointAText->Disable();
-    m_LoopPointAText->SetMinSize(wxSize(60, -1));
-    m_LoopPointAText->SetMaxSize(wxSize(60, -1));
-    m_LoopPointBButton = new wxToggleButton(m_TopControlsPanel, BC_LoopPointButton, _("B"), wxDefaultPosition, wxDefaultSize, 0);
-    m_LoopPointBButton->SetToolTip("Set Loop point B");
-    m_LoopPointBButton->Disable();
-    m_LoopPointBText = new wxTextCtrl(m_TopControlsPanel, BC_LoopPointText, _("00:00"), wxDefaultPosition, wxDefaultSize, wxTE_RIGHT | wxTE_PROCESS_ENTER);
-    m_LoopPointBText->Disable();
-    m_LoopPointBText->SetMinSize(wxSize(60, -1));
-    m_LoopPointBText->SetMaxSize(wxSize(60, -1));
+    if (m_Theme.IsDark())
+        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton, static_cast<wxString>(ICON_AB_LIGHT_16px), wxDefaultPosition, wxDefaultSize, 0);
+    else
+        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton, static_cast<wxString>(ICON_AB_DARK_16px), wxDefaultPosition, wxDefaultSize, 0);
+
+    m_LoopABButton->SetToolTip(_("Loop selected region"));
 
     // Initializing browser controls on top panel.
     m_AutoPlayCheck = new wxCheckBox(m_TopControlsPanel, BC_Autoplay, _("Autoplay"), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
@@ -274,16 +276,36 @@ MainFrame::MainFrame()
                                         wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
 
     // Initialize browser control buttons
-    m_PlayButton = new wxButton(m_TopControlsPanel, BC_Play, _("Play"), wxDefaultPosition, wxDefaultSize, 0);
+    if (m_Theme.IsDark())
+    {
+        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play, static_cast<wxString>(ICON_PLAY_LIGHT_16px),
+                                          wxDefaultPosition, wxDefaultSize, 0);
+        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop, static_cast<wxString>(ICON_LOOP_LIGHT_16px),
+                                                wxDefaultPosition, wxDefaultSize, 0);
+        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop, static_cast<wxString>(ICON_STOP_LIGHT_16px),
+                                          wxDefaultPosition, wxDefaultSize, 0);
+        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute, static_cast<wxString>(ICON_MUTE_LIGHT_16px),
+                                                wxDefaultPosition, wxDefaultSize, 0);
+    }
+    else
+    {
+        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play, static_cast<wxString>(ICON_PLAY_DARK_16px),
+                                          wxDefaultPosition, wxDefaultSize, 0);
+        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop, static_cast<wxString>(ICON_LOOP_DARK_16px),
+                                                wxDefaultPosition, wxDefaultSize, 0);
+        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop, static_cast<wxString>(ICON_STOP_DARK_16px),
+                                          wxDefaultPosition, wxDefaultSize, 0);
+        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute, static_cast<wxString>(ICON_MUTE_DARK_16px),
+                                                wxDefaultPosition, wxDefaultSize, 0);
+    }
+
     m_PlayButton->SetToolTip(_("Play"));
-    m_LoopButton = new wxToggleButton(m_TopControlsPanel, BC_Loop, _("Loop"), wxDefaultPosition, wxDefaultSize, 0);
     m_LoopButton->SetToolTip(_("Loop"));
-    m_StopButton = new wxButton(m_TopControlsPanel, BC_Stop, _("Stop"), wxDefaultPosition, wxDefaultSize, 0);
     m_StopButton->SetToolTip(_("Stop"));
+    m_MuteButton->SetToolTip(_("Mute"));
+
     m_SettingsButton = new wxButton(m_TopControlsPanel, BC_Settings, _("Settings"), wxDefaultPosition, wxDefaultSize, 0);
     m_SettingsButton->SetToolTip(_("Settings"));
-    m_MuteButton = new wxToggleButton(m_TopControlsPanel, BC_Mute, _("Mute"), wxDefaultPosition, wxDefaultSize, 0);
-    m_MuteButton->SetToolTip(_("Mute"));
 
     // Initializing wxSearchCtrl on bottom panel.
     m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, _("Search for samples.."), wxDefaultPosition,
@@ -404,10 +426,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickMute, this, BC_Mute);
     Bind(wxEVT_MEDIA_FINISHED, &MainFrame::OnMediaFinished, this, BC_MediaCtrl);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickSettings, this, BC_Settings);
-    Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickLoopPointsButton, this, BC_LoopPointButton);
-    Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickLoopPointsButton, this, BC_LoopPointButton);
-    Bind(wxEVT_TEXT_ENTER, &MainFrame::OnEnterLoopPoints, this, BC_LoopPointText);
-    Bind(wxEVT_TEXT_ENTER, &MainFrame::OnEnterLoopPoints, this, BC_LoopPointText);
+    // Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickLoopABButton, this, BC_LoopABButton);
     Bind(wxEVT_CHECKBOX, &MainFrame::OnCheckAutoplay, this, BC_Autoplay);
     Bind(wxEVT_SCROLL_THUMBTRACK, &MainFrame::OnSlideVolume, this, BC_Volume);
     Bind(wxEVT_SCROLL_THUMBRELEASE, &MainFrame::OnReleaseVolumeSlider, this, BC_Volume);
@@ -442,20 +461,17 @@ MainFrame::MainFrame()
 
     m_TopSizer->Add(m_TopSplitter, 1, wxALL | wxEXPAND, 0);
 
-    m_BrowserControlSizer->Add(m_PlayButton, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopButton, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_StopButton, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_PlayButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_StopButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_LoopButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_LoopABButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(0,0,1, wxALL | wxEXPAND, 0);
-    m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_BrowserControlSizer->Add(30,0,0, wxALL | wxEXPAND, 0);
-    m_BrowserControlSizer->Add(m_LoopPointAButton, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopPointAText, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopPointBButton, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopPointBText, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
+    m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
     m_TopPanelMainSizer->Add(m_TopWaveformPanel, 1, wxALL | wxEXPAND, 2);
     m_TopPanelMainSizer->Add(m_TopControlsPanel, 0, wxALL | wxEXPAND, 2);
@@ -943,7 +959,7 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
-    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+    if (bLoopPointsSet && m_LoopABButton->GetValue())
         PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
     else
         PlaySample(sample_path.ToStdString(), selection.ToStdString());
@@ -952,17 +968,9 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 void MainFrame::OnClickLoop(wxCommandEvent& event)
 {
     if (m_LoopButton->GetValue())
-    {
         bLoop = true;
-        m_LoopPointAButton->Enable(true);
-        m_LoopPointBButton->Enable(true);
-    }
     else
-    {
         bLoop = false;
-        m_LoopPointAButton->Disable();
-        m_LoopPointBButton->Disable();
-    }
 }
 
 void MainFrame::OnClickStop(wxCommandEvent& event)
@@ -1041,7 +1049,7 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
     m_TopControlsPanel->Refresh();
     m_TopWaveformPanel->Refresh();
 
-    if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+    if (bLoopPointsSet && m_LoopABButton->GetValue())
         if (static_cast<double>(m_MediaCtrl->Tell()) >= m_LoopB.ToDouble())
             m_MediaCtrl->Seek(m_LoopA.ToDouble(), wxFromStart);
 }
@@ -1106,6 +1114,8 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     // Update the waveform bitmap
     m_TopWaveformPanel->ResetDC();
 
+    m_LoopABButton->SetValue(false);
+
     if (m_Timer->IsRunning())
     {
         m_Timer->Stop();
@@ -1153,11 +1163,13 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
         if (bAutoplay)
         {
-            if (bLoop && m_LoopPointAButton->GetValue() && m_LoopPointBButton->GetValue())
+            if (bLoopPointsSet && m_LoopABButton->GetValue())
                 PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
             else
                 PlaySample(sample_path.ToStdString(), selection.ToStdString());
         }
+        else
+            m_MediaCtrl->Stop();
     }
     else
     {
@@ -2711,7 +2723,7 @@ void MainFrame::OnHiveStartEditing(wxDataViewEvent &event)
 
 void MainFrame::OnSelectAddFile(wxCommandEvent& event)
 {
-    wxFileDialog file_dialog(this, wxFileSelectorPromptStr, wxStandardPaths::Get().GetDocumentsDir(),
+    wxFileDialog file_dialog(this, wxFileSelectorPromptStr, wxGetHomeDir(),
                              wxEmptyString, wxFileSelectorDefaultWildcardStr,
                              wxFD_DEFAULT_STYLE | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE | wxFD_PREVIEW,
                              wxDefaultPosition, wxDefaultSize);
@@ -2734,7 +2746,7 @@ void MainFrame::OnSelectAddFile(wxCommandEvent& event)
 
 void MainFrame::OnSelectAddDirectory(wxCommandEvent& event)
 {
-    wxDirDialog dir_dialog(this, wxDirSelectorPromptStr, wxStandardPaths::Get().GetDocumentsDir(),
+    wxDirDialog dir_dialog(this, wxDirSelectorPromptStr, wxGetHomeDir(),
                           wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST, wxDefaultPosition, wxDefaultSize);
 
     switch (dir_dialog.ShowModal())
@@ -2923,35 +2935,9 @@ void MainFrame::SetAfterFrameCreate()
     m_BottomSplitter->SetSashPosition(300);
 }
 
-void MainFrame::OnClickLoopPointsButton(wxCommandEvent& event)
+void MainFrame::OnClickLoopABButton(wxCommandEvent& event)
 {
     wxLogDebug("Loop point button clicked");
-
-    if (bLoop)
-    {
-        m_LoopPointAButton->Enable(true);
-        m_LoopPointBButton->Enable(true);
-
-        if (m_LoopPointAButton->GetValue())
-            m_LoopPointAText->Enable(true);
-        else
-            m_LoopPointAText->Disable();
-
-        if (m_LoopPointBButton->GetValue())
-            m_LoopPointBText->Enable(true);
-        else
-            m_LoopPointBText->Disable();
-    }
-    else
-    {
-        m_LoopPointAButton->Disable();
-        m_LoopPointBButton->Disable();
-    }
-}
-
-void MainFrame::OnEnterLoopPoints(wxCommandEvent& event)
-{
-    wxLogDebug("Loop point text changed");
 }
 
 void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
@@ -2971,8 +2957,9 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
     wxLogDebug(wxString::Format("LoopA: %2i:%02i, LoopB: %2i:%02i",
                                 loopA_min, loopA_sec, loopB_min, loopB_sec));
 
-    m_LoopPointAText->SetValue(wxString::Format("%2i:%02i", loopA_min, loopA_sec));
-    m_LoopPointBText->SetValue(wxString::Format("%2i:%02i", loopB_min, loopB_sec));
+    m_LoopABButton->SetValue(true);
+
+    bLoopPointsSet = true;
 
     wxLogDebug("%s Event processed successfully..", __FUNCTION__);
 }
@@ -2986,14 +2973,10 @@ void MainFrame::OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent
 
 void MainFrame::ClearLoopPoints()
 {
-    m_LoopPointAText->SetValue("00:00");
-    m_LoopPointBText->SetValue("00:00");
-
-    m_LoopPointAButton->Disable();
-    m_LoopPointBButton->Disable();
-
     m_LoopA = 0;
     m_LoopB = 0;
+
+    bLoopPointsSet = false;
 }
 
 void MainFrame::PlaySample(const std::string& filepath, const std::string& sample, bool seek, wxFileOffset where, wxSeekMode mode)

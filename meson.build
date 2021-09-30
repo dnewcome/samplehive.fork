@@ -17,13 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-project('SampleHive', 'cpp',
+project('SampleHive',
+        'cpp',
         version : 'v0.8.4_alpha.1',
         license : 'GPL v3',
         default_options : ['warning_level=1',
                            'cpp_std=c++11'])
 
 meson_src_root = meson.current_source_dir()
+meson_build_root = meson.current_build_dir()
 
 # Save important directories
 prefix = get_option('prefix')
@@ -41,10 +43,16 @@ config_data.set_quoted('DATADIR', datadir)
 config_data.set_quoted('SAMPLEHIVE_DATADIR', samplehive_datadir)
 
 # Create samplehive-config.h based on configuration
-config_h = configure_file(
-  output: 'SampleHiveConfig.hpp',
-  configuration: config_data,
-)
+config_h = configure_file(output: 'SampleHiveConfig.hpp',
+                          configuration: config_data,)
+
+# Import CMake
+cmake = import('cmake')
+cmake_opts = cmake.subproject_options()
+cmake_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+                              'CMAKE_INSTALL_PREFIX': prefix,
+                              'CMAKE_BUILD_TYPE': 'Release',
+                              'CMAKE_CXX_COMPILER': 'g++'})
 
 # Source files to be compiled
 src = [
@@ -62,32 +70,77 @@ src = [
 
 ]
 
-wxconfig = find_program(['wx-config-gtk3', 'wx-config'])
-wx_modules = ['media', 'std']
-wx_cxx_flags = []
-wx_libs = []
-
-foreach module : wx_modules
-  wx_cxx_flags += run_command(wxconfig, '--cxxflags', module).stdout().strip().split()
-  wx_libs += run_command(wxconfig, '--libs', module).stdout().strip().split()
-endforeach
-
 # Dependencies
-wx = dependency('wxwidgets', version: '>=3.0.4')
-taglib = dependency('taglib', version: '>=1.11')
-sqlite3 = dependency('sqlite3')
-yaml = dependency('yaml-cpp')
-snd = dependency('sndfile')
+wx = dependency('wxwidgets', version: '>=3.1.5', required: false)
 
-install_subdir(
-  'assets',
-  install_dir: samplehive_datadir,
-  exclude_directories: 'screenshots'
-)
+wx_found = false
 
-executable('SampleHive',
-           sources: src,
-           cpp_args: [wx_cxx_flags],
-           link_args: [wx_libs],
-           dependencies: [wx, taglib, sqlite3, yaml, snd],
-           install: true)
+if not wx.found()
+  wx_found = false
+
+  wx_subproject = cmake.subproject('wxwidgets', options: cmake_opts)
+  wx_core = wx_subproject.dependency('wxcore')
+  wx_base = wx_subproject.dependency('wxbase')
+  wx_media = wx_subproject.dependency('wxmedia')
+  wx = [wx_core, wx_base, wx_media]
+else
+  wx_found = true
+
+  wxconfig = find_program(['wx-config-gtk3', 'wx-config'])
+  wx_modules = ['media', 'std']
+  wx_cxx_flags = []
+  wx_libs = []
+
+  foreach module : wx_modules
+    wx_cxx_flags += run_command(wxconfig, '--cxxflags', module).stdout().strip().split()
+    wx_libs += run_command(wxconfig, '--libs', module).stdout().strip().split()
+  endforeach
+endif
+
+taglib = dependency('taglib', version: '>=1.12', required: false)
+if not taglib.found()
+  taglib_subproject = cmake.subproject('taglib', options: cmake_opts)
+  taglib = taglib_subproject.dependency('tag')
+endif
+
+sqlite3 = dependency('sqlite3', required: true)
+yaml = dependency('yaml-cpp', required: true)
+snd = dependency('sndfile', required: true)
+
+install_subdir('assets',
+               install_dir: samplehive_datadir,
+               exclude_directories: 'screenshots')
+
+if wx_found
+  executable('SampleHive',
+             sources: src,
+             cpp_args: [wx_cxx_flags],
+             link_args: [wx_libs],
+             dependencies: [wx, taglib, sqlite3, yaml, snd],
+             install: true,
+             install_rpath: prefix / 'lib')
+else
+  executable('SampleHive',
+             sources: src,
+             dependencies: [wx, taglib, sqlite3, yaml, snd],
+             install: true,
+             install_rpath: prefix / 'lib')
+endif
+
+summary(
+  {
+    # 'Program name': get_option ('program_name'),
+    'Debug': get_option('debug'),
+    'Optimization': get_option('optimization'),
+  },
+  section: 'General')
+
+summary(
+  {
+    'prefix': prefix,
+    'bindir': bindir,
+    'libdir': libdir,
+    'datadir': datadir,
+    'samplehive_datadir': samplehive_datadir,
+  },
+  section: 'Directories')

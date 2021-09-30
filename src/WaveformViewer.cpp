@@ -233,7 +233,7 @@ void WaveformViewer::UpdateWaveformBitmap()
     // Draw code
     wxMemoryDC mdc(m_WaveformBitmap);
 
-    mdc.SetBrush(*wxBLACK);
+    mdc.SetBackground(wxBrush(wxColour(0, 0, 0, 150), wxBRUSHSTYLE_SOLID));
     mdc.Clear();
 
     m_WaveformColour = serializer.DeserializeWaveformColour();

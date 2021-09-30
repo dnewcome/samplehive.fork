@@ -18,9 +18,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <taglib/taglib.h>
+#include <taglib/tag.h>
 #include <taglib/fileref.h>
-#include <taglib/tstring.h>
+#include <taglib/toolkit/tstring.h>
 
 #include "Tags.hpp"
 
