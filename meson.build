@@ -67,7 +67,7 @@ wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'wxUSE_MDI_ARCHITECTURE': 'OFF',
                            'wxUSE_RICHTEXT': 'OFF',
                            'wxUSE_WEBVIEW': 'OFF',
-                           'wxUSE_LIBSDL': 'ON',
+                           'wxUSE_LIBSDL': 'OFF',
                            'wxUSE_MEDIACTRL': 'ON'})
 
 taglib_opts = cmake.subproject_options()
