@@ -18,11 +18,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Tags.hpp"
+#include "SampleHiveConfig.hpp"
+
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
-#include <taglib/toolkit/tstring.h>
 
-#include "Tags.hpp"
+#ifndef USE_SYSTEM_INCLUDE_PATH
+    #include <taglib/toolkit/tstring.h>
+#else
+    #include <taglib/tstring.h>
+#endif
 
 Tags::Tags(const std::string& filename)
     : m_Filepath(filename)

@@ -42,17 +42,39 @@ config_data.set_quoted('LIBDIR', libdir)
 config_data.set_quoted('DATADIR', datadir)
 config_data.set_quoted('SAMPLEHIVE_DATADIR', samplehive_datadir)
 
-# Create samplehive-config.h based on configuration
-config_h = configure_file(output: 'SampleHiveConfig.hpp',
-                          configuration: config_data,)
-
 # Import CMake
 cmake = import('cmake')
-cmake_opts = cmake.subproject_options()
-cmake_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
-                              'CMAKE_INSTALL_PREFIX': prefix,
-                              'CMAKE_BUILD_TYPE': 'Release',
-                              'CMAKE_CXX_COMPILER': 'g++'})
+
+wx_opts = cmake.subproject_options()
+wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+                           'CMAKE_INSTALL_PREFIX': prefix,
+                           'CMAKE_BUILD_TYPE': 'Release',
+                           'CMAKE_CXX_COMPILER': 'g++',
+                           'wxBUILD_SHARED': 'ON',
+                           'wxBUILD_TESTS': 'OFF',
+                           'wxBUILD_SAMPLES': 'OFF',
+                           'wxBUILD_DEMOS': 'OFF',
+                           'wxBUILD_COMPATIBILITY': '3.0',
+                           'wxUSE_UNICODE': 'ON',
+                           'wxUSE_AUI': 'OFF',
+                           'wxUSE_XML': 'OFF',
+                           'wxUSE_XRC': 'ON',
+                           'wxUSE_HTML': 'ON',
+                           'wxUSE_QA': 'ON',
+                           'wxUSE_PROPGRID': 'OFF',
+                           'wxUSE_RIBBON': 'OFF',
+                           'wxUSE_MDI': 'OFF',
+                           'wxUSE_MDI_ARCHITECTURE': 'OFF',
+                           'wxUSE_RICHTEXT': 'OFF',
+                           'wxUSE_WEBVIEW': 'OFF',
+                           'wxUSE_LIBSDL': 'ON',
+                           'wxUSE_MEDIACTRL': 'ON'})
+
+taglib_opts = cmake.subproject_options()
+taglib_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+                               'CMAKE_INSTALL_PREFIX': prefix,
+                               'CMAKE_BUILD_TYPE': 'Release',
+                               'CMAKE_CXX_COMPILER': 'g++'})
 
 # Source files to be compiled
 src = [
@@ -78,9 +100,9 @@ wx_found = false
 if not wx.found()
   wx_found = false
 
-  wx_subproject = cmake.subproject('wxwidgets', options: cmake_opts)
-  wx_core = wx_subproject.dependency('wxcore')
+  wx_subproject = cmake.subproject('wxwidgets', options: wx_opts)
   wx_base = wx_subproject.dependency('wxbase')
+  wx_core = wx_subproject.dependency('wxcore')
   wx_media = wx_subproject.dependency('wxmedia')
   wx = [wx_core, wx_base, wx_media]
 else
@@ -98,14 +120,21 @@ else
 endif
 
 taglib = dependency('taglib', version: '>=1.12', required: false)
+
 if not taglib.found()
-  taglib_subproject = cmake.subproject('taglib', options: cmake_opts)
+  taglib_subproject = cmake.subproject('taglib', options: taglib_opts)
   taglib = taglib_subproject.dependency('tag')
+else
+  config_data.set('USE_SYSTEM_INCLUDE_PATH', 1)
 endif
 
 sqlite3 = dependency('sqlite3', required: true)
 yaml = dependency('yaml-cpp', required: true)
 snd = dependency('sndfile', required: true)
+
+# Create samplehive-config.h based on configuration
+config_h = configure_file(output: 'SampleHiveConfig.hpp',
+                          configuration: config_data,)
 
 install_subdir('assets',
                install_dir: samplehive_datadir,
@@ -129,7 +158,6 @@ endif
 
 summary(
   {
-    # 'Program name': get_option ('program_name'),
     'Debug': get_option('debug'),
     'Optimization': get_option('optimization'),
   },

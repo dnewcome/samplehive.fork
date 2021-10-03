@@ -20,6 +20,10 @@
 
 #pragma once
 
+#include "WaveformViewer.hpp"
+#include "SampleHiveConfig.hpp"
+#include "SH_Event.hpp"
+
 #include <string>
 
 #include <wx/button.h>
@@ -55,10 +59,12 @@
 
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
-#include <taglib/toolkit/tstring.h>
 
-#include "WaveformViewer.hpp"
-#include "SH_Event.hpp"
+#ifndef USE_SYSTEM_INCLUDE_PATH
+    #include <taglib/toolkit/tstring.h>
+#else
+    #include <taglib/tstring.h>
+#endif
 
 struct FileInfo
 {
