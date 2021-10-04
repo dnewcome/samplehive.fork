@@ -19,7 +19,7 @@
 
 project('SampleHive',
         'cpp',
-        version : 'v0.8.4_alpha.1',
+        version : 'v0.9.0_alpha.1',
         license : 'GPL v3',
         default_options : ['warning_level=1',
                            'cpp_std=c++11'])
