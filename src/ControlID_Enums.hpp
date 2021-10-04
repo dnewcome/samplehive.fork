@@ -35,6 +35,7 @@ enum ControlIDs
     BC_Settings,
     BC_Loop,
     BC_Stop,
+    BC_LoopABButton,
     BC_Mute,
     BC_Autoplay,
     BC_Volume,
@@ -59,6 +60,7 @@ enum ControlIDs
     SD_FontType,
     SD_FontSize,
     SD_FontBrowseButton,
+    SD_WaveformColourPickerCtrl,
 
     // -------------------------------------------------------------------
     // App Menu items

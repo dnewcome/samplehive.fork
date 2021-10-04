@@ -23,6 +23,7 @@
 #include <string>
 
 #include <wx/button.h>
+#include <wx/clrpicker.h>
 #include <wx/checkbox.h>
 #include <wx/choice.h>
 #include <wx/dialog.h>
@@ -86,6 +87,9 @@ class Settings : public wxDialog
         wxFontDialog* m_FontDialog;
         wxButton* m_FontBrowseButton;
         wxSpinCtrl* m_FontSize;
+        wxBoxSizer* m_WaveformColourSizer;
+        wxStaticText* m_WaveformColourLabel;
+        wxColourPickerCtrl* m_WaveformColourPickerCtrl;
 
         // -------------------------------------------------------------------
         // Collection page
@@ -121,6 +125,7 @@ class Settings : public wxDialog
         // -------------------------------------------------------------------
         bool bAutoImport = false;
         bool bShowExtension = true;
+        bool bWaveformColourChanged = false;
 
     private:
         // -------------------------------------------------------------------
@@ -131,6 +136,7 @@ class Settings : public wxDialog
         void OnClickBrowseAutoImportDir(wxCommandEvent& event);
         void OnChangeFontSize(wxSpinEvent& event);
         void OnSelectFont(wxCommandEvent& event);
+        void OnChangeWaveformColour(wxColourPickerEvent& event);
 
         // -------------------------------------------------------------------
         void SetCustomFont();
@@ -147,4 +153,6 @@ class Settings : public wxDialog
         inline wxFont GetFontType() { return m_Font; };
         inline bool CanAutoImport() { return bAutoImport; };
         inline bool ShouldShowFileExtension() { return bShowExtension; };
+        inline bool IsWaveformColourChanged() { return bWaveformColourChanged; }
+        inline wxColour GetWaveformColour() { return m_WaveformColourPickerCtrl->GetColour(); }
 };

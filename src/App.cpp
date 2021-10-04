@@ -79,7 +79,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 
     if (parser.Found("version"))
     {
-        std::cout << "SampleHive v0.8.4_alpha.1" << std::endl;
+        std::cout << "SampleHive v0.9.0_alpha.1" << std::endl;
         return false;
     }
 

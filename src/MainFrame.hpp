@@ -20,9 +20,14 @@
 
 #pragma once
 
+#include "WaveformViewer.hpp"
+#include "SampleHiveConfig.hpp"
+#include "SH_Event.hpp"
+
 #include <string>
 
 #include <wx/button.h>
+#include <wx/bmpbuttn.h>
 #include <wx/checkbox.h>
 #include <wx/collpane.h>
 #include <wx/dataview.h>
@@ -40,6 +45,7 @@
 #include <wx/sizer.h>
 #include <wx/slider.h>
 #include <wx/splitter.h>
+#include <wx/settings.h>
 #include <wx/statbmp.h>
 #include <wx/statusbr.h>
 #include <wx/string.h>
@@ -51,9 +57,14 @@
 #include <wx/treectrl.h>
 #include <wx/window.h>
 
-#include <taglib/taglib.h>
+#include <taglib/tag.h>
 #include <taglib/fileref.h>
-#include <taglib/tstring.h>
+
+#ifndef USE_SYSTEM_INCLUDE_PATH
+    #include <taglib/toolkit/tstring.h>
+#else
+    #include <taglib/tstring.h>
+#endif
 
 struct FileInfo
 {
@@ -106,16 +117,18 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel controls
         wxPanel* m_TopPanel;
+        WaveformViewer* m_TopWaveformPanel;
+        wxPanel* m_TopControlsPanel;
         wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
-        wxStaticBitmap* m_WaveformViewer;
         wxBoxSizer* m_BrowserControlSizer;
-        wxButton* m_PlayButton;
-        wxToggleButton* m_LoopButton;
-        wxButton* m_StopButton;
+        wxBitmapButton* m_PlayButton;
+        wxBitmapToggleButton* m_LoopButton;
+        wxBitmapButton* m_StopButton;
         wxButton* m_SettingsButton;
-        wxToggleButton* m_MuteButton;
+        wxBitmapToggleButton* m_MuteButton;
+        wxBitmapToggleButton* m_LoopABButton;
         wxStaticText* m_SamplePosition;
         wxSlider* m_VolumeSlider;
         wxCheckBox* m_AutoPlayCheck;
@@ -162,6 +175,12 @@ class MainFrame : public wxFrame
         // FileSystemWatcher
         wxFileSystemWatcher* m_FsWatcher;
 
+        // -------------------------------------------------------------------
+        wxLongLong m_LoopA, m_LoopB;
+
+        // -------------------------------------------------------------------
+        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
+
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
@@ -169,6 +188,7 @@ class MainFrame : public wxFrame
         bool bMuted = false;
         bool bStopped = false;
         bool bFiltered = false;
+        bool bLoopPointsSet = false;
 
         // -------------------------------------------------------------------
         const std::string m_ConfigFilepath;
@@ -244,6 +264,15 @@ class MainFrame : public wxFrame
         void OnAutoImportDir(const wxString& pathToDirectory);
 
         // -------------------------------------------------------------------
+        void PlaySample(const std::string& filepath, const std::string& sample, bool seek = false,
+                        wxFileOffset where = NULL, wxSeekMode mode = wxFromStart);
+
+        // Recieve custom events
+        // -------------------------------------------------------------------
+        void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
+        void OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent& event);
+
+        // -------------------------------------------------------------------
         void LoadDatabase();
         void RefreshDatabase();
         void LoadConfigFile();
@@ -263,6 +292,9 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Call after frame creation
         void SetAfterFrameCreate();
+
+        // -------------------------------------------------------------------
+        void ClearLoopPoints();
 
         // -------------------------------------------------------------------
         friend class App;
