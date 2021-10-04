@@ -175,7 +175,11 @@ class MainFrame : public wxFrame
         // FileSystemWatcher
         wxFileSystemWatcher* m_FsWatcher;
 
+        // -------------------------------------------------------------------
         wxLongLong m_LoopA, m_LoopB;
+
+        // -------------------------------------------------------------------
+        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
     private:
         // -------------------------------------------------------------------
@@ -185,9 +189,6 @@ class MainFrame : public wxFrame
         bool bStopped = false;
         bool bFiltered = false;
         bool bLoopPointsSet = false;
-
-        // -------------------------------------------------------------------
-        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
         // -------------------------------------------------------------------
         const std::string m_ConfigFilepath;
@@ -205,7 +206,6 @@ class MainFrame : public wxFrame
         void OnSlideVolume(wxScrollEvent& event);
         void OnReleaseVolumeSlider(wxScrollEvent& event);
         void OnClickSettings(wxCommandEvent& event);
-        void OnClickLoopABButton(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // DirCtrl event handlers
@@ -264,7 +264,8 @@ class MainFrame : public wxFrame
         void OnAutoImportDir(const wxString& pathToDirectory);
 
         // -------------------------------------------------------------------
-        void PlaySample(const std::string& filepath, const std::string& sample, bool seek = false, wxFileOffset where = NULL, wxSeekMode mode = wxFromStart);
+        void PlaySample(const std::string& filepath, const std::string& sample, bool seek = false,
+                        wxFileOffset where = NULL, wxSeekMode mode = wxFromStart);
 
         // Recieve custom events
         // -------------------------------------------------------------------

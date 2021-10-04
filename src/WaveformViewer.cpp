@@ -74,7 +74,6 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
         wxLogDebug("Updating waveform bitmap..");
 
         m_WaveformBitmap = wxBitmap(wxImage(size.x, size.y), 32);
-        // m_WaveformBitmap.Create(size.x, size.y, 32);
 
         UpdateWaveformBitmap();
 
@@ -82,7 +81,6 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
     }
 
     dc.DrawBitmap(m_WaveformBitmap, 0, 0, false);
-    // m_WaveformBitmap.SaveFile("waveform.png", wxBITMAP_TYPE_PNG);
 
     RenderPlayhead(dc);
 

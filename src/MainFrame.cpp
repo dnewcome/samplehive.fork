@@ -50,14 +50,12 @@
 #include <wx/msgdlg.h>
 #include <wx/object.h>
 #include <wx/progdlg.h>
-// #include <wx/stdpaths.h>
 #include <wx/stringimpl.h>
 #include <wx/textdlg.h>
 #include <wx/valtext.h>
 #include <wx/variant.h>
 #include <wx/vector.h>
 #include <wx/utils.h>
-// #include <wx/unix/stdpaths.h>
 
 #include "MainFrame.hpp"
 #include "ControlID_Enums.hpp"
@@ -426,7 +424,6 @@ MainFrame::MainFrame()
     Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickMute, this, BC_Mute);
     Bind(wxEVT_MEDIA_FINISHED, &MainFrame::OnMediaFinished, this, BC_MediaCtrl);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickSettings, this, BC_Settings);
-    // Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickLoopABButton, this, BC_LoopABButton);
     Bind(wxEVT_CHECKBOX, &MainFrame::OnCheckAutoplay, this, BC_Autoplay);
     Bind(wxEVT_SCROLL_THUMBTRACK, &MainFrame::OnSlideVolume, this, BC_Volume);
     Bind(wxEVT_SCROLL_THUMBRELEASE, &MainFrame::OnReleaseVolumeSlider, this, BC_Volume);
@@ -2645,7 +2642,7 @@ void MainFrame::LoadConfigFile()
     this->CenterOnScreen(wxBOTH);
     this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
     this->SetTitle("SampleHive");
-    this->SetStatusText("SampleHive v0.8.4_alpha.1", 3);
+    this->SetStatusText("SampleHive v0.9.0_alpha.1", 3);
     this->SetStatusText(_("Stopped"), 1);
 }
 
@@ -2890,21 +2887,21 @@ void MainFrame::OnSelectAbout(wxCommandEvent& event)
     aboutInfo.SetName("SampleHive");
     aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
     aboutInfo.AddArtist("Apoorv");
-    aboutInfo.SetVersion("v0.8.4_alpha.1", _("Version 0.8.4_alpha.1"));
+    aboutInfo.SetVersion("v0.9.0_alpha.1", _("Version 0.9.0_alpha.1"));
     aboutInfo.SetDescription(_("A simple, modern audio sample browser/manager for GNU/Linux."));
     aboutInfo.SetCopyright("(C) 2020-2021");
     aboutInfo.SetWebSite("http://samplehive.gitlab.io");
     aboutInfo.AddDeveloper("Apoorv");
     aboutInfo.SetLicence(wxString::FromAscii(
-                             "SampleHive v0.8.4_alpha.1\n"
+                             "SampleHive v0.9.0_alpha.1\n"
                              "Copyright (C) 2021  Apoorv Singh\n"
                              "\n"
-                             "This program is free software: you can redistribute it and/or modify\n"
+                             "SampleHive is free software: you can redistribute it and/or modify\n"
                              "it under the terms of the GNU General Public License as published by\n"
                              "the Free Software Foundation, either version 3 of the License, or\n"
                              "(at your option) any later version.\n"
                              "\n"
-                             "This program is distributed in the hope that it will be useful,\n"
+                             "SampleHive is distributed in the hope that it will be useful,\n"
                              "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
                              "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
                              "GNU General Public License for more details.\n"
@@ -2933,11 +2930,6 @@ void MainFrame::SetAfterFrameCreate()
 {
     m_TopSplitter->SetSashPosition(200);
     m_BottomSplitter->SetSashPosition(300);
-}
-
-void MainFrame::OnClickLoopABButton(wxCommandEvent& event)
-{
-    wxLogDebug("Loop point button clicked");
 }
 
 void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
