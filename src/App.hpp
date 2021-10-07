@@ -20,10 +20,10 @@
 
 #pragma once
 
+#include "MainFrame.hpp"
+
 #include <wx/app.h>
 #include <wx/cmdline.h>
-
-#include "MainFrame.hpp"
 
 class App : public wxApp
 {

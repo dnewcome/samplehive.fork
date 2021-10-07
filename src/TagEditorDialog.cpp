@@ -18,16 +18,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "ControlID_Enums.hpp"
+#include "Database.hpp"
+#include "TagEditorDialog.hpp"
+
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
 #include <wx/log.h>
 #include <wx/msgdlg.h>
 #include <wx/stringimpl.h>
 #include <wx/textdlg.h>
-
-#include "ControlID_Enums.hpp"
-#include "Database.hpp"
-#include "TagEditorDialog.hpp"
 
 TagEditor::TagEditor(wxWindow* window, const std::string& dbPath, const std::string& filename, wxInfoBar& info_bar)
     : wxDialog(window, wxID_ANY, "Edit tags", wxDefaultPosition,

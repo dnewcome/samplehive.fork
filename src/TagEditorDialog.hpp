@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "Tags.hpp"
+
 #include <string>
 
 #include <wx/button.h>
@@ -33,8 +35,6 @@
 #include <wx/textctrl.h>
 #include <wx/toplevel.h>
 #include <wx/window.h>
-
-#include "Tags.hpp"
 
 class TagEditor : public wxDialog
 {

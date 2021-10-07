@@ -18,6 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Serialize.hpp"
+
 #include <fstream>
 #include <sstream>
 
@@ -28,8 +30,6 @@
 
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/node/parse.h>
-
-#include "Serialize.hpp"
 
 Serializer::Serializer(const std::string& filepath)
     : m_Filepath(filepath)

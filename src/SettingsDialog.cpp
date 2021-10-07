@@ -18,15 +18,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <wx/defs.h>
-#include <wx/gdicmn.h>
-#include <wx/log.h>
-// #include <wx/stdpaths.h>
-#include <wx/stringimpl.h>
-
 #include "ControlID_Enums.hpp"
 #include "SettingsDialog.hpp"
 #include "Serialize.hpp"
+
+#include <wx/defs.h>
+#include <wx/gdicmn.h>
+#include <wx/log.h>
+#include <wx/stringimpl.h>
 
 Settings::Settings(const std::string& configFilepath, const std::string& databaseFilepath)
     : m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)

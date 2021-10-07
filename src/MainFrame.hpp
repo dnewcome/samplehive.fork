@@ -49,7 +49,6 @@
 #include <wx/statbmp.h>
 #include <wx/statusbr.h>
 #include <wx/string.h>
-#include <wx/stringimpl.h>
 #include <wx/tglbtn.h>
 #include <wx/timer.h>
 #include <wx/toplevel.h>
@@ -146,7 +145,7 @@ class MainFrame : public wxFrame
         wxBoxSizer* m_TrashMainSizer;
         wxBoxSizer* m_TrashItemSizer;
         wxBoxSizer* m_TrashButtonSizer;
-        wxDirCtrl* m_DirCtrl;
+        wxGenericDirCtrl* m_DirCtrl;
         wxDataViewTreeCtrl* m_Hives;
         wxDataViewItem favorites_hive;
         wxTreeItemId trash_root;

@@ -21,11 +21,24 @@ project('SampleHive',
         'cpp',
         version : 'v0.9.0_alpha.1',
         license : 'GPL v3',
+        meson_version: '>= 0.58.0',
         default_options : ['warning_level=1',
                            'cpp_std=c++11'])
 
 meson_src_root = meson.current_source_dir()
 meson_build_root = meson.current_build_dir()
+
+# Create configuration data
+config_data = configuration_data()
+
+# Save project information
+project_name = meson.project_name()
+project_license = meson.project_license()
+project_version = meson.project_version()
+
+config_data.set_quoted('NAME', project_name)
+config_data.set_quoted('LICENSE', project_license)
+config_data.set_quoted('VERSION', project_version)
 
 # Save important directories
 prefix = get_option('prefix')
@@ -34,8 +47,6 @@ libdir = prefix / get_option('libdir')
 datadir = prefix / get_option('datadir')
 samplehive_datadir = datadir / 'SampleHive'
 
-# Create configuration data
-config_data = configuration_data()
 config_data.set_quoted('PREFIX', prefix)
 config_data.set_quoted('BINDIR', bindir)
 config_data.set_quoted('LIBDIR', libdir)
@@ -75,6 +86,28 @@ taglib_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                                'CMAKE_INSTALL_PREFIX': prefix,
                                'CMAKE_BUILD_TYPE': 'Release',
                                'CMAKE_CXX_COMPILER': 'g++'})
+
+yaml_opts = cmake.subproject_options()
+yaml_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+                             'CMAKE_INSTALL_PREFIX': prefix,
+                             'CMAKE_BUILD_TYPE': 'Release',
+                             'CMAKE_CXX_COMPILER': 'g++',
+                             'YAML_BUILD_SHARED_LIBS': 'ON',
+                             'YAML_CPP_BUILD_TESTS': 'OFF',
+                             'YAML_CPP_BUILD_CONTRIB': 'ON',
+                             'YAML_CPP_BUILD_TOOLS': 'ON'})
+
+snd_opts = cmake.subproject_options()
+snd_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+                            'CMAKE_INSTALL_PREFIX': prefix,
+                            'CMAKE_BUILD_TYPE': 'Release',
+                            'CMAKE_CXX_COMPILER': 'g++',
+                            'BUILD_SHARED_LIBS': 'ON',
+                            'BUILD_PROGRAMS': 'OFF',
+                            'BUILD_EXAMPLES': 'OFF',
+                            'BUILD_TESTING': 'OFF',
+                            'ENABLE_EXTERNAL_LIBS': 'ON',
+                            'ENABLE_MPEG': 'ON'})
 
 # Source files to be compiled
 src = [
@@ -128,9 +161,27 @@ else
   config_data.set('USE_SYSTEM_INCLUDE_PATH', 1)
 endif
 
-sqlite3 = dependency('sqlite3', required: true)
-yaml = dependency('yaml-cpp', required: true)
-snd = dependency('sndfile', required: true)
+sqlite3 = dependency('sqlite3', version: '>=3.31.1', required: false)
+
+if not sqlite3.found()
+  sqlite3_subproject = subproject('sqlite3')
+  libsqlite3 = sqlite3_subproject.get_variable('libsqlite3')
+  sqlite3 = declare_dependency(link_with: libsqlite3)
+endif
+
+yaml = dependency('yaml-cpp', version: '>=0.6.2', required: false)
+
+if not yaml.found()
+  yaml_subproject = cmake.subproject('yaml-cpp', options: yaml_opts)
+  yaml = yaml_subproject.dependency('yaml-cpp')
+endif
+
+snd = dependency('sndfile', version: '>=1.0.28', required: false)
+
+if not snd.found()
+  snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
+  snd = snd_subproject.dependency('sndfile')
+endif
 
 # Create samplehive-config.h based on configuration
 config_h = configure_file(output: 'SampleHiveConfig.hpp',
@@ -138,7 +189,8 @@ config_h = configure_file(output: 'SampleHiveConfig.hpp',
 
 install_subdir('assets',
                install_dir: samplehive_datadir,
-               exclude_directories: 'screenshots')
+               exclude_directories: 'screenshots',
+               strip_directory: true)
 
 if wx_found
   executable('SampleHive',

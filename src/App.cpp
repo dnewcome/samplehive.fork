@@ -26,7 +26,7 @@
 #include <wx/gdicmn.h>
 #include <wx/splash.h>
 
-#define SPLASH_LOGO SAMPLEHIVE_DATADIR "/assets/logo/logo-samplehive_768x432.png"
+#define SPLASH_LOGO SAMPLEHIVE_DATADIR "/logo/logo-samplehive_768x432.png"
 
 wxIMPLEMENT_APP(App);
 
@@ -79,7 +79,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 
     if (parser.Found("version"))
     {
-        std::cout << "SampleHive v0.9.0_alpha.1" << std::endl;
+        std::cout << NAME << ' ' << VERSION << std::endl;
         return false;
     }
 

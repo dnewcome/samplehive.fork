@@ -18,6 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Sample.hpp"
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -30,8 +32,6 @@
 #include <wx/variant.h>
 
 #include <sqlite3.h>
-
-#include "Sample.hpp"
 
 class Database
 {

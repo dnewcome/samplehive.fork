@@ -41,9 +41,8 @@
 #include <wx/filename.h>
 // #include <wx/fswatcher.h>
 #include <wx/gdicmn.h>
-#include <wx/generic/icon.h>
-#include <wx/gtk/dataobj2.h>
-#include <wx/gtk/dataview.h>
+#include <wx/icon.h>
+#include <wx/dataobj.h>
 #include <wx/headercol.h>
 #include <wx/log.h>
 #include <wx/menu.h>
@@ -68,24 +67,24 @@
 #include "SampleHiveConfig.hpp"
 
 // Path to all the assets
-#define ICON_HIVE_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_16x16.png"
-#define ICON_HIVE_24px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_24x24.png"
-#define ICON_HIVE_32px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_32x32.png"
-#define ICON_HIVE_64px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_64x64.png"
-#define ICON_HIVE_128px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_128x128.png"
-#define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/assets/icons/icon-hive_256x256.png"
-#define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_filled_16x16.png"
-#define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-star_empty_16x16.png"
-#define ICON_PLAY_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-play-dark_16x16.png"
-#define ICON_STOP_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-stop-dark_16x16.png"
-#define ICON_AB_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-ab-dark_16x16.png"
-#define ICON_LOOP_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-loop-dark_16x16.png"
-#define ICON_MUTE_DARK_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-mute-dark_16x16.png"
-#define ICON_PLAY_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-play-light_16x16.png"
-#define ICON_STOP_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-stop-light_16x16.png"
-#define ICON_AB_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-ab-light_16x16.png"
-#define ICON_LOOP_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-loop-light_16x16.png"
-#define ICON_MUTE_LIGHT_16px SAMPLEHIVE_DATADIR "/assets/icons/icon-mute-light_16x16.png"
+#define ICON_HIVE_16px SAMPLEHIVE_DATADIR "/icons/icon-hive_16x16.png"
+#define ICON_HIVE_24px SAMPLEHIVE_DATADIR "/icons/icon-hive_24x24.png"
+#define ICON_HIVE_32px SAMPLEHIVE_DATADIR "/icons/icon-hive_32x32.png"
+#define ICON_HIVE_64px SAMPLEHIVE_DATADIR "/icons/icon-hive_64x64.png"
+#define ICON_HIVE_128px SAMPLEHIVE_DATADIR "/icons/icon-hive_128x128.png"
+#define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/icons/icon-hive_256x256.png"
+#define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/icons/icon-star_filled_16x16.png"
+#define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/icons/icon-star_empty_16x16.png"
+#define ICON_PLAY_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-play-dark_16x16.png"
+#define ICON_STOP_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-stop-dark_16x16.png"
+#define ICON_AB_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-ab-dark_16x16.png"
+#define ICON_LOOP_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-loop-dark_16x16.png"
+#define ICON_MUTE_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-mute-dark_16x16.png"
+#define ICON_PLAY_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-play-light_16x16.png"
+#define ICON_STOP_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-stop-light_16x16.png"
+#define ICON_AB_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-ab-light_16x16.png"
+#define ICON_LOOP_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-loop-light_16x16.png"
+#define ICON_MUTE_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-mute-light_16x16.png"
 #define APP_CONFIG_DIR wxGetHomeDir() + "/.config/SampleHive"
 #define APP_DATA_DIR wxGetHomeDir() + "/.local/share/SampleHive"
 #define CONFIG_FILEPATH APP_CONFIG_DIR + "/config.yaml"
@@ -200,10 +199,10 @@ MainFrame::MainFrame()
     m_Notebook = new wxNotebook(m_BottomLeftPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
 
     // Initializing wxGenericDirCtrl as one of the wxNotebook page.
-    m_DirCtrl = new wxDirCtrl(m_Notebook, BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
-                              wxDefaultSize, wxDIRCTRL_SHOW_FILTERS,
-                              _("All files|*|Ogg files (*.ogg)|*.ogg|Wav files (*.wav)|*.wav|"
-                                "Flac files (*.flac)|*.flac"), 0);
+    m_DirCtrl = new wxGenericDirCtrl(m_Notebook, BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
+                                     wxDefaultSize, wxDIRCTRL_SHOW_FILTERS,
+                                     _("All files|*|Ogg files (*.ogg)|*.ogg|Wav files (*.wav)|*.wav|"
+                                       "Flac files (*.flac)|*.flac"), 0);
 
     wxString path = wxGetHomeDir();
     m_DirCtrl->SetPath(path);
@@ -2641,8 +2640,8 @@ void MainFrame::LoadConfigFile()
     this->SetMinSize(wxSize(width, height));
     this->CenterOnScreen(wxBOTH);
     this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
-    this->SetTitle("SampleHive");
-    this->SetStatusText("SampleHive v0.9.0_alpha.1", 3);
+    this->SetTitle(NAME);
+    this->SetStatusText(wxString::Format("%s %s", NAME, VERSION), 3);
     this->SetStatusText(_("Stopped"), 1);
 }
 
@@ -2884,31 +2883,31 @@ void MainFrame::OnSelectAbout(wxCommandEvent& event)
 {
     wxAboutDialogInfo aboutInfo;
 
-    aboutInfo.SetName("SampleHive");
+    aboutInfo.SetName(NAME);
     aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
     aboutInfo.AddArtist("Apoorv");
-    aboutInfo.SetVersion("v0.9.0_alpha.1", _("Version 0.9.0_alpha.1"));
+    aboutInfo.SetVersion(VERSION, _("Version 0.9.0_alpha.1"));
     aboutInfo.SetDescription(_("A simple, modern audio sample browser/manager for GNU/Linux."));
     aboutInfo.SetCopyright("(C) 2020-2021");
     aboutInfo.SetWebSite("http://samplehive.gitlab.io");
     aboutInfo.AddDeveloper("Apoorv");
-    aboutInfo.SetLicence(wxString::FromAscii(
-                             "SampleHive v0.9.0_alpha.1\n"
+    aboutInfo.SetLicence(wxString::Format(wxString::FromAscii(
+                             "%s %s\n"
                              "Copyright (C) 2021  Apoorv Singh\n"
                              "\n"
-                             "SampleHive is free software: you can redistribute it and/or modify\n"
+                             "%s is free software: you can redistribute it and/or modify\n"
                              "it under the terms of the GNU General Public License as published by\n"
                              "the Free Software Foundation, either version 3 of the License, or\n"
                              "(at your option) any later version.\n"
                              "\n"
-                             "SampleHive is distributed in the hope that it will be useful,\n"
+                             "%s is distributed in the hope that it will be useful,\n"
                              "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
                              "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
                              "GNU General Public License for more details.\n"
                              "\n"
                              "You should have received a copy of the GNU General Public License\n"
                              "along with this program.  If not, see <https://www.gnu.org/licenses/>.\n"
-                         ));
+                             ), NAME, VERSION, NAME, NAME));
 
     wxAboutBox(aboutInfo);
 }

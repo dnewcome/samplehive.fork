@@ -18,6 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Database.hpp"
+
 #include <deque>
 #include <exception>
 
@@ -28,8 +30,6 @@
 #include <wx/string.h>
 #include <wx/stringimpl.h>
 #include <wx/variant.h>
-
-#include "Database.hpp"
 
 Database::Database(wxInfoBar& infoBar)
     : m_InfoBar(infoBar)

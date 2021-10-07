@@ -18,6 +18,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "WaveformViewer.hpp"
+#include "Database.hpp"
+#include "SettingsDialog.hpp"
+#include "Serialize.hpp"
+#include "Tags.hpp"
+#include "SH_Event.hpp"
+
 #include <vector>
 
 #include <wx/brush.h>
@@ -30,13 +37,6 @@
 #include <wx/pen.h>
 
 #include <sndfile.hh>
-
-#include "WaveformViewer.hpp"
-#include "Database.hpp"
-#include "SettingsDialog.hpp"
-#include "Serialize.hpp"
-#include "Tags.hpp"
-#include "SH_Event.hpp"
 
 WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
                                wxMediaCtrl& mediaCtrl, wxInfoBar& infoBar,
