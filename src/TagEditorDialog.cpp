@@ -226,7 +226,7 @@ void TagEditor::OnClickCustomTagButton(wxCommandEvent& event)
 
 void TagEditor::OnClickApply(wxCommandEvent& event)
 {
-    Database db(m_InfoBar);
+    Database db(m_InfoBar, m_DatabaseFilepath);
 
     wxString title = m_TitleText->GetValue();
     wxString artist = m_ArtistText->GetValue();
@@ -235,7 +235,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
     wxString comment = m_CommentText->GetValue();
     wxString type = m_SampleTypeChoice->GetStringSelection();
 
-    std::string sampleType = db.GetSampleType(m_DatabaseFilepath, m_Filename);
+    std::string sampleType = db.GetSampleType(m_Filename);
 
     std::string filename = wxString(m_Filename).AfterLast('/').BeforeLast('.').ToStdString();
 
@@ -265,7 +265,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
                 wxLogDebug("Changing artist tag..");
                 tags.SetArtist(artist.ToStdString());
 
-                db.UpdateSamplePack(m_DatabaseFilepath, m_Filename, artist.ToStdString());
+                db.UpdateSamplePack(m_Filename, artist.ToStdString());
 
                 wxLogDebug("SAMPLE FILENAME HERE: %s", m_Filename);
 
@@ -299,7 +299,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             if (m_SampleTypeCheck->GetValue() && m_SampleTypeChoice->GetStringSelection() != sampleType)
             {
                 wxLogDebug("Changing type tag..");
-                db.UpdateSampleType(m_DatabaseFilepath, filename, type.ToStdString());
+                db.UpdateSampleType(filename, type.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed type tag to %s", type);
             }

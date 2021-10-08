@@ -39,10 +39,10 @@
 #include <sndfile.hh>
 
 WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
-                               wxMediaCtrl& mediaCtrl, wxInfoBar& infoBar,
+                               wxMediaCtrl& mediaCtrl, Database& database,
                                const std::string& configFilepath, const std::string& databaseFilepath)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_InfoBar(infoBar), m_MediaCtrl(mediaCtrl),
+      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_database(database), m_MediaCtrl(mediaCtrl),
       m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     this->SetDoubleBuffered(true);
@@ -110,15 +110,13 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
 
 void WaveformViewer::RenderPlayhead(wxDC& dc)
 {
-    Database db(m_InfoBar);
-
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -150,7 +148,6 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
 
 void WaveformViewer::UpdateWaveformBitmap()
 {
-    Database db(m_InfoBar);
     Settings settings(m_ParentFrame, m_ConfigFilepath, m_DatabaseFilepath);
     Serializer serializer(m_ConfigFilepath);
 
@@ -161,12 +158,12 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     wxString selection = m_Library.GetTextValue(selected_row, 1);
 
-    wxString filepath_with_extension = db.GetSamplePathByFilename(m_DatabaseFilepath, selection.BeforeLast('.').ToStdString());
-    wxString filepath_without_extension = db.GetSamplePathByFilename(m_DatabaseFilepath, selection.ToStdString());
+    wxString filepath_with_extension = m_database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString filepath_without_extension = m_database.GetSamplePathByFilename(selection.ToStdString());
 
     std::string extension = settings.ShouldShowFileExtension() ?
-        db.GetSampleFileExtension(m_DatabaseFilepath, selection.ToStdString()) :
-        db.GetSampleFileExtension(m_DatabaseFilepath, selection.BeforeLast('.').ToStdString());
+        m_database.GetSampleFileExtension(selection.ToStdString()) :
+        m_database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
     wxString path = selection.Contains(wxString::Format(".%s", extension)) ?
         filepath_with_extension : filepath_without_extension;
@@ -293,15 +290,13 @@ void WaveformViewer::OnControlKeyUp(wxKeyEvent &event)
 
 void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
 {
-    Database db(m_InfoBar);
-
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -335,14 +330,13 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
 
 void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 {
-    Database db(m_InfoBar);
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -385,15 +379,13 @@ void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 
 void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
 {
-    Database db(m_InfoBar);
-
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -457,15 +449,13 @@ void WaveformViewer::SendLoopPoints()
     SampleHive::SH_LoopPointsEvent event(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, this->GetId());
     event.SetEventObject(this);
 
-    Database db(m_InfoBar);
-
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = db.GetSamplePathByFilename(m_DatabaseFilepath, selected.BeforeLast('.').ToStdString());
+    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 

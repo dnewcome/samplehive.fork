@@ -23,7 +23,7 @@ project('SampleHive',
         license : 'GPL v3',
         meson_version: '>= 0.58.0',
         default_options : ['warning_level=1',
-                           'cpp_std=c++11'])
+                           'cpp_std=c++14'])
 
 meson_src_root = meson.current_source_dir()
 meson_build_root = meson.current_build_dir()

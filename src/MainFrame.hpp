@@ -24,6 +24,7 @@
 #include "SampleHiveConfig.hpp"
 #include "SH_Event.hpp"
 
+#include <memory>
 #include <string>
 
 #include <wx/button.h>
@@ -64,6 +65,8 @@
 #else
     #include <taglib/tstring.h>
 #endif
+
+#include "Database.hpp"
 
 struct FileInfo
 {
@@ -180,6 +183,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
+        std::unique_ptr<Database> m_database;
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;

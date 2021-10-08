@@ -398,7 +398,12 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_InfoBar,
+    // Initialize the database
+    m_database = std::make_unique<Database>(*m_InfoBar, m_DatabaseFilepath);
+    m_database->CreateTableSamples();
+    m_database->CreateTableHives();
+
+    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_database,
                                             m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
@@ -543,11 +548,6 @@ MainFrame::MainFrame()
     m_BottomRightPanelMainSizer->SetSizeHints(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->Layout();
 
-    // Initialize the database
-    Database db(*m_InfoBar);
-    db.CreateTableSamples(static_cast<std::string>(DATABASE_FILEPATH));
-    db.CreateTableHives(static_cast<std::string>(DATABASE_FILEPATH));
-
     // Restore the data previously added to Library
     LoadDatabase();
 
@@ -582,7 +582,6 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
 void MainFrame::AddSamples(wxArrayString& files)
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
     
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
@@ -605,7 +604,7 @@ void MainFrame::AddSamples(wxArrayString& files)
     //Check All Files At Once
     wxArrayString sorted_files;
 
-    sorted_files = db.CheckDuplicates(static_cast<std::string>(DATABASE_FILEPATH), files);
+    sorted_files = m_database->CheckDuplicates(files);
     files = sorted_files;
 
     if(files.size() < 1)
@@ -686,7 +685,7 @@ void MainFrame::AddSamples(wxArrayString& files)
 
     progressDialog->Pulse(_("Updating Database.."), NULL);
 
-    db.InsertIntoSamples(static_cast<std::string>(DATABASE_FILEPATH), sample_array);
+    m_database->InsertIntoSamples(sample_array);
 
     progressDialog->Destroy();
 }
@@ -750,7 +749,6 @@ void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 
 void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 {
-    Database db(*m_InfoBar);
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     if (event.GetNumberOfFiles() > 0)
@@ -787,27 +785,23 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
                        rows - i, files[i], m_Hives->GetItemText(drop_target));
 
             if (drop_target.IsOk() && m_Hives->IsContainer(drop_target) &&
-                db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                    file_name.ToStdString()) == 0)
+                m_database->GetFavoriteColumnValueByFilename(file_name.ToStdString()) == 0)
             {
                 m_Hives->AppendItem(drop_target, files[i]);
 
                 m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), row, 0);
 
-                db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), file_name.ToStdString(), 1);
-                db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH),
-                                  file_name.ToStdString(), hive_name.ToStdString());
+                m_database->UpdateFavoriteColumn(file_name.ToStdString(), 1);
+                m_database->UpdateHiveName(                                  file_name.ToStdString(), hive_name.ToStdString());
 
                 msg = wxString::Format(_("%s added to %s."), files[i], hive_name);
             }
             else
             {
-                if (db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                        file_name.ToStdString()) == 1)
+                if (m_database->GetFavoriteColumnValueByFilename(file_name.ToStdString()) == 1)
                 {
                     wxMessageBox(wxString::Format(_("%s is already added to %s hive"), files[i],
-                                                  db.GetHiveByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                       file_name.ToStdString())),
+                                                  m_database->GetHiveByFilename(file_name.ToStdString())),
                                  _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
                 }
                 else
@@ -901,20 +895,19 @@ void MainFrame::OnDragFromDirCtrl(wxTreeEvent& event)
 void MainFrame::OnDragFromLibrary(wxDataViewEvent& event)
 {
     // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    // Database db(*m_InfoBar);
-
+    // 
     int selected_row = m_Library->ItemToRow(event.GetItem());
 
     if (selected_row < 0) return;
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
-    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+    // wxString sample_with_extension = m_database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = m_database->GetSamplePathByFilename(selection.ToStdString());
 
     // std::string extension = settings.ShouldShowFileExtension() ?
-    //     db.GetSampleFileExtension(selection.ToStdString()) :
-    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    //     m_database->GetSampleFileExtension(selection.ToStdString()) :
+    //     m_database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
@@ -934,8 +927,7 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
     bStopped = false;
 
     // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    // Database db(*m_InfoBar);
-
+    //  
     int selected_row = m_Library->GetSelectedRow();
 
     if (selected_row < 0)
@@ -943,12 +935,12 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
 
-    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+    // wxString sample_with_extension = m_database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = m_database->GetSamplePathByFilename(selection.ToStdString());
 
     // std::string extension = settings.ShouldShowFileExtension() ?
-    //     db.GetSampleFileExtension(selection.ToStdString()) :
-    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    //     m_database->GetSampleFileExtension(selection.ToStdString()) :
+    //     m_database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
@@ -1091,9 +1083,7 @@ void MainFrame::OnReleaseVolumeSlider(wxScrollEvent& event)
 void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 {
     Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    int selected_row = m_Library->ItemToRow(event.GetItem());
+     int selected_row = m_Library->ItemToRow(event.GetItem());
 
     int current_row = m_Library->ItemToRow(m_Library->GetCurrentItem());
 
@@ -1139,12 +1129,12 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     // else
     //     selection = m_Library->GetTextValue(selected_row, 1);
 
-    // wxString sample_with_extension = db.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = db.GetSamplePathByFilename(selection.ToStdString());
+    // wxString sample_with_extension = m_database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    // wxString sample_without_extension = m_database->GetSamplePathByFilename(selection.ToStdString());
 
     // std::string extension = settings.ShouldShowFileExtension() ?
-    //     db.GetSampleFileExtension(selection.ToStdString()) :
-    //     db.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+    //     m_database->GetSampleFileExtension(selection.ToStdString()) :
+    //     m_database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
     // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
     //     sample_with_extension : sample_without_extension;
@@ -1187,12 +1177,12 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
         wxDataViewItem container;
         wxDataViewItem child;
 
-        if (db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH), filename) == 0)
+        if (m_database->GetFavoriteColumnValueByFilename(filename) == 0)
         {
             m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
 
-            db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), filename, 1);
-            db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), filename, hive_name);
+            m_database->UpdateFavoriteColumn(filename, 1);
+            m_database->UpdateHiveName(filename, hive_name);
 
             for (int i = 0; i < m_Hives->GetChildCount(root); i++)
             {
@@ -1211,9 +1201,8 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
         {
             m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
-            db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), filename, 0);
-            db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH),
-                              filename, m_Hives->GetItemText(favorites_hive).ToStdString());
+            m_database->UpdateFavoriteColumn(filename, 0);
+            m_database->UpdateHiveName(filename, m_Hives->GetItemText(favorites_hive).ToStdString());
 
             for (int i = 0; i < m_Hives->GetChildCount(root); i++)
             {
@@ -1242,9 +1231,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    wxDataViewItem selected_hive = event.GetItem();
+     wxDataViewItem selected_hive = event.GetItem();
 
     wxString hive_name = m_Hives->GetItemText(selected_hive);
 
@@ -1342,8 +1329,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 wxLogDebug("Sample count: %d", sample_count);
 
                                 m_Hives->SetItemText(selected_hive, hive_name);
-                                db.UpdateHive(static_cast<std::string>(DATABASE_FILEPATH),
-                                              selected_hive_name.ToStdString(), hive_name.ToStdString());
+                                m_database->UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
                             }
                             else
                             {
@@ -1357,10 +1343,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                     wxLogDebug("Sample count: %d :: Sample name: %s", sample_count, sample_name);
 
-                                    db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH),
-                                                      sample_name.ToStdString(), hive_name.ToStdString());
-                                    db.UpdateHive(static_cast<std::string>(DATABASE_FILEPATH),
-                                                  selected_hive_name.ToStdString(), hive_name.ToStdString());
+                                    m_database->UpdateHiveName(sample_name.ToStdString(), hive_name.ToStdString());
+                                    m_database->UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
 
                                     m_Hives->SetItemText(selected_hive, hive_name);
                                 }
@@ -1429,8 +1413,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                             {
                                 m_Hives->DeleteItem(selected_hive);
 
-                                db.RemoveHiveFromDatabase(static_cast<std::string>(DATABASE_FILEPATH),
-                                                          hive_name.ToStdString());
+                                m_database->RemoveHiveFromDatabase(hive_name.ToStdString());
 
                                 msg = wxString::Format(_("%s deleted from hives successfully."), hive_name);
                             }
@@ -1471,11 +1454,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                             m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
-                                            db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                    matched_sample.ToStdString(), 0);
-                                            db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH),
-                                                              matched_sample.ToStdString(),
-                                                              m_Hives->GetItemText(favorites_hive).ToStdString());
+                                            m_database->UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
+                                            m_database->UpdateHiveName(matched_sample.ToStdString(), m_Hives->GetItemText(favorites_hive).ToStdString());
 
                                             break;
                                         }
@@ -1487,8 +1467,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 m_Hives->DeleteChildren(selected_hive);
                                 m_Hives->DeleteItem(selected_hive);
 
-                                db.RemoveHiveFromDatabase(static_cast<std::string>(DATABASE_FILEPATH),
-                                                          hive_name.ToStdString());
+                                m_database->RemoveHiveFromDatabase(hive_name.ToStdString());
 
                                 msg = wxString::Format(
                                     _("%s and all samples inside %s have been deleted from hives successfully."),
@@ -1512,12 +1491,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 {
                     try
                     {
-                        wxVector<wxVector<wxVariant>> dataset;
-
-                        if (db.FilterDatabaseByHiveName(static_cast<std::string>(DATABASE_FILEPATH),
-                                                        dataset, hive_name.ToStdString(),
+                        const auto dataset = m_database->FilterDatabaseByHiveName(hive_name.ToStdString(),
                                                         settings.ShouldShowFileExtension(),
-                                                        ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
+                                                        ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
+
+                        if (dataset.empty())
                         {
                             wxMessageBox(_("Error! Database is empty."), _("Error!"),
                                          wxOK | wxICON_ERROR | wxCENTRE, this);
@@ -1547,11 +1525,10 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 {
                     try
                     {
-                        wxVector<wxVector<wxVariant>> dataset;
+                        const auto dataset = m_database->FilterDatabaseBySampleName("", settings.ShouldShowFileExtension(),
+                                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
-                        if (db.FilterDatabaseBySampleName(static_cast<std::string>(DATABASE_FILEPATH),
-                                                          dataset, "", settings.ShouldShowFileExtension(),
-                                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
+                        if (dataset.empty())
                         {
                             wxMessageBox(_("Error! Database is empty."), _("Error!"),
                                          wxOK | wxICON_ERROR | wxCENTRE, this);
@@ -1601,8 +1578,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                         m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
-                        db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), matched_sample.ToStdString(), 0);
-                        db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), matched_sample.ToStdString(),
+                        m_database->UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
+                        m_database->UpdateHiveName(matched_sample.ToStdString(),
                                           m_Hives->GetItemText(favorites_hive).ToStdString());
 
                         m_Hives->DeleteItem(selected_hive);
@@ -1612,8 +1589,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                     m_InfoBar->ShowMessage(wxString::Format(_("Removed %s from %s"),
                                                             m_Hives->GetItemText(event.GetItem()),
-                                                            db.GetHiveByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                                 matched_sample.ToStdString())),
+                                                            m_database->GetHiveByFilename(matched_sample.ToStdString())),
                                            wxICON_INFORMATION);
                 }
                 break;
@@ -1652,9 +1628,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    wxString msg;
+     wxString msg;
 
     wxDataViewItem item = event.GetItem();
     int selected_row;
@@ -1675,7 +1649,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
     //true = add false = remove
     bool favorite_add = false;
 
-    if (db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH), filename) == 1)
+    if (m_database->GetFavoriteColumnValueByFilename(filename) == 1)
         menu.Append(MN_FavoriteSample, _("Remove from hive"), _("Remove the selected sample(s) from hive"));
     else 
     {
@@ -1729,7 +1703,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 filename = settings.ShouldShowFileExtension() ?
                     name.BeforeLast('.').ToStdString() : name.ToStdString();
 
-                db_status = db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH), filename);
+                db_status = m_database->GetFavoriteColumnValueByFilename(filename);
 
                 // Aleady Added, Do Nothing
                 if (favorite_add && db_status == 1)
@@ -1744,8 +1718,8 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 {
                     m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
 
-                    db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), filename, 1);
-                    db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), filename, hive_name);
+                    m_database->UpdateFavoriteColumn(filename, 1);
+                    m_database->UpdateHiveName(filename, hive_name);
         
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
                     {
@@ -1765,8 +1739,8 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     //Remove From Favorites
                     m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
-                    db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), filename, 0);
-                    db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), filename,
+                    m_database->UpdateFavoriteColumn(filename, 0);
+                    m_database->UpdateHiveName(filename,
                                       m_Hives->GetItemText(favorites_hive).ToStdString());
                     
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
@@ -1829,7 +1803,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     {
                         wxLogDebug("Selected row: %d :: Sample: %s", selected_row, filename);
 
-                        db.RemoveSampleFromDatabase(static_cast<std::string>(DATABASE_FILEPATH), filename);
+                        m_database->RemoveSampleFromDatabase(filename);
                         m_Library->DeleteItem(selected_row);
 
                         for (int j = 0; j < m_Hives->GetChildCount(root); j++)
@@ -1879,7 +1853,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             std::string multi_selection = settings.ShouldShowFileExtension() ?
                                 text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
-                            db.RemoveSampleFromDatabase(static_cast<std::string>(DATABASE_FILEPATH), multi_selection);
+                            m_database->RemoveSampleFromDatabase(multi_selection);
                             m_Library->DeleteItem(row);
 
                             for (int j = 0; j < m_Hives->GetChildCount(root); j++)
@@ -1921,7 +1895,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
             wxDataViewItem root = wxDataViewItem(wxNullPtr);
             wxDataViewItem container, child;
 
-            if (db.IsTrashed(static_cast<std::string>(DATABASE_FILEPATH), filename))
+            if (m_database->IsTrashed(filename))
                 wxLogDebug(_("Already trashed.."));
             else
             {
@@ -1946,11 +1920,11 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     files = file_data.GetFilenames();
 
-                    if (db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString()))
+                    if (m_database->GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                     {
                         m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
 
-                        db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 0);
+                        m_database->UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
                         for (int j = 0; j < m_Hives->GetChildCount(root); j++)
                         {
@@ -1973,8 +1947,8 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                         }
                     }
 
-                    db.UpdateTrashColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 1);
-                    db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(),
+                    m_database->UpdateTrashColumn(files[i].ToStdString(), 1);
+                    m_database->UpdateHiveName(files[i].ToStdString(),
                                       m_Hives->GetItemText(favorites_hive).ToStdString());
 
                     m_Trash->AppendItem(trash_root, text_value);
@@ -2081,17 +2055,15 @@ void MainFrame::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
 void MainFrame::LoadDatabase()
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    try
+     try
     {
-        db.LoadHivesDatabase(static_cast<std::string>(DATABASE_FILEPATH), *m_Hives);
+        m_database->LoadHivesDatabase(*m_Hives);
 
-        wxVector<wxVector<wxVariant>> dataset;
-
-        if (db.LoadSamplesDatabase(static_cast<std::string>(DATABASE_FILEPATH), dataset, *m_Hives, favorites_hive,
+        const auto dataset = m_database->LoadSamplesDatabase(*m_Hives, favorites_hive,
                                    *m_Trash, trash_root, settings.ShouldShowFileExtension(),
-                                   ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
+                                   ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
+
+        if (dataset.empty())
         {
             wxLogInfo(_("Error! Database is empty."));
         }
@@ -2112,9 +2084,7 @@ void MainFrame::LoadDatabase()
 void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    wxTreeItemId selected_trashed_item = event.GetItem();
+     wxTreeItemId selected_trashed_item = event.GetItem();
 
     wxMenu menu;
 
@@ -2133,7 +2103,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
                     m_Trash->GetItemText(selected_trashed_item).BeforeLast('.') :
                     m_Trash->GetItemText(selected_trashed_item);
 
-                db.RemoveSampleFromDatabase(static_cast<std::string>(DATABASE_FILEPATH), trashed_item_name.ToStdString());
+                m_database->RemoveSampleFromDatabase(trashed_item_name.ToStdString());
 
                 m_Trash->Delete(selected_trashed_item);
             }
@@ -2142,9 +2112,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
             {
                 wxLogDebug(_("Restore sample"));
 
-                Database db(*m_InfoBar);
-
-                wxArrayTreeItemIds selected_item_ids;
+                             wxArrayTreeItemIds selected_item_ids;
                 m_Trash->GetSelections(selected_item_ids);
 
                 wxFileDataObject file_data;
@@ -2166,13 +2134,13 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 
                     files = file_data.GetFilenames();
 
-                    db.UpdateTrashColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 0);
+                    m_database->UpdateTrashColumn(files[i].ToStdString(), 0);
 
                     try
                     {
                         wxVector<wxVector<wxVariant>> dataset;
 
-                        if (db.RestoreFromTrashByFilename(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(),
+                        if (m_database->RestoreFromTrashByFilename(files[i].ToStdString(),
                                                           dataset, settings.ShouldShowFileExtension(),
                                                           ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
                         {
@@ -2203,7 +2171,6 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 
 void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 {
-    Database db(*m_InfoBar);
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     if (event.GetNumberOfFiles() > 0)
@@ -2233,11 +2200,11 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             files = file_data.GetFilenames();
 
-            if (db.GetFavoriteColumnValueByFilename(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString()))
+            if (m_database->GetFavoriteColumnValueByFilename(files[i].ToStdString()))
             {
                 m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
 
-                db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 0);
+                m_database->UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
                 for (int j = 0; j < m_Hives->GetChildCount(root); j++)
                 {
@@ -2260,8 +2227,8 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
                 }
             }
 
-            db.UpdateTrashColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 1);
-            db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(),
+            m_database->UpdateTrashColumn(files[i].ToStdString(), 1);
+            m_database->UpdateHiveName(files[i].ToStdString(),
                               m_Hives->GetItemText(favorites_hive).ToStdString());
 
             m_Trash->AppendItem(trash_root, text_value);
@@ -2278,9 +2245,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
 void MainFrame::OnClickAddHive(wxCommandEvent& event)
 {
-    Database db(*m_InfoBar);
-
-    std::deque<wxDataViewItem> nodes;
+     std::deque<wxDataViewItem> nodes;
     nodes.push_back(m_Hives->GetNthChild(wxDataViewItem(wxNullPtr), 0));
 
     wxDataViewItem current_item, found_item;
@@ -2341,7 +2306,7 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
             else
             {
                 m_Hives->AppendContainer(wxDataViewItem(wxNullPtr), hive_name);
-                db.InsertIntoHives(static_cast<std::string>(DATABASE_FILEPATH), hive_name.ToStdString());
+                m_database->InsertIntoHives(hive_name.ToStdString());
 
                 msg = wxString::Format(_("%s added to Hives."), hive_name);
             }
@@ -2360,9 +2325,7 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
 void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 {
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-    Database db(*m_InfoBar);
-
-    wxDataViewItem selected_item = m_Hives->GetSelection();
+     wxDataViewItem selected_item = m_Hives->GetSelection();
     wxString hive_name = m_Hives->GetItemText(selected_item);
 
     wxString msg;
@@ -2411,7 +2374,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                 {
                     m_Hives->DeleteItem(selected_item);
 
-                    db.RemoveHiveFromDatabase(static_cast<std::string>(DATABASE_FILEPATH), hive_name.ToStdString());
+                    m_database->RemoveHiveFromDatabase(hive_name.ToStdString());
                     msg = wxString::Format(_("%s deleted from hives successfully."), hive_name);
                 }
                 break;
@@ -2451,8 +2414,8 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
                                 m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
-                                db.UpdateFavoriteColumn(static_cast<std::string>(DATABASE_FILEPATH), matched_sample.ToStdString(), 0);
-                                db.UpdateHiveName(static_cast<std::string>(DATABASE_FILEPATH), matched_sample.ToStdString(),
+                                m_database->UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
+                                m_database->UpdateHiveName(matched_sample.ToStdString(),
                                                   m_Hives->GetItemText(favorites_hive).ToStdString());
 
                                 break;
@@ -2465,7 +2428,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                     m_Hives->DeleteChildren(selected_item);
                     m_Hives->DeleteItem(selected_item);
 
-                    db.RemoveHiveFromDatabase(static_cast<std::string>(DATABASE_FILEPATH), hive_name.ToStdString());
+                    m_database->RemoveHiveFromDatabase(hive_name.ToStdString());
 
                     msg = wxString::Format(_("%s and all samples inside %s have been deleted from hives successfully."),
                                            hive_name, hive_name);
@@ -2484,7 +2447,6 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
-    Database db(*m_InfoBar);
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
     wxArrayTreeItemIds selected_item_ids;
@@ -2521,13 +2483,13 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
         files = file_data.GetFilenames();
 
-        db.UpdateTrashColumn(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), 0);
+        m_database->UpdateTrashColumn(files[i].ToStdString(), 0);
 
         try
         {
             wxVector<wxVector<wxVariant>> dataset;
 
-            if (db.RestoreFromTrashByFilename(static_cast<std::string>(DATABASE_FILEPATH), files[i].ToStdString(), dataset,
+            if (m_database->RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
                                               settings.ShouldShowFileExtension(),
                                               ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
             {
@@ -2552,17 +2514,16 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
 void MainFrame::OnDoSearch(wxCommandEvent& event)
 {
-    Database db(*m_InfoBar);
     Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
 
-    std::string search = m_SearchBox->GetValue().ToStdString();
+    const auto search = m_SearchBox->GetValue().ToStdString();
 
     try
     {
-        wxVector<wxVector<wxVariant>> dataset;
+        const auto dataset = m_database->FilterDatabaseBySampleName(search, settings.ShouldShowFileExtension(),
+                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
-        if (db.FilterDatabaseBySampleName(static_cast<std::string>(DATABASE_FILEPATH), dataset, search, settings.ShouldShowFileExtension(),
-                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
+        if (dataset.empty())
         {
             wxLogDebug(_("Error! Database is empty."));
         }
@@ -2572,7 +2533,7 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
 
             std::cout << search << std::endl;
 
-            for (auto data : dataset)
+            for (const auto& data : dataset)
             {
                 m_Library->AppendItem(data);
             }
@@ -2685,21 +2646,19 @@ void MainFrame::RefreshDatabase()
 FileInfo
 MainFrame::GetFilenamePathAndExtension(const wxString& selected, bool checkExtension, bool doGetFilename) const
 {
-    Database db(*m_InfoBar);
     Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
 
     wxString path;
     std::string extension, filename;
 
-    wxString filename_with_extension = db.GetSamplePathByFilename(static_cast<std::string>(DATABASE_FILEPATH),
-                                                                  selected.BeforeLast('.').ToStdString());
-    wxString filename_without_extension = db.GetSamplePathByFilename(static_cast<std::string>(DATABASE_FILEPATH), selected.ToStdString());
+    wxString filename_with_extension = m_database->GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    wxString filename_without_extension = m_database->GetSamplePathByFilename(selected.ToStdString());
 
     if (checkExtension)
     {
         extension = settings.ShouldShowFileExtension() ?
-            db.GetSampleFileExtension(static_cast<std::string>(DATABASE_FILEPATH), selected.ToStdString()) :
-            db.GetSampleFileExtension(static_cast<std::string>(DATABASE_FILEPATH), selected.BeforeLast('.').ToStdString());
+            m_database->GetSampleFileExtension(selected.ToStdString()) :
+            m_database->GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
     }
 
     path = selected.Contains(wxString::Format(".%s", extension)) ?

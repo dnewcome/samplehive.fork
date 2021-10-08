@@ -1,3 +1,4 @@
 [wrap-git]
 url = https://github.com/wxWidgets/wxWidgets
 revision = master
+clone-recursive = true

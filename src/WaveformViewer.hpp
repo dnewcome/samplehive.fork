@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "Database.hpp"
+
 #include <wx/dataview.h>
 #include <wx/bitmap.h>
 #include <wx/colour.h>
@@ -37,7 +39,7 @@ class WaveformViewer : public wxPanel
 {
     public:
         WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
-                       wxMediaCtrl& mediaCtrl, wxInfoBar& infoBar,
+                       wxMediaCtrl& mediaCtrl, Database& database,
                        const std::string& configFilepath, const std::string& databaseFilepath);
         ~WaveformViewer();
 
@@ -47,7 +49,7 @@ class WaveformViewer : public wxPanel
         wxWindow* m_Window;
 
         wxDataViewListCtrl& m_Library;
-        wxInfoBar& m_InfoBar;
+        Database& m_database;
         wxMediaCtrl& m_MediaCtrl;
 
         const std::string& m_ConfigFilepath;
