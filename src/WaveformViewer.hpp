@@ -48,8 +48,8 @@ class WaveformViewer : public wxPanel
         wxWindow* m_ParentFrame;
         wxWindow* m_Window;
 
+        Database& m_Database;
         wxDataViewListCtrl& m_Library;
-        Database& m_database;
         wxMediaCtrl& m_MediaCtrl;
 
         const std::string& m_ConfigFilepath;

@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "Database.hpp"
 #include "WaveformViewer.hpp"
 #include "SampleHiveConfig.hpp"
 #include "SH_Event.hpp"
@@ -65,8 +66,6 @@
 #else
     #include <taglib/tstring.h>
 #endif
-
-#include "Database.hpp"
 
 struct FileInfo
 {
@@ -174,6 +173,9 @@ class MainFrame : public wxFrame
         wxTimer* m_Timer;
 
         // -------------------------------------------------------------------
+        std::unique_ptr<Database> m_Database;
+
+        // -------------------------------------------------------------------
         // FileSystemWatcher
         wxFileSystemWatcher* m_FsWatcher;
 
@@ -183,7 +185,6 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
-        std::unique_ptr<Database> m_database;
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
@@ -273,7 +274,7 @@ class MainFrame : public wxFrame
         // Recieve custom events
         // -------------------------------------------------------------------
         void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
-        void OnRecieveStatusBarStatus(SampleHive::SH_SetStatusBarMessageEvent& event);
+        void OnRecieveStatusBarStatus(SampleHive::SH_StatusBarMessageEvent& event);
 
         // -------------------------------------------------------------------
         void LoadDatabase();

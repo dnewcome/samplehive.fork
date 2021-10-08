@@ -42,7 +42,7 @@ WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataVi
                                wxMediaCtrl& mediaCtrl, Database& database,
                                const std::string& configFilepath, const std::string& databaseFilepath)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_ParentFrame(parentFrame), m_Window(window), m_Library(library), m_database(database), m_MediaCtrl(mediaCtrl),
+      m_ParentFrame(parentFrame), m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl),
       m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     this->SetDoubleBuffered(true);
@@ -116,7 +116,7 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -158,12 +158,12 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     wxString selection = m_Library.GetTextValue(selected_row, 1);
 
-    wxString filepath_with_extension = m_database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString filepath_without_extension = m_database.GetSamplePathByFilename(selection.ToStdString());
+    wxString filepath_with_extension = m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString filepath_without_extension = m_Database.GetSamplePathByFilename(selection.ToStdString());
 
     std::string extension = settings.ShouldShowFileExtension() ?
-        m_database.GetSampleFileExtension(selection.ToStdString()) :
-        m_database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
+        m_Database.GetSampleFileExtension(selection.ToStdString()) :
+        m_Database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 
     wxString path = selection.Contains(wxString::Format(".%s", extension)) ?
         filepath_with_extension : filepath_without_extension;
@@ -296,7 +296,7 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -336,7 +336,7 @@ void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -385,7 +385,7 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -455,7 +455,7 @@ void WaveformViewer::SendLoopPoints()
         return;
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
-    std::string path = m_database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
     Tags tags(path);
 
@@ -477,7 +477,7 @@ void WaveformViewer::SendLoopPoints()
 
 void WaveformViewer::SendStatusBarStatus(const wxString& msg, int section)
 {
-    SampleHive::SH_SetStatusBarMessageEvent event(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, this->GetId());
+    SampleHive::SH_StatusBarMessageEvent event(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, this->GetId());
     event.SetEventObject(this);
 
     event.SetMessageAndSection({ msg, section });

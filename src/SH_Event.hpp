@@ -64,14 +64,14 @@ namespace SampleHive
 
     // wxDECLARE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, SH_MediaEvent);
 
-    class SH_SetStatusBarMessageEvent : public wxCommandEvent
+    class SH_StatusBarMessageEvent : public wxCommandEvent
     {
         public:
-            SH_SetStatusBarMessageEvent(wxEventType eventType, int winId);
-            ~SH_SetStatusBarMessageEvent();
+            SH_StatusBarMessageEvent(wxEventType eventType, int winId);
+            ~SH_StatusBarMessageEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_SetStatusBarMessageEvent(*this); }
+            virtual wxEvent* Clone() const { return new SH_StatusBarMessageEvent(*this); }
 
         public:
             std::pair<wxString, int> GetMessageAndSection() const { return { m_Msg, m_Section }; }
@@ -82,25 +82,45 @@ namespace SampleHive
             int m_Section;
     };
 
-    wxDECLARE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_SetStatusBarMessageEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_StatusBarMessageEvent);
 
-//     class SH_TimerEvent : public wxCommandEvent
-//     {
-//         public:
-//             SH_TimerEvent(wxEventType eventType, int winId);
-//             ~SH_TimerEvent();
+    // class SH_InfoBarMessageEvent : public wxCommandEvent
+    // {
+    //     public:
+    //         SH_InfoBarMessageEvent(wxEventType eventType, int winId);
+    //         ~SH_InfoBarMessageEvent();
 
-//         public:
-//             virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+    //     public:
+    //         virtual wxEvent* Clone() const { return new SH_InfoBarMessageEvent(*this); }
 
-//         public:
-//             std::pair<int, bool> GetSecondsAndMode() const { return { m_Seconds, m_Mode }; }
-//             void SetSecondsAndMode(std::pair<int, bool> timerStatus) { m_Seconds = timerStatus.first; m_Mode = timerStatus.second; }
+    //     public:
+    //         std::pair<wxString, int> GetInfoBarMessage() const { return { m_Msg, m_Mode }; }
+    //         void SetInfoBarMessage(std::pair<wxString, int> infoBarMessageEvent) { m_Msg = infoBarMessageEvent.first; m_Mode = infoBarMessageEvent.second; }
 
-//         private:
-//             int m_Seconds;
-//             bool m_Mode;
-//     };
+    //     private:
+    //         wxString m_Msg;
+    //         int m_Mode;
+    // };
 
-//     wxDECLARE_EVENT(SH_EVT_TIMER_STATUS_UPDATED, SH_TimerEvent);
+    // wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
+
+    // class SH_TimerEvent : public wxCommandEvent
+    // {
+    //     public:
+    //         SH_TimerEvent(wxEventType eventType, int winId);
+    //         ~SH_TimerEvent();
+
+    //     public:
+    //         virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+
+    //     public:
+    //         std::pair<int, bool> GetSecondsAndMode() const { return { m_Seconds, m_Mode }; }
+    //         void SetSecondsAndMode(std::pair<int, bool> timerStatus) { m_Seconds = timerStatus.first; m_Mode = timerStatus.second; }
+
+    //     private:
+    //         int m_Seconds;
+    //         bool m_Mode;
+    // };
+
+    // wxDECLARE_EVENT(SH_EVT_TIMER_STATUS_UPDATED, SH_TimerEvent);
 }

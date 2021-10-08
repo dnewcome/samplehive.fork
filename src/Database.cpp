@@ -52,35 +52,38 @@ void show_modal_dialog_and_log(const std::string &message, const std::string &ti
 {
     std::stringstream ss;
     ss << message << error_msg;
+
     const auto msg = ss.str();
+
     wxLogDebug(msg.c_str());
-    wxMessageDialog msgDialog(NULL, msg, title, wxOK | wxICON_ERROR);
+
+    wxMessageDialog msgDialog(NULL, _(msg), _(title), wxOK | wxICON_ERROR);
     msgDialog.ShowModal();
 }
 
 class Sqlite3Statement
 {
-public:
-    Sqlite3Statement(sqlite3 *database, const std::string &query)
-    {
-        throw_on_sqlite3_error(sqlite3_prepare_v2(database, query.c_str(), query.size(), &stmt, NULL));
-    }
-    ~Sqlite3Statement()
-    {
-        throw_on_sqlite3_error(sqlite3_finalize(stmt));
-    }
-    sqlite3_stmt *stmt = nullptr;
+    public:
+        Sqlite3Statement(sqlite3 *database, const std::string &query)
+        {
+            throw_on_sqlite3_error(sqlite3_prepare_v2(database, query.c_str(), query.size(), &stmt, NULL));
+        }
+         ~Sqlite3Statement()
+        {
+            throw_on_sqlite3_error(sqlite3_finalize(stmt));
+        }
+
+        sqlite3_stmt *stmt = nullptr;
 };
 
-Database::Database(wxInfoBar &infoBar, const std::string &dbPath)
-    : m_InfoBar(infoBar)
+Database::Database(const std::string &dbPath)
 {
-    open(dbPath);
+    OpenDatabase(dbPath);
 }
 
 Database::~Database()
 {
-    close();
+    CloseDatabase();
 }
 
 void Database::CreateTableSamples()
@@ -103,7 +106,7 @@ void Database::CreateTableSamples()
     try
     {
         throw_on_sqlite3_error(sqlite3_exec(m_Database, samples, NULL, 0, &m_ErrMsg));
-        wxLogDebug("Samples table created successfully.");
+        wxLogDebug(_("Samples table created successfully."));
     }
     catch (const std::exception &e)
     {
@@ -194,6 +197,7 @@ void Database::InsertIntoHives(const std::string &hiveName)
     try
     {
         const auto sql = "INSERT INTO HIVES(HIVE) VALUES(?);";
+
         Sqlite3Statement statement(m_Database, sql);
 
         // rc = sqlite3_exec(m_Database, "BEGIN TRANSACTION", NULL, NULL, &m_ErrMsg);
@@ -241,6 +245,7 @@ void Database::UpdateHive(const std::string &hiveOldName, const std::string &hiv
     try
     {
         const auto sql = "UPDATE HIVES SET HIVE = ? WHERE HIVE = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveNewName.c_str(), hiveNewName.size(), SQLITE_STATIC));
@@ -266,6 +271,7 @@ void Database::UpdateHiveName(const std::string &filename, const std::string &hi
     try
     {
         const auto sql = "UPDATE SAMPLES SET HIVE = ? WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
@@ -289,6 +295,7 @@ void Database::UpdateFavoriteColumn(const std::string &filename, int value)
     try
     {
         const auto sql = "UPDATE SAMPLES SET FAVORITE = ? WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 1, value));
@@ -312,6 +319,7 @@ void Database::UpdateSamplePack(const std::string &filename, const std::string &
     try
     {
         const auto sql = "UPDATE SAMPLES SET SAMPLEPACK = ? WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, samplePack.c_str(), samplePack.size(), SQLITE_STATIC));
@@ -335,6 +343,7 @@ void Database::UpdateSampleType(const std::string &filename, const std::string &
     try
     {
         const auto sql = "UPDATE SAMPLES SET TYPE = ? WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, type.c_str(), type.size(), SQLITE_STATIC));
@@ -359,6 +368,7 @@ std::string Database::GetSampleType(const std::string &filename)
     try
     {
         const auto sql = "SELECT TYPE FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -369,6 +379,7 @@ std::string Database::GetSampleType(const std::string &filename)
 
             type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0)));
         }
+
         wxLogDebug("Selected data from table successfully.");
     }
     catch (const std::exception &e)
@@ -386,6 +397,7 @@ int Database::GetFavoriteColumnValueByFilename(const std::string &filename)
     try
     {
         const auto sql = "SELECT FAVORITE FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -413,6 +425,7 @@ std::string Database::GetHiveByFilename(const std::string &filename)
     try
     {
         const auto sql = "SELECT HIVE FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -438,6 +451,7 @@ void Database::RemoveSampleFromDatabase(const std::string &filename)
     try
     {
         const auto sql = "DELETE FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -460,6 +474,7 @@ void Database::RemoveHiveFromDatabase(const std::string &hiveName)
     try
     {
         const auto sql = "DELETE FROM HIVES WHERE HIVE = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
@@ -484,6 +499,7 @@ std::string Database::GetSamplePathByFilename(const std::string &filename)
     try
     {
         const auto sql = "SELECT PATH FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -511,6 +527,7 @@ std::string Database::GetSampleFileExtension(const std::string &filename)
     try
     {
         const auto sql = "SELECT EXTENSION FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -531,31 +548,34 @@ std::string Database::GetSampleFileExtension(const std::string &filename)
     return extension;
 }
 
-wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(
-    // wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
-    wxDataViewTreeCtrl &favorite_tree, wxDataViewItem &favorite_item,
-    wxTreeCtrl &trash_tree, wxTreeItemId &trash_item, bool show_extension,
-    const std::string &icon_star_filled, const std::string &icon_star_empty)
+wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &favorite_tree, wxDataViewItem &favorite_item,
+                                                            wxTreeCtrl &trash_tree, wxTreeItemId &trash_item, bool show_extension,
+                                                            const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
     wxVector<wxVector<wxVariant>> vecSet;
+
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
+
     try
     {
-
         int numRows = 0;
+
         Sqlite3Statement statement1(m_Database, "SELECT Count(*) FROM SAMPLES;");
+
         if (SQLITE_ROW == sqlite3_step(statement1.stmt))
         {
             numRows = sqlite3_column_int(statement1.stmt, 0);
+
             wxLogDebug("rows %d", numRows);
+
             vecSet.reserve(numRows);
         }
 
         Sqlite3Statement statement(m_Database, "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
-                            TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
-                            TRASHED, HIVE FROM SAMPLES;");
+                                                TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                                                TRASHED, HIVE FROM SAMPLES;");
 
         int row = 0;
 
@@ -580,6 +600,7 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(
 
             wxVector<wxVariant> vec;
             vec.reserve(12);
+
             if (trashed == 1)
             {
                 if (show_extension)
@@ -656,6 +677,7 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(
                 {
                     vec.push_back(path.AfterLast('/').BeforeLast('.'));
                 }
+
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
@@ -683,14 +705,17 @@ Database::FilterDatabaseBySampleName(const std::string &sampleName, bool show_ex
                                      const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
     wxVector<wxVector<wxVariant>> sampleVec;
+
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
+
     try
     {
         Sqlite3Statement statement(m_Database, "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                              CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
-                              FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%' ;");
+                                                CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
+                                                FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%' ;");
+
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, sampleName.c_str(), sampleName.size(), SQLITE_STATIC));
 
         int row = 0;
@@ -761,14 +786,16 @@ Database::FilterDatabaseByHiveName(const std::string &hiveName, bool show_extens
                                    const std::string &icon_star_filled, const std::string &icon_star_empty)
 {
     wxVector<wxVector<wxVariant>> sampleVec;
+
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
+
     try
     {
         Sqlite3Statement statement(m_Database, "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                              CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
-                              FROM SAMPLES WHERE HIVE = ? AND FAVORITE = 1;");
+                                                CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
+                                                FROM SAMPLES WHERE HIVE = ? AND FAVORITE = 1;");
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
 
@@ -840,6 +867,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl &treeCtrl)
     try
     {
         const auto sql = "SELECT HIVE FROM HIVES;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
@@ -867,6 +895,7 @@ wxArrayString Database::CheckDuplicates(const wxArrayString &files)
     try
     {
         const auto sql = "SELECT * FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         for (unsigned int i = 0; i < files.size(); i++)
@@ -897,6 +926,7 @@ bool Database::IsTrashed(const std::string &filename)
     try
     {
         const auto sql = "SELECT TRASHED FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -924,6 +954,7 @@ void Database::UpdateTrashColumn(const std::string &filename, int value)
     try
     {
         const auto sql = "UPDATE SAMPLES SET TRASHED = ? WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 1, value));
@@ -950,11 +981,13 @@ Database::RestoreFromTrashByFilename(const std::string &filename,
     wxVariant icon_filled, icon_empty;
     icon_filled = wxVariant(wxBitmap(icon_star_filled));
     icon_empty = wxVariant(wxBitmap(icon_star_empty));
+
     try
     {
         const auto sql = "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
-                               TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
-                               TRASHED, HIVE FROM SAMPLES WHERE FILENAME = ?;";
+                          TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                          TRASHED, HIVE FROM SAMPLES WHERE FILENAME = ?;";
+
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
@@ -1012,12 +1045,12 @@ Database::RestoreFromTrashByFilename(const std::string &filename,
     return vecSet;
 }
 
-void Database::open(const std::string &dbPath)
+void Database::OpenDatabase(const std::string &dbPath)
 {
     throw_on_sqlite3_error(sqlite3_open(dbPath.c_str(), &m_Database));
 }
 
-void Database::close()
+void Database::CloseDatabase()
 {
     throw_on_sqlite3_error(sqlite3_close(m_Database));
 }

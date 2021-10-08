@@ -37,7 +37,7 @@
 class Database
 {
     public:
-        Database(wxInfoBar& infoBar, const std::string& dbPath);
+        Database(const std::string& dbPath);
         ~Database();
 
     private:
@@ -45,12 +45,11 @@ class Database
         sqlite3* m_Database;
         int rc;
         char* m_ErrMsg;
+
     private:
         // -------------------------------------------------------------------
-        wxInfoBar& m_InfoBar;
-
-        void open(const std::string& dbPath);
-        void close();
+        void OpenDatabase(const std::string& dbPath);
+        void CloseDatabase();
 
     public:
         // -------------------------------------------------------------------
@@ -91,9 +90,6 @@ class Database
         void RemoveHiveFromDatabase(const std::string& hiveName);
 
         // -------------------------------------------------------------------
-        // LoadDatabase(wxVector<wxVector<wxVariant>> &vecSet,
-        //              wxTreeCtrl& favorite_tree, wxTreeItemId& favorite_item,
-        //              wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension);
         wxVector<wxVector<wxVariant>> 
         LoadSamplesDatabase(wxDataViewTreeCtrl& favorite_tree, wxDataViewItem& favorite_item,
                             wxTreeCtrl& trash_tree, wxTreeItemId& trash_item, bool show_extension,
