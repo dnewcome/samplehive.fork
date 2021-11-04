@@ -18,9 +18,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ControlID_Enums.hpp"
-#include "Database.hpp"
-#include "TagEditorDialog.hpp"
+#include "Utility/ControlID_Enums.hpp"
+#include "Database/Database.hpp"
+#include "GUI/Dialogs/TagEditor.hpp"
 
 #include <wx/defs.h>
 #include <wx/gdicmn.h>

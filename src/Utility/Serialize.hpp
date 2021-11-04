@@ -38,17 +38,9 @@
 #include <yaml-cpp/null.h>
 #include <yaml-cpp/emittermanip.h>
 
-struct FontType
-{
-    wxString font_face;
-    int font_size;
-};
-
-struct ImportDirInfo
-{
-    bool auto_import;
-    wxString import_dir;
-};
+typedef std::pair<int, int> WindowSize;
+// typedef std::pair<wxString, int> FontType;
+typedef std::pair<bool, wxString> ImportDirInfo;
 
 class Serializer
 {
@@ -60,37 +52,46 @@ class Serializer
         // -------------------------------------------------------------------
         const std::string& m_Filepath;
 
+        // -------------------------------------------------------------------
         YAML::Emitter m_Emitter;
 
     public:
         // -------------------------------------------------------------------
         // Window size
-        int DeserializeWinSize(std::string key, int size) const;
+        WindowSize DeserializeWinSize() const;
+
+        // -------------------------------------------------------------------
+        // Menu and status bar
+        void SerializeShowMenuAndStatusBar(std::string key, bool value);
+        bool DeserializeShowMenuAndStatusBar(std::string key) const;
 
         // -------------------------------------------------------------------
         // Browser controls
-        void SerializeBrowserControls();
-        bool DeserializeBrowserControls(std::string key, bool control) const;
+        void SerializeBrowserControls(std::string key, bool value);
+        bool DeserializeBrowserControls(std::string key) const;
 
         // -------------------------------------------------------------------
         // Display settings
         void SerializeDisplaySettings(wxFont& font);
-        FontType DeserializeDisplaySettings() const;
+        wxFont DeserializeDisplaySettings() const;
+
+        // -------------------------------------------------------------------
+        // Waveform colour
         void SerializeWaveformColour(wxColour& colour);
         wxColour DeserializeWaveformColour() const;
 
         // -------------------------------------------------------------------
         // Auto import settings
-        void SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& checkBox);
+        void SerializeAutoImportSettings(bool autoImport, const std::string& importDir);
         ImportDirInfo DeserializeAutoImportSettings() const;
 
         // -------------------------------------------------------------------
-        // Show file extension
-        void SerializeShowFileExtensionSetting(wxCheckBox& checkBox);
-        bool DeserializeShowFileExtensionSetting() const;
+        // Follow symbolic links
+        void SerializeFollowSymLink(bool followSymLink);
+        bool DeserializeFollowSymLink() const;
 
         // -------------------------------------------------------------------
-        // Favorite samples
-        void SerializeDataViewTreeCtrlItems(wxTreeCtrl& tree, wxTreeItemId& item);
-        bool DeserializeDataViewTreeCtrlItems(YAML::Emitter& out, wxDataViewItem item) const;
+        // Show file extension
+        void SerializeShowFileExtensionSetting(bool showExtension);
+        bool DeserializeShowFileExtensionSetting() const;
 };

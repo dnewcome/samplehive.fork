@@ -19,7 +19,7 @@
  */
 #pragma once
 
-#include "Sample.hpp"
+#include "Utility/Sample.hpp"
 
 #include <string>
 #include <vector>

@@ -23,6 +23,7 @@
 
 #include <wx/bitmap.h>
 #include <wx/defs.h>
+#include <wx/fswatcher.h>
 #include <wx/gdicmn.h>
 #include <wx/splash.h>
 
@@ -44,6 +45,9 @@ bool App::OnInit()
 {
     if (!wxApp::OnInit())
         return false;
+
+    wxLog::AddTraceMask("EventSource");
+    wxLog::AddTraceMask(wxTRACE_FSWATCHER);
 
     m_Frame = new MainFrame();
 
@@ -84,4 +88,10 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     }
 
     return true;
+}
+
+void App::OnEventLoopEnter(wxEventLoopBase* event)
+{
+    if (m_Frame->CreateWatcherIfNecessary())
+        wxLogDebug("Filesystem watcher created sucessfully");
 }

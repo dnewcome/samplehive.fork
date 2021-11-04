@@ -45,7 +45,6 @@ class Settings : public wxDialog
     public:
         Settings(const std::string& configFilepath, const std::string& databaseFilepath);
         Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath);
-
         ~Settings();
 
     private:
@@ -84,7 +83,6 @@ class Settings : public wxDialog
         wxStaticText* m_FontTypeText;
         wxChoice* m_RowHeight;
         wxChoice* m_FontType;
-        wxFontDialog* m_FontDialog;
         wxButton* m_FontBrowseButton;
         wxSpinCtrl* m_FontSize;
         wxBoxSizer* m_WaveformColourSizer;
@@ -93,14 +91,14 @@ class Settings : public wxDialog
 
         // -------------------------------------------------------------------
         // Collection page
-        wxBoxSizer* m_CollectionTopSizer;
+        wxBoxSizer* m_CollectionMainSizer;
         wxBoxSizer* m_CollectionImportDirSizer;
-        wxBoxSizer* m_ShowFileExtensionSizer;
+        wxBoxSizer* m_CollectionBottomSizer;
         wxCheckBox* m_AutoImportCheck;
+        wxCheckBox* m_FollowSymLinksCheck;
         wxCheckBox* m_ShowFileExtensionCheck;
         wxTextCtrl* m_ImportDirLocation;
         wxButton* m_BrowseAutoImportDirButton;
-        wxDirDialog* m_DirDialog;
 
         // -------------------------------------------------------------------
         // General configuration page
@@ -124,7 +122,8 @@ class Settings : public wxDialog
     private:
         // -------------------------------------------------------------------
         bool bAutoImport = false;
-        bool bShowExtension = true;
+        // bool bFollowSymLinks = false;
+        // bool bShowExtension = true;
         bool bWaveformColourChanged = false;
 
     private:
@@ -132,6 +131,7 @@ class Settings : public wxDialog
         void OnClickConfigBrowse(wxCommandEvent& event);
         void OnClickDatabaseBrowse(wxCommandEvent& event);
         void OnCheckAutoImport(wxCommandEvent& event);
+        void OnCheckFollowSymLinks(wxCommandEvent& event);
         void OnCheckShowFileExtension(wxCommandEvent& event);
         void OnClickBrowseAutoImportDir(wxCommandEvent& event);
         void OnChangeFontSize(wxSpinEvent& event);
@@ -150,9 +150,14 @@ class Settings : public wxDialog
         // Getters
         wxString GetImportDirPath();
 
-        inline wxFont GetFontType() { return m_Font; };
+        // inline wxFont GetFontType() { return m_Font; };
         inline bool CanAutoImport() { return bAutoImport; };
-        inline bool ShouldShowFileExtension() { return bShowExtension; };
+        // inline bool ShouldFollowSymLinks() { return bFollowSymLinks; };
+        // inline bool ShouldShowFileExtension() { return bShowExtension; };
         inline bool IsWaveformColourChanged() { return bWaveformColourChanged; }
-        inline wxColour GetWaveformColour() { return m_WaveformColourPickerCtrl->GetColour(); }
+        // inline wxColour GetWaveformColour() { return m_WaveformColourPickerCtrl->GetColour(); }
+
+        // -------------------------------------------------------------------
+        // Setters
+        void SetShowExtension(bool value);
 };

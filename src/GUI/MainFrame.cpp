@@ -18,14 +18,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "MainFrame.hpp"
-#include "ControlID_Enums.hpp"
-#include "Database.hpp"
-#include "SettingsDialog.hpp"
-#include "TagEditorDialog.hpp"
-#include "Tags.hpp"
-#include "Sample.hpp"
-#include "Serialize.hpp"
+#include "GUI/MainFrame.hpp"
+#include "GUI/Dialogs/Settings.hpp"
+#include "GUI/Dialogs/TagEditor.hpp"
+#include "Database/Database.hpp"
+#include "Utility/ControlID_Enums.hpp"
+#include "Utility/Tags.hpp"
+#include "Utility/Sample.hpp"
 #include "SampleHiveConfig.hpp"
 
 #include <algorithm>
@@ -34,6 +33,8 @@
 #include <deque>
 #include <exception>
 #include <ios>
+
+#include <stdlib.h>
 
 #include <wx/aboutdlg.h>
 #include <wx/accel.h>
@@ -44,12 +45,13 @@
 #include <wx/debug.h>
 #include <wx/defs.h>
 #include <wx/dir.h>
+#include <wx/dirdlg.h>
 #include <wx/dnd.h>
 #include <wx/dvrenderers.h>
 #include <wx/filedlg.h>
 #include <wx/filefn.h>
 #include <wx/filename.h>
-// #include <wx/fswatcher.h>
+#include <wx/fswatcher.h>
 #include <wx/gdicmn.h>
 #include <wx/icon.h>
 #include <wx/dataobj.h>
@@ -115,7 +117,8 @@ MainFrame::MainFrame()
     m_AddFile->SetBitmap(wxArtProvider::GetBitmap(wxART_NORMAL_FILE));
     m_FileMenu->Append(m_AddFile);
 
-    m_AddDirectory = new wxMenuItem(m_FileMenu, MN_AddDirectory, _("Add a directory\tCtrl+D"), _("Add a directory"));
+    m_AddDirectory = new wxMenuItem(m_FileMenu, MN_AddDirectory,
+                                    _("Add a directory\tCtrl+D"), _("Add a directory"));
     m_AddDirectory->SetBitmap(wxArtProvider::GetBitmap(wxART_FOLDER));
     m_FileMenu->Append(m_AddDirectory);
 
@@ -139,7 +142,8 @@ MainFrame::MainFrame()
     m_ViewMenu->Append(m_ToggleStatusBar)->Check(m_StatusBar->IsShown());
 
     // Help menu items
-    m_HelpMenu->Append(wxID_REFRESH, _("Reset app data"), _("Clear the application data revert to default configuration"));
+    m_HelpMenu->Append(wxID_REFRESH, _("Reset app data"),
+                       _("Clear the application data revert to default configuration"));
     m_HelpMenu->Append(wxID_ABOUT, wxEmptyString, _("Show about the application"));
 
     // Append all menus to menubar
@@ -193,7 +197,8 @@ MainFrame::MainFrame()
     m_BottomSplitter->SetSashGravity(0);
 
     // Left half of the BottomSplitter window
-    m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    m_BottomLeftPanel = new wxPanel(m_BottomSplitter, wxID_ANY,
+                                    wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Initializing wxNotebook
     m_Notebook = new wxNotebook(m_BottomLeftPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
@@ -246,26 +251,34 @@ MainFrame::MainFrame()
     m_Notebook->AddPage(m_TrashPanel, _("Trash"), false);
 
     // Right half of BottomSlitter window
-    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    m_BottomRightPanel = new wxPanel(m_BottomSplitter, wxID_ANY,
+                                     wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 
     // Set split direction
     m_TopSplitter->SplitHorizontally(m_TopPanel, m_BottomSplitter);
     m_BottomSplitter->SplitVertically(m_BottomLeftPanel, m_BottomRightPanel);
 
-    m_TopControlsPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER);
+    m_TopControlsPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                     wxTAB_TRAVERSAL | wxNO_BORDER);
 
     // Looping region controls
     if (m_Theme.IsDark())
-        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton, static_cast<wxString>(ICON_AB_LIGHT_16px), wxDefaultPosition, wxDefaultSize, 0);
+        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton,
+                                                  static_cast<wxString>(ICON_AB_LIGHT_16px),
+                                                  wxDefaultPosition, wxDefaultSize, 0);
     else
-        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton, static_cast<wxString>(ICON_AB_DARK_16px), wxDefaultPosition, wxDefaultSize, 0);
+        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton,
+                                                  static_cast<wxString>(ICON_AB_DARK_16px),
+                                                  wxDefaultPosition, wxDefaultSize, 0);
 
     m_LoopABButton->SetToolTip(_("Loop selected region"));
 
     // Initializing browser controls on top panel.
-    m_AutoPlayCheck = new wxCheckBox(m_TopControlsPanel, BC_Autoplay, _("Autoplay"), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
+    m_AutoPlayCheck = new wxCheckBox(m_TopControlsPanel, BC_Autoplay, _("Autoplay"),
+                                     wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
     m_AutoPlayCheck->SetToolTip(_("Autoplay"));
-    m_VolumeSlider = new wxSlider(m_TopControlsPanel, BC_Volume, 100, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
+    m_VolumeSlider = new wxSlider(m_TopControlsPanel, BC_Volume, 100, 0, 100,
+                                  wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
     m_VolumeSlider->SetToolTip(_("Volume"));
     m_VolumeSlider->SetMinSize(wxSize(120, -1));
     m_VolumeSlider->SetMaxSize(wxSize(120, -1));
@@ -275,24 +288,32 @@ MainFrame::MainFrame()
     // Initialize browser control buttons
     if (m_Theme.IsDark())
     {
-        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play, static_cast<wxString>(ICON_PLAY_LIGHT_16px),
+        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
+                                          static_cast<wxString>(ICON_PLAY_LIGHT_16px),
                                           wxDefaultPosition, wxDefaultSize, 0);
-        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop, static_cast<wxString>(ICON_LOOP_LIGHT_16px),
+        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
+                                                static_cast<wxString>(ICON_LOOP_LIGHT_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
-        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop, static_cast<wxString>(ICON_STOP_LIGHT_16px),
+        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
+                                          static_cast<wxString>(ICON_STOP_LIGHT_16px),
                                           wxDefaultPosition, wxDefaultSize, 0);
-        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute, static_cast<wxString>(ICON_MUTE_LIGHT_16px),
+        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
+                                                static_cast<wxString>(ICON_MUTE_LIGHT_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
     }
     else
     {
-        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play, static_cast<wxString>(ICON_PLAY_DARK_16px),
+        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
+                                          static_cast<wxString>(ICON_PLAY_DARK_16px),
                                           wxDefaultPosition, wxDefaultSize, 0);
-        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop, static_cast<wxString>(ICON_LOOP_DARK_16px),
+        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
+                                                static_cast<wxString>(ICON_LOOP_DARK_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
-        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop, static_cast<wxString>(ICON_STOP_DARK_16px),
+        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
+                                          static_cast<wxString>(ICON_STOP_DARK_16px),
                                           wxDefaultPosition, wxDefaultSize, 0);
-        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute, static_cast<wxString>(ICON_MUTE_DARK_16px),
+        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
+                                                static_cast<wxString>(ICON_MUTE_DARK_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
     }
 
@@ -301,14 +322,16 @@ MainFrame::MainFrame()
     m_StopButton->SetToolTip(_("Stop"));
     m_MuteButton->SetToolTip(_("Mute"));
 
-    m_SettingsButton = new wxButton(m_TopControlsPanel, BC_Settings, _("Settings"), wxDefaultPosition, wxDefaultSize, 0);
+    m_SettingsButton = new wxButton(m_TopControlsPanel, BC_Settings, _("Settings"),
+                                    wxDefaultPosition, wxDefaultSize, 0);
     m_SettingsButton->SetToolTip(_("Settings"));
 
     // Initializing wxSearchCtrl on bottom panel.
-    m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, _("Search for samples.."), wxDefaultPosition,
-                                   wxDefaultSize, wxTE_PROCESS_ENTER);
+    m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, _("Search for samples.."),
+                                   wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
 
-    // Set minimum and maximum size of m_SearchBox so it doesn't expand too wide when resizing the main frame.
+    // Set minimum and maximum size of m_SearchBox
+    // so it doesn't expand too wide when resizing the main frame.
     m_SearchBox->SetMinSize(wxSize(-1, 38));
     m_SearchBox->SetMaxSize(wxSize(-1, 38));
 
@@ -393,7 +416,8 @@ MainFrame::MainFrame()
     m_InfoBar = new wxInfoBar(m_BottomRightPanel);
 
     // Initializing wxMediaCtrl.
-    m_MediaCtrl = new wxMediaCtrl(this, BC_MediaCtrl, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxEmptyString);
+    m_MediaCtrl = new wxMediaCtrl(this, BC_MediaCtrl, wxEmptyString, wxDefaultPosition,
+                                  wxDefaultSize, 0, wxEmptyString);
 
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
@@ -404,7 +428,7 @@ MainFrame::MainFrame()
     m_Database->CreateTableSamples();
     m_Database->CreateTableHives();
 
-    m_TopWaveformPanel = new WaveformViewer(this, m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database,
+    m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database,
                                             m_ConfigFilepath, m_DatabaseFilepath);
 
     // Binding events.
@@ -441,9 +465,11 @@ MainFrame::MainFrame()
 
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &MainFrame::OnClickLibrary, this, BC_Library);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &MainFrame::OnDragFromLibrary, this);
-    m_Library->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(MainFrame::OnDragAndDropToLibrary), NULL, this);
+    m_Library->Connect(wxEVT_DROP_FILES,
+                       wxDropFilesEventHandler(MainFrame::OnDragAndDropToLibrary), NULL, this);
     Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &MainFrame::OnShowLibraryContextMenu, this, BC_Library);
-    Bind(wxEVT_DATAVIEW_COLUMN_HEADER_RIGHT_CLICK, &MainFrame::OnShowLibraryColumnHeaderContextMenu, this, BC_Library);
+    Bind(wxEVT_DATAVIEW_COLUMN_HEADER_RIGHT_CLICK,
+         &MainFrame::OnShowLibraryColumnHeaderContextMenu, this, BC_Library);
 
     Bind(wxEVT_TEXT, &MainFrame::OnDoSearch, this, BC_Search);
     Bind(wxEVT_SEARCHCTRL_SEARCH_BTN, &MainFrame::OnDoSearch, this, BC_Search);
@@ -582,12 +608,13 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
 
 void MainFrame::AddSamples(wxArrayString& files)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serializer(m_ConfigFilepath);
     
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
 
-    wxProgressDialog* progressDialog = new wxProgressDialog(_("Adding files.."), _("Adding files, please wait..."),
+    wxProgressDialog* progressDialog = new wxProgressDialog(_("Adding files.."),
+                                                            _("Adding files, please wait..."),
                                                             static_cast<int>(files.size()), this,
                                                             wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
                                                             wxPD_AUTO_HIDE);
@@ -631,7 +658,7 @@ void MainFrame::AddSamples(wxArrayString& files)
         filename_without_extension = files[i].AfterLast('/').BeforeLast('.').ToStdString();
         extension = files[i].AfterLast('.').ToStdString();
 
-        filename = settings.ShouldShowFileExtension() ?
+        filename = serializer.DeserializeShowFileExtensionSetting() ?
             filename_with_extension : filename_without_extension;
         
         Sample sample;
@@ -679,7 +706,8 @@ void MainFrame::AddSamples(wxArrayString& files)
         }
         else
         {
-            wxString msg = wxString::Format(_("Error! Cannot open %s, Invalid file type."), filename_with_extension);
+            wxString msg = wxString::Format(_("Error! Cannot open %s, Invalid file type."),
+                                            filename_with_extension);
             m_InfoBar->ShowMessage(msg, wxICON_ERROR);
         }
     }
@@ -715,10 +743,11 @@ void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
         wxString filepath;
         wxArrayString filepath_array;
 
-        wxProgressDialog* progressDialog = new wxProgressDialog(_("Reading files.."), _("Reading files, please wait..."),
+        wxProgressDialog* progressDialog = new wxProgressDialog(_("Reading files.."),
+                                                                _("Reading files, please wait..."),
                                                                 event.GetNumberOfFiles(), this,
-                                                                wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
-                                                                wxPD_AUTO_HIDE);
+                                                                wxPD_APP_MODAL | wxPD_SMOOTH |
+                                                                wxPD_CAN_ABORT | wxPD_AUTO_HIDE);
 
         progressDialog->CenterOnParent(wxBOTH);
 
@@ -750,7 +779,7 @@ void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 
 void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serializer(m_ConfigFilepath);
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -780,7 +809,8 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 
             files = file_data.GetFilenames();
 
-            wxString file_name = settings.ShouldShowFileExtension() ? files[i].BeforeLast('.') : files[i];
+            wxString file_name = serializer.DeserializeShowFileExtensionSetting() ?
+                files[i].BeforeLast('.') : files[i];
 
             wxLogDebug(_("Dropping %d files %s on %s"),
                        rows - i, files[i], m_Hives->GetItemText(drop_target));
@@ -808,8 +838,8 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
                 else
                 {
                     if (m_Hives->GetItemText(drop_target) == "")
-                        wxMessageBox(_("Cannot drop item outside of a hive, try dropping on a hive."), _("Error!"),
-                                     wxOK | wxICON_ERROR | wxCENTRE, this);
+                        wxMessageBox(_("Cannot drop item outside of a hive, try dropping on a hive."),
+                                     _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
                     else
                         wxMessageBox(wxString::Format(_("%s is not a hive, try dropping on a hive."),
                                                       m_Hives->GetItemText(drop_target)), _("Error!"),
@@ -833,16 +863,18 @@ void MainFrame::OnAutoImportDir(const wxString& pathToDirectory)
     wxString filepath;
     wxArrayString filepath_array;
 
-    size_t number_of_files = wxDir::GetAllFiles(pathToDirectory, &filepath_array, wxEmptyString, wxDIR_DEFAULT);
+    size_t number_of_files = wxDir::GetAllFiles(pathToDirectory, &filepath_array,
+                                                wxEmptyString, wxDIR_DEFAULT);
 
-    wxProgressDialog* progressDialog = new wxProgressDialog(_("Adding files.."), _("Adding files, please wait..."),
+    wxProgressDialog* progressDialog = new wxProgressDialog(_("Adding files.."),
+                                                            _("Adding files, please wait..."),
                                                             static_cast<int>(number_of_files), this,
-                                                            wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
-                                                            wxPD_AUTO_HIDE);
+                                                            wxPD_APP_MODAL | wxPD_SMOOTH |
+                                                            wxPD_CAN_ABORT | wxPD_AUTO_HIDE);
 
     progressDialog->CenterOnParent(wxBOTH);
 
-    for ( size_t i = 0; i < number_of_files; i++)
+    for (size_t i = 0; i < number_of_files; i++)
     {
         filepath = filepath_array[i];
 
@@ -861,7 +893,7 @@ void MainFrame::OnAutoImportDir(const wxString& pathToDirectory)
     progressDialog->Destroy();
 
     AddSamples(filepath_array);
-        
+
     wxLogDebug(_("Done Importing Samples"));
 }
 
@@ -895,23 +927,11 @@ void MainFrame::OnDragFromDirCtrl(wxTreeEvent& event)
 
 void MainFrame::OnDragFromLibrary(wxDataViewEvent& event)
 {
-    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    // 
     int selected_row = m_Library->ItemToRow(event.GetItem());
 
     if (selected_row < 0) return;
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
-
-    // wxString sample_with_extension = m_Database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = m_Database->GetSamplePathByFilename(selection.ToStdString());
-
-    // std::string extension = settings.ShouldShowFileExtension() ?
-    //     m_Database->GetSampleFileExtension(selection.ToStdString()) :
-    //     m_Database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
-
-    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-    //     sample_with_extension : sample_without_extension;
 
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
@@ -927,24 +947,12 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 {
     bStopped = false;
 
-    // Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-    //  
     int selected_row = m_Library->GetSelectedRow();
 
     if (selected_row < 0)
         return;
 
     wxString selection = m_Library->GetTextValue(selected_row, 1);
-
-    // wxString sample_with_extension = m_Database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = m_Database->GetSamplePathByFilename(selection.ToStdString());
-
-    // std::string extension = settings.ShouldShowFileExtension() ?
-    //     m_Database->GetSampleFileExtension(selection.ToStdString()) :
-    //     m_Database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
-
-    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-    //     sample_with_extension : sample_without_extension;
 
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
 
@@ -1083,9 +1091,7 @@ void MainFrame::OnReleaseVolumeSlider(wxScrollEvent& event)
 
 void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
-     int selected_row = m_Library->ItemToRow(event.GetItem());
-
+    int selected_row = m_Library->ItemToRow(event.GetItem());
     int current_row = m_Library->ItemToRow(m_Library->GetCurrentItem());
 
     if (selected_row < 0 || !event.GetItem().IsOk())
@@ -1120,26 +1126,6 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     if (!CurrentColumn)
         return;
 
-    //Get Filename
-    // int selected_row = m_Library->ItemToRow(event.GetItem());
-    // if (selected_row < 0) return;
-
-    // wxString selection;
-    // if(settings.ShouldShowFileExtension())
-    //     selection = m_Library->GetTextValue(selected_row, 1).BeforeLast('.');
-    // else
-    //     selection = m_Library->GetTextValue(selected_row, 1);
-
-    // wxString sample_with_extension = m_Database->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    // wxString sample_without_extension = m_Database->GetSamplePathByFilename(selection.ToStdString());
-
-    // std::string extension = settings.ShouldShowFileExtension() ?
-    //     m_Database->GetSampleFileExtension(selection.ToStdString()) :
-    //     m_Database->GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
-
-    // wxString sample = selection.Contains(wxString::Format(".%s", extension)) ?
-    //     sample_with_extension : sample_without_extension;
-
     wxString sample_path = GetFilenamePathAndExtension(selection).Path;
     std::string filename = GetFilenamePathAndExtension(selection).Filename;
     std::string extension = GetFilenamePathAndExtension(selection).Extension;
@@ -1151,7 +1137,8 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
         if (bAutoplay)
         {
             if (bLoopPointsSet && m_LoopABButton->GetValue())
-                PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
+                PlaySample(sample_path.ToStdString(), selection.ToStdString(),
+                           true, m_LoopA.ToDouble(), wxFromStart);
             else
                 PlaySample(sample_path.ToStdString(), selection.ToStdString());
         }
@@ -1231,8 +1218,9 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
 void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-     wxDataViewItem selected_hive = event.GetItem();
+    Serializer serializer(m_ConfigFilepath);
+
+    wxDataViewItem selected_hive = event.GetItem();
 
     wxString hive_name = m_Hives->GetItemText(selected_hive);
 
@@ -1245,7 +1233,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
         menu.Append(MN_DeleteHive, _("Delete hive"), _("Delete selected hive"));
 
         if (!bFiltered)
-            menu.Append(MN_FilterLibrary, _("Filter library"), _("Show only samples from current hive in library"));
+            menu.Append(MN_FilterLibrary, _("Filter library"),
+                        _("Show only samples from current hive in library"));
         else
             menu.Append(MN_FilterLibrary, _("Clear filter"), _("Clear the filter"));
     }
@@ -1314,9 +1303,9 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                         if (found_item.IsOk())
                         {
-                            wxMessageBox(wxString::Format(
-                                             _("Another hive by the name %s already exist. Please try with a different name."),
-                                             hive_name),
+                            wxMessageBox(wxString::Format(_("Another hive by the name %s already exist. "
+                                                            "Please try with a different name."),
+                                                          hive_name),
                                          _("Error!"), wxOK | wxCENTRE, this);
                         }
                         else
@@ -1330,7 +1319,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 wxLogDebug("Sample count: %d", sample_count);
 
                                 m_Hives->SetItemText(selected_hive, hive_name);
-                                m_Database->UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
+                                m_Database->UpdateHive(selected_hive_name.ToStdString(),
+                                                       hive_name.ToStdString());
                             }
                             else
                             {
@@ -1338,14 +1328,17 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 {
                                     wxDataViewItem sample_item = m_Hives->GetNthChild(selected_hive, i);
 
-                                    wxString sample_name = settings.ShouldShowFileExtension() ?
+                                    wxString sample_name = serializer.DeserializeShowFileExtensionSetting() ?
                                         m_Hives->GetItemText(sample_item).BeforeLast('.') :
                                         m_Hives->GetItemText(sample_item);
 
-                                    wxLogDebug("Sample count: %d :: Sample name: %s", sample_count, sample_name);
+                                    wxLogDebug("Sample count: %d :: Sample name: %s",
+                                               sample_count, sample_name);
 
-                                    m_Database->UpdateHiveName(sample_name.ToStdString(), hive_name.ToStdString());
-                                    m_Database->UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
+                                    m_Database->UpdateHiveName(sample_name.ToStdString(),
+                                                               hive_name.ToStdString());
+                                    m_Database->UpdateHive(selected_hive_name.ToStdString(),
+                                                           hive_name.ToStdString());
 
                                     m_Hives->SetItemText(selected_hive, hive_name);
                                 }
@@ -1369,18 +1362,17 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
             {
                 wxString msg;
 
-                wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(
-                                                          _("Are you sure you want to delete "
-                                                            "%s from hives?"),
-                                                          hive_name),
+                wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(_("Are you sure you want to "
+                                                                               "delete %s from hives?"),
+                                                                             hive_name),
                                                       wxMessageBoxCaptionStr,
                                                       wxYES_NO | wxNO_DEFAULT |
                                                       wxICON_QUESTION | wxSTAY_ON_TOP);
 
-                wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(
-                                                           _("Are you sure you want to delete "
-                                                             "%s and all sample inside %s from hives?"),
-                                                           hive_name, hive_name),
+                wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(_("Are you sure you want to "
+                                                                                "delete %s and all samples "
+                                                                                "inside %s from hives?"),
+                                                                              hive_name, hive_name),
                                                        wxMessageBoxCaptionStr,
                                                        wxYES_NO | wxNO_DEFAULT |
                                                        wxICON_QUESTION | wxSTAY_ON_TOP);
@@ -1393,7 +1385,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
                 else if (!selected_hive.IsOk())
                 {
-                    wxMessageBox(_("No hive selected, try selecting a hive first"), _("Error!"), wxOK | wxCENTRE, this);
+                    wxMessageBox(_("No hive selected, try selecting a hive first"), _("Error!"),
+                                 wxOK | wxCENTRE, this);
                     return;
                 }
                 else if (selected_hive.IsOk() && !m_Hives->IsContainer(selected_hive))
@@ -1437,7 +1430,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                 for (int i = 0; i < m_Library->GetItemCount(); i++)
                                 {
-                                    wxString matched_sample = settings.ShouldShowFileExtension() ?
+                                    wxString matched_sample =
+                                        serializer.DeserializeShowFileExtensionSetting() ?
                                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                                         m_Library->GetTextValue(i, 1);
 
@@ -1445,7 +1439,8 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                     {
                                         child_item = m_Hives->GetNthChild(selected_hive, j);
 
-                                        wxString child_name = settings.ShouldShowFileExtension() ?
+                                        wxString child_name =
+                                            serializer.DeserializeShowFileExtensionSetting() ?
                                             m_Hives->GetItemText(child_item).BeforeLast('.') :
                                             m_Hives->GetItemText(child_item);
 
@@ -1453,10 +1448,12 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         {
                                             wxLogDebug(_("Found match"));
 
-                                            m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                                            m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)),
+                                                                i, 0);
 
                                             m_Database->UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
-                                            m_Database->UpdateHiveName(matched_sample.ToStdString(), m_Hives->GetItemText(favorites_hive).ToStdString());
+                                            m_Database->UpdateHiveName(matched_sample.ToStdString(),
+                                                                       m_Hives->GetItemText(favorites_hive).ToStdString());
 
                                             break;
                                         }
@@ -1470,9 +1467,9 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                 m_Database->RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                                msg = wxString::Format(
-                                    _("%s and all samples inside %s have been deleted from hives successfully."),
-                                    hive_name, hive_name);
+                                msg = wxString::Format(_("%s and all samples inside %s "
+                                                         "have been deleted from hives successfully."),
+                                                       hive_name, hive_name);
                             }
                             break;
                         case wxID_NO:
@@ -1493,7 +1490,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     try
                     {
                         const auto dataset = m_Database->FilterDatabaseByHiveName(hive_name.ToStdString(),
-                                                                                  settings.ShouldShowFileExtension(),
+                                                                                  serializer.DeserializeShowFileExtensionSetting(),
                                                                                   ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
@@ -1526,7 +1523,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 {
                     try
                     {
-                        const auto dataset = m_Database->FilterDatabaseBySampleName("", settings.ShouldShowFileExtension(),
+                        const auto dataset = m_Database->FilterDatabaseBySampleName("", serializer.DeserializeShowFileExtensionSetting(),
                                                                                     ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
@@ -1565,11 +1562,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
             case MN_RemoveSample:
                 for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
-                    wxString matched_sample = settings.ShouldShowFileExtension() ?
+                    wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                         m_Library->GetTextValue(i, 1);
 
-                    wxString selected_sample_name = settings.ShouldShowFileExtension() ?
+                    wxString selected_sample_name = serializer.DeserializeShowFileExtensionSetting() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_Hives->GetItemText(event.GetItem());
 
@@ -1597,11 +1594,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
             case MN_ShowInLibrary:
                 for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
-                    wxString matched_sample = settings.ShouldShowFileExtension() ?
+                    wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                         m_Library->GetTextValue(i, 1);
 
-                    wxString selected_sample_name = settings.ShouldShowFileExtension() ?
+                    wxString selected_sample_name = serializer.DeserializeShowFileExtensionSetting() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_Hives->GetItemText(event.GetItem());
 
@@ -1628,8 +1625,9 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-     wxString msg;
+    Serializer serializer(m_ConfigFilepath);
+
+    wxString msg;
 
     wxDataViewItem item = event.GetItem();
     int selected_row;
@@ -1663,13 +1661,17 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
     
     if (m_Library->GetSelectedItemsCount() <= 1)
     {
-        menu.Append(MN_EditTagSample, _("Edit tags"), _("Edit the tags for the selected sample"))->Enable(true);
-        menu.Append(MN_OpenFile, _("Open in file manager"), _("Open the selected sample in system's file manager"))->Enable(true);
+        menu.Append(MN_EditTagSample, _("Edit tags"),
+                    _("Edit the tags for the selected sample"))->Enable(true);
+        menu.Append(MN_OpenFile, _("Open in file manager"),
+                    _("Open the selected sample in system's file manager"))->Enable(true);
     }
     else
     {
-        menu.Append(MN_EditTagSample, _("Edit tags"), _("Edit the tags for the selected sample"))->Enable(false);
-        menu.Append(MN_OpenFile, _("Open in file manager"), _("Open the selected sample in system's file manager"))->Enable(false);
+        menu.Append(MN_EditTagSample, _("Edit tags"),
+                    _("Edit the tags for the selected sample"))->Enable(false);
+        menu.Append(MN_OpenFile, _("Open in file manager"),
+                    _("Open the selected sample in system's file manager"))->Enable(false);
     }
 
     switch (m_Library->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
@@ -1701,7 +1703,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                 wxString name = m_Library->GetTextValue(selected_row, 1);
 
-                filename = settings.ShouldShowFileExtension() ?
+                filename = serializer.DeserializeShowFileExtensionSetting() ?
                     name.BeforeLast('.').ToStdString() : name.ToStdString();
 
                 db_status = m_Database->GetFavoriteColumnValueByFilename(filename);
@@ -1815,7 +1817,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_Hives->GetNthChild(container, k);
 
-                                wxString child_text = settings.ShouldShowFileExtension() ?
+                                wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
                                     m_Hives->GetItemText(child).BeforeLast('.') :
                                     m_Hives->GetItemText(child);
 
@@ -1851,7 +1853,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                             wxString text_value = m_Library->GetTextValue(row, 1);
 
-                            std::string multi_selection = settings.ShouldShowFileExtension() ?
+                            std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
                                 text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
                             m_Database->RemoveSampleFromDatabase(multi_selection);
@@ -1865,7 +1867,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                                 {
                                     child = m_Hives->GetNthChild(container, k);
 
-                                    wxString child_text = settings.ShouldShowFileExtension() ?
+                                    wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
                                         m_Hives->GetItemText(child).BeforeLast('.') :
                                         m_Hives->GetItemText(child);
 
@@ -1913,7 +1915,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     wxString text_value = m_Library->GetTextValue(item_row, 1);
 
-                    std::string multi_selection = settings.ShouldShowFileExtension() ?
+                    std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
                         m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
                         m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
@@ -1935,7 +1937,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_Hives->GetNthChild(container, k);
 
-                                wxString child_text = settings.ShouldShowFileExtension() ?
+                                wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
                                     m_Hives->GetItemText(child).BeforeLast('.') :
                                     m_Hives->GetItemText(child);
 
@@ -1988,7 +1990,8 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
         case wxID_NONE:
             return;
         default:
-            wxMessageBox(_("Unexpected wxMenu return code!"), _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
+            wxMessageBox(_("Unexpected wxMenu return code!"), _("Error!"),
+                         wxOK | wxICON_ERROR | wxCENTRE, this);
     }
 
     if(!msg.IsEmpty())
@@ -2055,28 +2058,26 @@ void MainFrame::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
 
 void MainFrame::LoadDatabase()
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-     try
-    {
-        m_Database->LoadHivesDatabase(*m_Hives);
+    Serializer serializer(m_ConfigFilepath);
 
+    try
+    {
         const auto dataset = m_Database->LoadSamplesDatabase(*m_Hives, favorites_hive,
-                                                             *m_Trash, trash_root, settings.ShouldShowFileExtension(),
+                                                             *m_Trash, trash_root,
+                                                             serializer.DeserializeShowFileExtensionSetting(),
                                                              ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
         if (dataset.empty())
-        {
             wxLogInfo(_("Error! Database is empty."));
-        }
         else
         {
             for (auto data : dataset)
-            {
                 m_Library->AppendItem(data);
-            }
         }
+
+        m_Database->LoadHivesDatabase(*m_Hives);
     }
-    catch (...)
+    catch(...)
     {
         std::cerr << "Error loading data." << std::endl;
     }
@@ -2084,8 +2085,9 @@ void MainFrame::LoadDatabase()
 
 void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-     wxTreeItemId selected_trashed_item = event.GetItem();
+    Serializer serializer(m_ConfigFilepath);
+
+    wxTreeItemId selected_trashed_item = event.GetItem();
 
     wxMenu menu;
 
@@ -2100,7 +2102,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
             {
                 wxLogDebug(_("Delete permanently"));
 
-                wxString trashed_item_name = settings.ShouldShowFileExtension() ?
+                wxString trashed_item_name = serializer.DeserializeShowFileExtensionSetting() ?
                     m_Trash->GetItemText(selected_trashed_item).BeforeLast('.') :
                     m_Trash->GetItemText(selected_trashed_item);
 
@@ -2113,7 +2115,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
             {
                 wxLogDebug(_("Restore sample"));
 
-                             wxArrayTreeItemIds selected_item_ids;
+                wxArrayTreeItemIds selected_item_ids;
                 m_Trash->GetSelections(selected_item_ids);
 
                 wxFileDataObject file_data;
@@ -2142,7 +2144,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
                         wxVector<wxVector<wxVariant>> dataset;
 
                         if (m_Database->RestoreFromTrashByFilename(files[i].ToStdString(),
-                                                                   dataset, settings.ShouldShowFileExtension(),
+                                                                   dataset, serializer.DeserializeShowFileExtensionSetting(),
                                                                    ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
                         {
                             wxLogDebug(_("Error! Database is empty."));
@@ -2172,7 +2174,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 
 void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serializer(m_ConfigFilepath);
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -2193,7 +2195,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             wxString text_value = m_Library->GetTextValue(item_row, 1);
 
-            std::string multi_selection = settings.ShouldShowFileExtension() ?
+            std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
                 m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
                 m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
@@ -2215,7 +2217,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
                     {
                         child = m_Hives->GetNthChild(container, k);
 
-                        wxString child_text = settings.ShouldShowFileExtension() ?
+                        wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
                             m_Hives->GetItemText(child).BeforeLast('.') :
                             m_Hives->GetItemText(child);
 
@@ -2325,8 +2327,9 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
 
 void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
-     wxDataViewItem selected_item = m_Hives->GetSelection();
+    Serializer serializer(m_ConfigFilepath);
+
+    wxDataViewItem selected_item = m_Hives->GetSelection();
     wxString hive_name = m_Hives->GetItemText(selected_item);
 
     wxString msg;
@@ -2397,7 +2400,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
                     for (int i = 0; i < m_Library->GetItemCount(); i++)
                     {
-                        wxString matched_sample = settings.ShouldShowFileExtension() ?
+                        wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
                             m_Library->GetTextValue(i, 1).BeforeLast('.') :
                             m_Library->GetTextValue(i, 1);
 
@@ -2405,7 +2408,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                         {
                             child_item = m_Hives->GetNthChild(selected_item, j);
 
-                            wxString child_name = settings.ShouldShowFileExtension() ?
+                            wxString child_name = serializer.DeserializeShowFileExtensionSetting() ?
                                 m_Hives->GetItemText(child_item).BeforeLast('.') :
                                 m_Hives->GetItemText(child_item);
 
@@ -2448,7 +2451,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serializer(m_ConfigFilepath);
 
     wxArrayTreeItemIds selected_item_ids;
     m_Trash->GetSelections(selected_item_ids);
@@ -2467,7 +2470,8 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
     if (selected_item_ids.IsEmpty())
     {
-        wxMessageBox(_("No item selected, try selected a item first."), wxMessageBoxCaptionStr, wxOK | wxCENTRE, this);
+        wxMessageBox(_("No item selected, try selected a item first."), wxMessageBoxCaptionStr,
+                     wxOK | wxCENTRE, this);
         return;
     }
 
@@ -2491,7 +2495,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
             wxVector<wxVector<wxVariant>> dataset;
 
             if (m_Database->RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
-                                                       settings.ShouldShowFileExtension(),
+                                                       serializer.DeserializeShowFileExtensionSetting(),
                                                        ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
             {
                 wxLogDebug(_("Error! Database is empty."));
@@ -2515,13 +2519,13 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
 void MainFrame::OnDoSearch(wxCommandEvent& event)
 {
-    Settings settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Serializer serializer(m_ConfigFilepath);
 
     const auto search = m_SearchBox->GetValue().ToStdString();
 
     try
     {
-        const auto dataset = m_Database->FilterDatabaseBySampleName(search, settings.ShouldShowFileExtension(),
+        const auto dataset = m_Database->FilterDatabaseBySampleName(search, serializer.DeserializeShowFileExtensionSetting(),
                                                                     ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
         if (dataset.empty())
@@ -2553,51 +2557,63 @@ void MainFrame::OnCancelSearch(wxCommandEvent& event)
 
 void MainFrame::LoadConfigFile()
 {
-    int height = 600, width = 800;
-
     // Check if SampleHive configuration directory exist and create it if not
-    if (wxFileName::Mkdir(APP_CONFIG_DIR, wxPOSIX_USER_READ | wxPOSIX_USER_WRITE | wxPOSIX_USER_EXECUTE |
-                          wxPOSIX_GROUP_READ | wxPOSIX_GROUP_EXECUTE |
-                          wxPOSIX_OTHERS_READ | wxPOSIX_OTHERS_EXECUTE, wxPATH_MKDIR_FULL))
+    if (!wxDirExists(APP_CONFIG_DIR))
     {
-        wxLogDebug(wxString::Format(_("Successfully created configuratin directory at %s"), APP_CONFIG_DIR));
-    }
-    else
-    {
-        wxMessageBox(wxString::Format(_("Error! Could not create configuration directory %s"), APP_CONFIG_DIR), _("Error!"),
-                     wxOK | wxCENTRE, this);
+        if (wxFileName::Mkdir(APP_CONFIG_DIR, wxPOSIX_USER_READ | wxPOSIX_USER_WRITE | wxPOSIX_USER_EXECUTE |
+                              wxPOSIX_GROUP_READ | wxPOSIX_GROUP_EXECUTE |
+                              wxPOSIX_OTHERS_READ | wxPOSIX_OTHERS_EXECUTE, wxPATH_MKDIR_FULL))
+        {
+            wxLogDebug(wxString::Format(_("Successfully created configuratin directory at %s"),
+                                        APP_CONFIG_DIR));
+        }
+        else
+        {
+            wxMessageBox(wxString::Format(_("Error! Could not create configuration directory %s"),
+                                          APP_CONFIG_DIR), _("Error!"), wxOK | wxCENTRE, this);
+        }
     }
 
     // Check if SampleHive data directory exist and create it if not
-    if (wxFileName::Mkdir(APP_DATA_DIR, wxPOSIX_USER_READ | wxPOSIX_USER_WRITE | wxPOSIX_USER_EXECUTE |
-                          wxPOSIX_GROUP_READ | wxPOSIX_GROUP_EXECUTE |
-                          wxPOSIX_OTHERS_READ | wxPOSIX_OTHERS_EXECUTE, wxPATH_MKDIR_FULL))
+    if (!wxDirExists(APP_DATA_DIR))
     {
-        wxLogDebug(wxString::Format(_("Successfully created data directory at %s"), APP_DATA_DIR));
-    }
-    else
-    {
-        wxMessageBox(wxString::Format(_("Error! Could not create data directory %s"), APP_DATA_DIR), _("Error!"),
-                     wxOK | wxCENTRE, this);
+        if (wxFileName::Mkdir(APP_DATA_DIR, wxPOSIX_USER_READ | wxPOSIX_USER_WRITE | wxPOSIX_USER_EXECUTE |
+                              wxPOSIX_GROUP_READ | wxPOSIX_GROUP_EXECUTE |
+                              wxPOSIX_OTHERS_READ | wxPOSIX_OTHERS_EXECUTE, wxPATH_MKDIR_FULL))
+        {
+            wxLogDebug(wxString::Format(_("Successfully created data directory at %s"), APP_DATA_DIR));
+        }
+        else
+        {
+            wxMessageBox(wxString::Format(_("Error! Could not create data directory %s"), APP_DATA_DIR),
+                         _("Error!"), wxOK | wxCENTRE, this);
+        }
     }
 
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
     Serializer serialize(m_ConfigFilepath);
 
-    wxString font_face = serialize.DeserializeDisplaySettings().font_face;
-    int font_size = serialize.DeserializeDisplaySettings().font_size;
+    wxLogDebug(_("Reading from configuration file.."));
 
-    serialize.DeserializeBrowserControls("autoplay", bAutoplay);
-    serialize.DeserializeBrowserControls("loop", bLoop);
-    serialize.DeserializeBrowserControls("muted", bMuted);
+    int height = 600, width = 800;
 
-    height = serialize.DeserializeWinSize("Height", height);
-    width = serialize.DeserializeWinSize("Width", width);
+    bAutoplay = serialize.DeserializeBrowserControls("autoplay");
+    bLoop = serialize.DeserializeBrowserControls("loop");
+    bMuted = serialize.DeserializeBrowserControls("muted");
 
-    settings.GetFontType().SetFaceName(font_face);
-    settings.GetFontType().SetPointSize(font_size);
+    width = serialize.DeserializeWinSize().first;
+    height = serialize.DeserializeWinSize().second;
 
-    this->SetFont(settings.GetFontType());
+    bShowMenuBar = serialize.DeserializeShowMenuAndStatusBar("menubar");
+    bShowStatusBar = serialize.DeserializeShowMenuAndStatusBar("statusbar");
+
+    m_ToggleMenuBar->Check(bShowMenuBar);
+    m_MenuBar->Show(bShowMenuBar);
+    m_ToggleStatusBar->Check(bShowStatusBar);
+    m_StatusBar->Show(bShowStatusBar);
+
+    m_ToggleExtension->Check(serialize.DeserializeShowFileExtensionSetting());
+
+    this->SetFont(serialize.DeserializeDisplaySettings());
     this->SetSize(width, height);
     this->SetMinSize(wxSize(width, height));
     this->CenterOnScreen(wxBOTH);
@@ -2624,30 +2640,129 @@ void MainFrame::RefreshDatabase()
     LoadDatabase();
 }
 
-// bool MainFrame::CreateWatcherIfNecessary()
-// {
-//     if (m_FsWatcher)
-//         return false;
-
-//     CreateWatcher();
-//     Connect(wxEVT_FSWATCHER,
-//             wxFileSystemWatcherEventHandler(MainFrame::OnFileSystemEvent));
-
-//     return true;
-// }
-
-// void MainFrame::CreateWatcher()
-// {
-//     wxCHECK_RET(!m_FsWatcher, "Watcher already initialized");
-
-//     m_FsWatcher = new wxFileSystemWatcher();
-//     m_FsWatcher->SetOwner(this);
-// }
-
-FileInfo
-MainFrame::GetFilenamePathAndExtension(const wxString& selected, bool checkExtension, bool doGetFilename) const
+bool MainFrame::CreateWatcherIfNecessary()
 {
-    Settings settings(m_ConfigFilepath, m_DatabaseFilepath);
+    if (m_FsWatcher)
+        return false;
+
+    CreateWatcher();
+    Bind(wxEVT_FSWATCHER, &MainFrame::OnFileSystemEvent, this);
+
+    return true;
+}
+
+void MainFrame::CreateWatcher()
+{
+    Serializer serializer(m_ConfigFilepath);
+
+    wxCHECK_RET(!m_FsWatcher, "Watcher already initialized");
+
+    m_FsWatcher = new wxFileSystemWatcher();
+    m_FsWatcher->SetOwner(this);
+
+    wxString path = serializer.DeserializeAutoImportSettings().second;
+
+    if (serializer.DeserializeAutoImportSettings().first)
+    {
+        wxLogDebug("Adding watch entry..");
+        AddWatchEntry(wxFSWPath_Tree, path.ToStdString());
+    }
+}
+
+void MainFrame::AddWatchEntry(wxFSWPathType type, std::string path)
+{
+    Serializer serializer(m_ConfigFilepath);
+
+    if (path.empty())
+    {
+        path = wxDirSelector("Choose a directory to watch", "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+
+        if (path.empty())
+            return;
+    }
+
+    wxCHECK_RET(m_FsWatcher, "Watcher not initialized");
+
+    wxLogDebug("Adding %s: '%s'", path, type == wxFSWPath_Dir ? "directory" : "directory tree");
+
+    wxFileName filename = wxFileName::DirName(path);
+
+    if (filename.IsDir() && filename.IsDirReadable() && filename.IsOk())
+        wxLogDebug("Path is ok, adding to watch list.");
+
+    if (!serializer.DeserializeFollowSymLink())
+    {
+        filename.DontFollowLink();
+    }
+
+    bool ok = false;
+
+    switch (type)
+    {
+        case wxFSWPath_Dir:
+            break;
+        case wxFSWPath_Tree:
+            ok = m_FsWatcher->AddTree(filename);
+            break;
+        case wxFSWPath_File:
+            break;
+        case wxFSWPath_None:
+            wxFAIL_MSG("Unexpected path type.");
+    }
+
+    if (!ok)
+    {
+        wxLogError("Error! Cannot add '%s' to watched paths", filename.GetPath());
+        return;
+    }
+}
+
+void MainFrame::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
+{
+    wxLogTrace(wxTRACE_FSWATCHER, "*** %s ***", event.ToString());
+
+    int type = event.GetChangeType();
+
+    wxString path = event.GetPath().GetFullPath();
+
+    wxArrayString files;
+    files.push_back(path);
+
+    wxLogDebug("%s %s", path, event.ToString());
+
+    switch (type)
+    {
+        case wxFSW_EVENT_CREATE:
+            wxLogDebug("NEW FILES DETECTED, ADDING: %s", path);
+            AddSamples(files);
+            break;
+        case wxFSW_EVENT_ACCESS:
+            wxLogDebug("ACCESSING DIRECTORY: %s", path);
+            break;
+        case wxFSW_EVENT_DELETE:
+            wxLogDebug("FILES DELETED IN DIRECTORY: %s", path);
+            break;
+        case wxFSW_EVENT_MODIFY:
+            wxLogDebug("DIRECTORY MODIFIED: %s", path);
+            break;
+        case wxFSW_EVENT_RENAME:
+            wxLogDebug("FILES RENAMED IN DIRECTORY: %s", event.GetNewPath().GetFullPath());
+            break;
+        case wxFSW_EVENT_WARNING:
+            wxLogDebug("Filesystem watcher warning: %d", event.GetWarningType());
+            break;
+        case wxFSW_EVENT_ERROR:
+            wxLogDebug("Error! Filesystem watcher: %s", event.GetErrorDescription());
+            break;
+        default:
+            break;
+    }
+}
+
+FileInfo MainFrame::GetFilenamePathAndExtension(const wxString& selected,
+                                                bool checkExtension, bool doGetFilename) const
+{
+    Serializer serializer(m_ConfigFilepath);
 
     wxString path;
     std::string extension, filename;
@@ -2657,7 +2772,7 @@ MainFrame::GetFilenamePathAndExtension(const wxString& selected, bool checkExten
 
     if (checkExtension)
     {
-        extension = settings.ShouldShowFileExtension() ?
+        extension = serializer.DeserializeShowFileExtensionSetting() ?
             m_Database->GetSampleFileExtension(selected.ToStdString()) :
             m_Database->GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
     }
@@ -2721,56 +2836,67 @@ void MainFrame::OnSelectAddDirectory(wxCommandEvent& event)
 
 void MainFrame::OnSelectToggleExtension(wxCommandEvent& event)
 {
-    wxMessageBox("// TODO", "Toggle extension", wxOK | wxCENTRE, this);
+    Serializer serializer(m_ConfigFilepath);
 
-    m_Trash->DeleteAllItems();
-
-    // wxDataViewItem root = wxDataViewItem(wxNullPtr);
-
-    // int item_count = m_Hives->GetChildCount(root);
-
-    // for (int i = 0; i < item_count; i++)
-    // {
-    //     wxDataViewItem item = m_Hives->GetNthChild(root, i);
-
-    //     wxLogDebug("Deleteing: %s", m_Hives->GetItemText(item));
-
-    //     // m_Hives->DeleteItem(item);
-    //     // break;
-    // }
-
-    /* TODO: Toggle Show/Hide Extensions
-     * Perhaps need Refresh()
-     * that just updates all elements
-     * and sample info in all widgets.
-     */
+    if (m_ToggleExtension->IsChecked())
+    {
+        serializer.SerializeShowFileExtensionSetting(true);
+        m_InfoBar->ShowMessage(_("Extension showing, restart the application to view changes "
+                                 "or press CTRL+E to toggle show/hide."), wxICON_INFORMATION);
+    }
+    else
+    {
+        serializer.SerializeShowFileExtensionSetting(false);
+        m_InfoBar->ShowMessage(_("Extension hidden, restart the application to view changes "
+                                 "or press CTRL+E to toggle show/hide."), wxICON_INFORMATION);
+    }
 }
 
 void MainFrame::OnSelectToggleMenuBar(wxCommandEvent& event)
 {
+    Serializer serializer(m_ConfigFilepath);
+
     if (m_ToggleMenuBar->IsChecked())
     {
         m_MenuBar->Show();
         m_InfoBar->ShowMessage(_("MenuBar showing, press CTRL+M to toggle show/hide."), wxICON_INFORMATION);
+
+        bShowMenuBar = true;
+
+        serializer.SerializeShowMenuAndStatusBar("menubar", bShowMenuBar);
     }
     else
     {
         m_MenuBar->Hide();
         m_InfoBar->ShowMessage(_("MenuBar hidden, press CTRL+M to toggle show/hide."), wxICON_INFORMATION);
+
+        bShowMenuBar = false;
+
+        serializer.SerializeShowMenuAndStatusBar("menubar", bShowMenuBar);
     }
 }
 
 void MainFrame::OnSelectToggleStatusBar(wxCommandEvent& event)
 {
+    Serializer serializer(m_ConfigFilepath);
+
     if (m_ToggleStatusBar->IsChecked())
     {
         m_StatusBar->Show();
         m_InfoBar->ShowMessage(_("StatusBar showing, press CTRL+B to toggle show/hide."), wxICON_INFORMATION);
+
+        bShowStatusBar = true;
+
+        serializer.SerializeShowMenuAndStatusBar("statusbar", bShowStatusBar);
     }
     else
     {
         m_StatusBar->Hide();
         m_InfoBar->ShowMessage(_("StatusBar hidden, press CTRL+B to toggle show/hide."), wxICON_INFORMATION);
+
+        bShowStatusBar = false;
+
+        serializer.SerializeShowMenuAndStatusBar("statusbar", bShowStatusBar);
     }
 }
 
@@ -2791,17 +2917,26 @@ void MainFrame::OnSelectPreferences(wxCommandEvent& event)
                 OnAutoImportDir(settings->GetImportDirPath());
                 RefreshDatabase();
             }
+            if (settings->IsWaveformColourChanged())
+            {
+                m_TopWaveformPanel->ResetDC();
+            }
+            break;
+        case wxID_CANCEL:
             break;
         default:
-            break;
+            return;
     }
 }
 
 void MainFrame::OnSelectResetAppData(wxCommandEvent& event)
 {
-    wxMessageDialog clearDataDialog(this, wxString::Format(_("Warning! This will delete configuration file \"%s\" and database file \"%s\" permanently, "
-                                                             "are you sure you want to delete these files?"), m_ConfigFilepath, m_DatabaseFilepath),
-                                    _("Clear app data"), wxYES_NO | wxNO_DEFAULT | wxCENTRE, wxDefaultPosition);
+    wxMessageDialog clearDataDialog(this, wxString::Format(_("Warning! This will delete configuration file "
+                                                             "\"%s\" and database file \"%s\" permanently, "
+                                                             "are you sure you want to delete these files?"),
+                                                           m_ConfigFilepath, m_DatabaseFilepath),
+                                    _("Clear app data"),
+                                    wxYES_NO | wxNO_DEFAULT | wxCENTRE, wxDefaultPosition);
 
     bool remove = false;
 
@@ -2829,7 +2964,8 @@ void MainFrame::OnSelectResetAppData(wxCommandEvent& event)
                 if (configIsDeleted && dbIsDeleted)
                     m_InfoBar->ShowMessage(_("Successfully cleared app data"), wxICON_INFORMATION);
                 else
-                    wxMessageBox(_("Error! Could not clear app data"), _("Error!"), wxOK | wxCENTRE | wxICON_ERROR, this);
+                    wxMessageBox(_("Error! Could not clear app data"), _("Error!"),
+                                 wxOK | wxCENTRE | wxICON_ERROR, this);
             }
             break;
         case wxID_NO:
@@ -2930,7 +3066,8 @@ void MainFrame::ClearLoopPoints()
     bLoopPointsSet = false;
 }
 
-void MainFrame::PlaySample(const std::string& filepath, const std::string& sample, bool seek, wxFileOffset where, wxSeekMode mode)
+void MainFrame::PlaySample(const std::string& filepath, const std::string& sample,
+                           bool seek, wxFileOffset where, wxSeekMode mode)
 {
     wxLogDebug("TIMER STARTING FROM %s", __FUNCTION__);
 
@@ -2951,4 +3088,7 @@ void MainFrame::PlaySample(const std::string& filepath, const std::string& sampl
         wxLogDebug(_("Error! Cannot load sample."));
 }
 
-MainFrame::~MainFrame(){}
+MainFrame::~MainFrame()
+{
+    delete m_FsWatcher;
+}

@@ -18,9 +18,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ControlID_Enums.hpp"
-#include "SettingsDialog.hpp"
-#include "Serialize.hpp"
+#include "GUI/Dialogs/Settings.hpp"
+#include "Utility/ControlID_Enums.hpp"
+#include "Utility/Serialize.hpp"
 
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
@@ -52,34 +52,50 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_DisplayFontSizer = new wxBoxSizer(wxHORIZONTAL);
     m_WaveformColourSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxString fontChoices[] = {"System default"};
     Serializer serializer(m_ConfigFilepath);
-    // m_RowHeightText = new wxStaticText();
-    m_FontTypeText = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Font", wxDefaultPosition, wxDefaultSize, 0);
-    // m_RowHeight = new wxChoice();
-    m_FontType = new wxChoice(m_DisplaySettingPanel, SD_FontType, wxDefaultPosition, wxDefaultSize, 1, fontChoices, 0);
+
+    wxString fontChoices[] = { "System default" };
+
+    m_FontTypeText = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Font",
+                                      wxDefaultPosition, wxDefaultSize, 0);
+    m_FontType = new wxChoice(m_DisplaySettingPanel, SD_FontType,
+                              wxDefaultPosition, wxDefaultSize, 1, fontChoices, 0);
     m_FontType->SetSelection(0);
-    m_FontSize = new wxSpinCtrl(m_DisplaySettingPanel, SD_FontSize, "Default", wxDefaultPosition, wxDefaultSize);
+    m_FontSize = new wxSpinCtrl(m_DisplaySettingPanel, SD_FontSize, "Default",
+                                wxDefaultPosition, wxDefaultSize);
     m_FontSize->SetValue(window->GetFont().GetPointSize());
-    m_FontBrowseButton = new wxButton(m_DisplaySettingPanel, SD_FontBrowseButton, "Select font", wxDefaultPosition, wxDefaultSize, 0);
-    m_WaveformColourLabel = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Waveform colour", wxDefaultPosition, wxDefaultSize, 0);
-    m_WaveformColourPickerCtrl = new wxColourPickerCtrl(m_DisplaySettingPanel, SD_WaveformColourPickerCtrl, serializer.DeserializeWaveformColour(),
-                                                        wxDefaultPosition, wxDefaultSize, wxCLRP_DEFAULT_STYLE);
+    m_FontBrowseButton = new wxButton(m_DisplaySettingPanel, SD_FontBrowseButton, "Select font",
+                                      wxDefaultPosition, wxDefaultSize, 0);
+    m_WaveformColourLabel = new wxStaticText(m_DisplaySettingPanel, wxID_ANY, "Waveform colour",
+                                             wxDefaultPosition, wxDefaultSize, 0);
+    m_WaveformColourPickerCtrl = new wxColourPickerCtrl(m_DisplaySettingPanel, SD_WaveformColourPickerCtrl,
+                                                        serializer.DeserializeWaveformColour(),
+                                                        wxDefaultPosition, wxDefaultSize,
+                                                        wxCLRP_DEFAULT_STYLE);
 
     m_CollectionSettingPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
-    m_CollectionTopSizer = new wxBoxSizer(wxVERTICAL);
+    m_CollectionMainSizer = new wxBoxSizer(wxVERTICAL);
     m_CollectionImportDirSizer = new wxBoxSizer(wxHORIZONTAL);
-    m_ShowFileExtensionSizer = new wxBoxSizer(wxHORIZONTAL);
+    m_CollectionBottomSizer = new wxBoxSizer(wxVERTICAL);
 
     wxString defaultDir = wxGetHomeDir();
 
-    m_AutoImportCheck = new wxCheckBox(m_CollectionSettingPanel, SD_AutoImport, "Auto import", wxDefaultPosition, wxDefaultSize, 0);
-    m_ImportDirLocation = new wxTextCtrl(m_CollectionSettingPanel, wxID_ANY, defaultDir, wxDefaultPosition, wxDefaultSize, 0);
+    m_AutoImportCheck = new wxCheckBox(m_CollectionSettingPanel, SD_AutoImport, "Auto import",
+                                       wxDefaultPosition, wxDefaultSize, 0);
+    m_ImportDirLocation = new wxTextCtrl(m_CollectionSettingPanel, wxID_ANY, defaultDir,
+                                         wxDefaultPosition, wxDefaultSize, 0);
     m_ImportDirLocation->Disable();
-    m_BrowseAutoImportDirButton = new wxButton(m_CollectionSettingPanel, SD_BrowseAutoImportDir, "Browse", wxDefaultPosition, wxDefaultSize, 0);
+    m_BrowseAutoImportDirButton = new wxButton(m_CollectionSettingPanel, SD_BrowseAutoImportDir, "Browse",
+                                               wxDefaultPosition, wxDefaultSize, 0);
     m_BrowseAutoImportDirButton->Disable();
-    m_ShowFileExtensionCheck = new wxCheckBox(m_CollectionSettingPanel, SD_ShowFileExtension, "Show file extension", wxDefaultPosition, wxDefaultSize, 0);
+    m_FollowSymLinksCheck = new wxCheckBox(m_CollectionSettingPanel, SD_FollowSymLinks,
+                                           "Follow symbolic links", wxDefaultPosition, wxDefaultSize, 0);
+    m_FollowSymLinksCheck->SetToolTip("Wheather to follow symbolic links");
+    m_FollowSymLinksCheck->Disable();
+    m_ShowFileExtensionCheck = new wxCheckBox(m_CollectionSettingPanel, SD_ShowFileExtension,
+                                              "Show file extension", wxDefaultPosition, wxDefaultSize, 0);
+    m_ShowFileExtensionCheck->SetToolTip("Weather to show file extension");
 
     m_ConfigurationSettingPanel = new wxPanel(m_Notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -88,12 +104,18 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_GeneralMainSizer->SetFlexibleDirection(wxBOTH);
     m_GeneralMainSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    m_ConfigLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY, "Default configuration file location", wxDefaultPosition, wxDefaultSize);
-    m_ConfigText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, configFilepath, wxDefaultPosition, wxDefaultSize);
-    m_ConfigBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseConfigDir, "Browse", wxDefaultPosition, wxDefaultSize, 0);
-    m_DatabaseLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY, "Default database location", wxDefaultPosition, wxDefaultSize);
-    m_DatabaseText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, databaseFilepath, wxDefaultPosition, wxDefaultSize);
-    m_DatabaseBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseDatabaseDir, "Browse", wxDefaultPosition, wxDefaultSize, 0);
+    m_ConfigLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY,
+                                     "Default configuration file location", wxDefaultPosition, wxDefaultSize);
+    m_ConfigText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, configFilepath,
+                                  wxDefaultPosition, wxDefaultSize);
+    m_ConfigBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseConfigDir, "Browse",
+                                  wxDefaultPosition, wxDefaultSize, 0);
+    m_DatabaseLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY, "Default database location",
+                                       wxDefaultPosition, wxDefaultSize);
+    m_DatabaseText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, databaseFilepath,
+                                    wxDefaultPosition, wxDefaultSize);
+    m_DatabaseBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseDatabaseDir, "Browse",
+                                    wxDefaultPosition, wxDefaultSize, 0);
 
     m_Notebook->AddPage(m_DisplaySettingPanel, "Display");
     m_Notebook->AddPage(m_CollectionSettingPanel, "Collection");
@@ -106,6 +128,7 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
 
     // Bind events
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckAutoImport, this, SD_AutoImport);
+    Bind(wxEVT_CHECKBOX, &Settings::OnCheckFollowSymLinks, this, SD_FollowSymLinks);
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckShowFileExtension, this, SD_ShowFileExtension);
     Bind(wxEVT_SPINCTRL, &Settings::OnChangeFontSize, this, SD_FontSize);
     Bind(wxEVT_BUTTON, &Settings::OnSelectFont, this, SD_FontBrowseButton);
@@ -139,10 +162,11 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
-    m_ShowFileExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL, 2);
+    m_CollectionBottomSizer->Add(m_FollowSymLinksCheck, 0, wxALL, 2);
+    m_CollectionBottomSizer->Add(m_ShowFileExtensionCheck, 0, wxALL, 2);
 
-    m_CollectionTopSizer->Add(m_CollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
-    m_CollectionTopSizer->Add(m_ShowFileExtensionSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionMainSizer->Add(m_CollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionMainSizer->Add(m_CollectionBottomSizer, 0, wxALL | wxEXPAND, 2);
 
     m_ButtonSizer->Add(m_OkButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_ButtonSizer->Add(m_CancelButton, 0, wxALL | wxALIGN_BOTTOM, 2);
@@ -163,10 +187,10 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_DisplayTopSizer->Layout();
 
     // Collection panel layout
-    m_CollectionSettingPanel->SetSizer(m_CollectionTopSizer);
-    m_CollectionTopSizer->Fit(m_CollectionSettingPanel);
-    m_CollectionTopSizer->SetSizeHints(m_CollectionSettingPanel);
-    m_CollectionTopSizer->Layout();
+    m_CollectionSettingPanel->SetSizer(m_CollectionMainSizer);
+    m_CollectionMainSizer->Fit(m_CollectionSettingPanel);
+    m_CollectionMainSizer->SetSizeHints(m_CollectionSettingPanel);
+    m_CollectionMainSizer->Layout();
 
     // Configuration panel layout
     m_ConfigurationSettingPanel->SetSizer(m_GeneralMainSizer);
@@ -179,17 +203,17 @@ void Settings::OnClickConfigBrowse(wxCommandEvent& event)
 {
     wxString initial_dir = wxGetHomeDir();
 
-    m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
-                                  wxDD_DEFAULT_STYLE |
-                                  wxDD_DIR_MUST_EXIST |
-                                  wxDD_NEW_DIR_BUTTON,
-                                  wxDefaultPosition, wxDefaultSize);
+    wxDirDialog dir_dialog(this, "Select a directory..", initial_dir,
+                           wxDD_DEFAULT_STYLE |
+                           wxDD_DIR_MUST_EXIST |
+                           wxDD_NEW_DIR_BUTTON,
+                           wxDefaultPosition, wxDefaultSize);
 
-    switch (m_DirDialog->ShowModal())
+    switch (dir_dialog.ShowModal())
     {
         case wxID_OK:
         {
-            wxString path = m_DirDialog->GetPath();
+            wxString path = dir_dialog.GetPath();
             m_ConfigText->SetValue(path + "/config.yaml");
             break;
         }
@@ -202,17 +226,17 @@ void Settings::OnClickDatabaseBrowse(wxCommandEvent& event)
 {
     wxString initial_dir = wxGetHomeDir();
 
-    m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
-                                  wxDD_DEFAULT_STYLE |
-                                  wxDD_DIR_MUST_EXIST |
-                                  wxDD_NEW_DIR_BUTTON,
-                                  wxDefaultPosition, wxDefaultSize);
+    wxDirDialog dir_dialog(this, "Select a directory..", initial_dir,
+                           wxDD_DEFAULT_STYLE |
+                           wxDD_DIR_MUST_EXIST |
+                           wxDD_NEW_DIR_BUTTON,
+                           wxDefaultPosition, wxDefaultSize);
 
-    switch (m_DirDialog->ShowModal())
+    switch (dir_dialog.ShowModal())
     {
         case wxID_OK:
         {
-            wxString path = m_DirDialog->GetPath();
+            wxString path = dir_dialog.GetPath();
             m_DatabaseText->SetValue(path + "/config.yaml");
             break;
         }
@@ -230,33 +254,33 @@ void Settings::OnCheckAutoImport(wxCommandEvent& event)
         bAutoImport = false;
         m_ImportDirLocation->Disable();
         m_BrowseAutoImportDirButton->Disable();
+        m_FollowSymLinksCheck->Disable();
 
-        serializer.SerializeAutoImportSettings(*m_ImportDirLocation, *m_AutoImportCheck);
+        serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
     }
     else
     {
         bAutoImport = true;
         m_ImportDirLocation->Enable();
         m_BrowseAutoImportDirButton->Enable();
+        m_FollowSymLinksCheck->Enable();
 
-        serializer.SerializeAutoImportSettings(*m_ImportDirLocation, *m_AutoImportCheck);
+        serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
     }
+}
+
+void Settings::OnCheckFollowSymLinks(wxCommandEvent& event)
+{
+    Serializer serialize(m_ConfigFilepath);
+
+    serialize.SerializeFollowSymLink(m_FollowSymLinksCheck->GetValue());
 }
 
 void Settings::OnCheckShowFileExtension(wxCommandEvent& event)
 {
     Serializer serialize(m_ConfigFilepath);
 
-    if (!m_ShowFileExtensionCheck->GetValue())
-    {
-        bShowExtension = false;
-        serialize.SerializeShowFileExtensionSetting(*m_ShowFileExtensionCheck);
-    }
-    else
-    {
-        bShowExtension = true;
-        serialize.SerializeShowFileExtensionSetting(*m_ShowFileExtensionCheck);
-    }
+    serialize.SerializeShowFileExtensionSetting(m_ShowFileExtensionCheck->GetValue());
 }
 
 void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
@@ -265,20 +289,20 @@ void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
 
     wxString initial_dir = wxGetHomeDir();
 
-    m_DirDialog = new wxDirDialog(this, "Select a directory..", initial_dir,
-                                  wxDD_DEFAULT_STYLE |
-                                  wxDD_DIR_MUST_EXIST |
-                                  wxDD_NEW_DIR_BUTTON,
-                                  wxDefaultPosition, wxDefaultSize);
+    wxDirDialog dir_dialog(this, "Select a directory..", initial_dir,
+                           wxDD_DEFAULT_STYLE |
+                           wxDD_DIR_MUST_EXIST |
+                           wxDD_NEW_DIR_BUTTON,
+                           wxDefaultPosition, wxDefaultSize);
 
-    switch (m_DirDialog->ShowModal())
+    switch (dir_dialog.ShowModal())
     {
         case wxID_OK:
         {
-            wxString path = m_DirDialog->GetPath();
+            wxString path = dir_dialog.GetPath();
             m_ImportDirLocation->SetValue(path);
 
-            serializer.SerializeAutoImportSettings(*m_ImportDirLocation, *m_AutoImportCheck);
+            serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
             break;
         }
         default:
@@ -288,13 +312,13 @@ void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
 
 void Settings::OnSelectFont(wxCommandEvent& event)
 {
-    m_FontDialog = new wxFontDialog(this);
+    wxFontDialog font_dialog(this);
 
-    switch (m_FontDialog->ShowModal())
+    switch (font_dialog.ShowModal())
     {
         case wxID_OK:
         {
-            wxFontData fontData = m_FontDialog->GetFontData();
+            wxFontData fontData = font_dialog.GetFontData();
             m_Font = fontData.GetChosenFont();
 
             if (m_FontType->GetCount() > 1)
@@ -324,7 +348,7 @@ void Settings::OnChangeFontSize(wxSpinEvent& event)
 
     int font_size = m_FontSize->GetValue();
 
-    if ( m_FontType->GetStringSelection() == "System default" )
+    if (m_FontType->GetStringSelection() == "System default")
         m_Font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
 
     m_Font.SetPointSize(font_size);
@@ -343,13 +367,13 @@ void Settings::LoadDefaultConfig()
     Serializer serializer(m_ConfigFilepath);
 
     wxFont sys_font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
-    std::string system_font = sys_font.GetFaceName().ToStdString();
+    wxString system_font = sys_font.GetFaceName();
     int system_font_size = sys_font.GetPointSize();
 
-    wxString font_face = serializer.DeserializeDisplaySettings().font_face;
-    int font_size = serializer.DeserializeDisplaySettings().font_size;
+    wxString font_face = serializer.DeserializeDisplaySettings().GetFaceName();
+    int font_size = serializer.DeserializeDisplaySettings().GetPointSize();
 
-    if ( system_font != font_face )
+    if (system_font != font_face)
     {
         if (m_FontType->GetCount() > 1)
         {
@@ -373,19 +397,27 @@ void Settings::LoadDefaultConfig()
     m_FontSize->SetValue(font_size);
     SetCustomFont();
 
-    bAutoImport = serializer.DeserializeAutoImportSettings().auto_import;
-    wxString location = serializer.DeserializeAutoImportSettings().import_dir;
-    bShowExtension = serializer.DeserializeShowFileExtensionSetting();
+    bAutoImport = serializer.DeserializeAutoImportSettings().first;
+    wxString location = serializer.DeserializeAutoImportSettings().second;
 
     m_AutoImportCheck->SetValue(bAutoImport);
     m_ImportDirLocation->SetValue(location);
-    m_ShowFileExtensionCheck->SetValue(bShowExtension);
+    m_ShowFileExtensionCheck->SetValue(serializer.DeserializeShowFileExtensionSetting());
 
     if (bAutoImport)
     {
         m_ImportDirLocation->Enable();
         m_BrowseAutoImportDirButton->Enable();
+        m_FollowSymLinksCheck->Enable();
     }
+}
+
+void Settings::SetShowExtension(bool value)
+{
+    Serializer serializer(m_ConfigFilepath);
+
+    m_ShowFileExtensionCheck->SetValue(value);
+    serializer.SerializeShowFileExtensionSetting(value);
 }
 
 void Settings::PrintFont()
@@ -405,10 +437,10 @@ void Settings::SetCustomFont()
     std::string system_font = sys_font.GetFaceName().ToStdString();
     int system_font_size = sys_font.GetPointSize();
 
-    wxString font_face = serializer.DeserializeDisplaySettings().font_face;
-    int font_size = serializer.DeserializeDisplaySettings().font_size;
+    wxString font_face = serializer.DeserializeDisplaySettings().GetFaceName();
+    int font_size = serializer.DeserializeDisplaySettings().GetPointSize();
 
-    if ( m_FontType->GetStringSelection() == "System default" )
+    if (m_FontType->GetStringSelection() == "System default")
     {
         m_Window->SetFont(sys_font);
         this->SetFont(sys_font);
@@ -452,6 +484,8 @@ void Settings::OnChangeWaveformColour(wxColourPickerEvent& event)
     {
         wxLogDebug("Waveform colour not changed.");
         bWaveformColourChanged = false;
+
+        serializer.SerializeWaveformColour(colour);
     }
 }
 

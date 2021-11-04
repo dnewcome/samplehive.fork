@@ -113,17 +113,23 @@ snd_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
 src = [
 
   'src/App.cpp',
-  'src/MainFrame.cpp',
-  'src/SettingsDialog.cpp',
-  'src/TagEditorDialog.cpp',
-  'src/Database.cpp',
-  'src/Sample.cpp',
-  'src/Serialize.cpp',
-  'src/Tags.cpp',
-  'src/WaveformViewer.cpp',
-  'src/SH_Event.cpp',
+
+  'src/GUI/MainFrame.cpp',
+  'src/GUI/WaveformViewer.cpp',
+
+  'src/GUI/Dialogs/Settings.cpp',
+  'src/GUI/Dialogs/TagEditor.cpp',
+
+  'src/Database/Database.cpp',
+
+  'src/Utility/Sample.cpp',
+  'src/Utility/Serialize.cpp',
+  'src/Utility/Tags.cpp',
+  'src/Utility/SH_Event.cpp',
 
 ]
+
+include_dirs = include_directories('src')
 
 # Dependencies
 wx = dependency('wxwidgets', version: '>=3.1.5', required: false)
@@ -197,12 +203,14 @@ if wx_found
              sources: src,
              cpp_args: [wx_cxx_flags],
              link_args: [wx_libs],
+             include_directories : include_dirs,
              dependencies: [wx, taglib, sqlite3, yaml, snd],
              install: true,
              install_rpath: prefix / 'lib')
 else
   executable('SampleHive',
              sources: src,
+             include_directories : include_dirs,
              dependencies: [wx, taglib, sqlite3, yaml, snd],
              install: true,
              install_rpath: prefix / 'lib')

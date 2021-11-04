@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "MainFrame.hpp"
+#include "GUI/MainFrame.hpp"
 
 #include <wx/app.h>
 #include <wx/cmdline.h>
@@ -36,6 +36,7 @@ class App : public wxApp
 
     private:
         virtual bool OnInit();
+        virtual void OnEventLoopEnter(wxEventLoopBase* event);
         virtual void OnInitCmdLine(wxCmdLineParser& parser);
         virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 };

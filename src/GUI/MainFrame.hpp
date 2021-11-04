@@ -20,10 +20,11 @@
 
 #pragma once
 
-#include "Database.hpp"
-#include "WaveformViewer.hpp"
+#include "Database/Database.hpp"
+#include "GUI/WaveformViewer.hpp"
 #include "SampleHiveConfig.hpp"
-#include "SH_Event.hpp"
+#include "Utility/Serialize.hpp"
+#include "Utility/SH_Event.hpp"
 
 #include <memory>
 #include <string>
@@ -192,6 +193,8 @@ class MainFrame : public wxFrame
         bool bMuted = false;
         bool bStopped = false;
         bool bFiltered = false;
+        bool bShowMenuBar = false;
+        bool bShowStatusBar = false;
         bool bLoopPointsSet = false;
 
         // -------------------------------------------------------------------
@@ -290,6 +293,8 @@ class MainFrame : public wxFrame
         // Directory watchers
         bool CreateWatcherIfNecessary();
         void CreateWatcher();
+        void AddWatchEntry(wxFSWPathType type, std::string path);
+        void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
 
         // wxString TagLibTowx(const TagLib::String& in);
 

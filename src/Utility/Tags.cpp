@@ -18,7 +18,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Tags.hpp"
+#include "Utility/Tags.hpp"
 #include "SampleHiveConfig.hpp"
 
 #include <taglib/tag.h>

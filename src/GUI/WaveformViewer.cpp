@@ -18,12 +18,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "WaveformViewer.hpp"
-#include "Database.hpp"
-#include "SettingsDialog.hpp"
-#include "Serialize.hpp"
-#include "Tags.hpp"
-#include "SH_Event.hpp"
+#include "GUI/WaveformViewer.hpp"
+#include "Utility/Serialize.hpp"
+#include "Utility/Tags.hpp"
+#include "Utility/SH_Event.hpp"
 
 #include <vector>
 
@@ -38,11 +36,12 @@
 
 #include <sndfile.hh>
 
-WaveformViewer::WaveformViewer(wxWindow* parentFrame, wxWindow* window, wxDataViewListCtrl& library,
+WaveformViewer::WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
                                wxMediaCtrl& mediaCtrl, Database& database,
                                const std::string& configFilepath, const std::string& databaseFilepath)
-    : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_ParentFrame(parentFrame), m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl),
+    : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+              wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
+      m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl),
       m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
 {
     this->SetDoubleBuffered(true);
@@ -99,7 +98,8 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
     {
         dc.SetPen(wxPen(wxColour(200, 200, 200, 255), 4, wxPENSTYLE_SOLID));
         dc.SetBrush(wxBrush(wxColour(200, 200, 200, 80), wxBRUSHSTYLE_SOLID));
-        dc.DrawRectangle(wxRect(m_AnchorPoint.x, -2, m_CurrentPoint.x - m_AnchorPoint.x, this->GetSize().GetHeight() + 5));
+        dc.DrawRectangle(wxRect(m_AnchorPoint.x, -2, m_CurrentPoint.x - m_AnchorPoint.x,
+                                this->GetSize().GetHeight() + 5));
 
         bAreaSelected = true;
         SendLoopPoints();
@@ -148,7 +148,6 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
 
 void WaveformViewer::UpdateWaveformBitmap()
 {
-    Settings settings(m_ParentFrame, m_ConfigFilepath, m_DatabaseFilepath);
     Serializer serializer(m_ConfigFilepath);
 
     int selected_row = m_Library.GetSelectedRow();
@@ -158,10 +157,11 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     wxString selection = m_Library.GetTextValue(selected_row, 1);
 
-    wxString filepath_with_extension = m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString filepath_with_extension =
+        m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     wxString filepath_without_extension = m_Database.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = settings.ShouldShowFileExtension() ?
+    std::string extension = serializer.DeserializeShowFileExtensionSetting() ?
         m_Database.GetSampleFileExtension(selection.ToStdString()) :
         m_Database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 

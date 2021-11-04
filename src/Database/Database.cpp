@@ -18,7 +18,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Database.hpp"
+#include "Database/Database.hpp"
 
 #include <deque>
 #include <exception>
@@ -126,7 +126,7 @@ void Database::CreateTableHives()
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot create table hives: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot create hives table", "Error", e.what());
     }
 }
 
@@ -548,9 +548,12 @@ std::string Database::GetSampleFileExtension(const std::string &filename)
     return extension;
 }
 
-wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &favorite_tree, wxDataViewItem &favorite_item,
-                                                            wxTreeCtrl &trash_tree, wxTreeItemId &trash_item, bool show_extension,
-                                                            const std::string &icon_star_filled, const std::string &icon_star_empty)
+wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &favorite_tree,
+                                                            wxDataViewItem &favorite_item,
+                                                            wxTreeCtrl &trash_tree, wxTreeItemId &trash_item,
+                                                            bool show_extension,
+                                                            const std::string &icon_star_filled,
+                                                            const std::string &icon_star_empty)
 {
     wxVector<wxVector<wxVariant>> vecSet;
 
@@ -560,17 +563,17 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
 
     try
     {
-        int numRows = 0;
+        int num_rows = 0;
 
         Sqlite3Statement statement1(m_Database, "SELECT Count(*) FROM SAMPLES;");
 
         if (SQLITE_ROW == sqlite3_step(statement1.stmt))
         {
-            numRows = sqlite3_column_int(statement1.stmt, 0);
+            num_rows = sqlite3_column_int(statement1.stmt, 0);
 
-            wxLogDebug("rows %d", numRows);
+            wxLogDebug("Loading %d samples..", num_rows);
 
-            vecSet.reserve(numRows);
+            vecSet.reserve(num_rows);
         }
 
         Sqlite3Statement statement(m_Database, "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
@@ -615,8 +618,6 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
                     // vec.push_back(true);
                     vec.push_back(icon_filled);
 
-                    wxLogDebug("Loading hives..");
-
                     std::deque<wxDataViewItem> nodes;
                     nodes.push_back(favorite_tree.GetNthChild(wxDataViewItem(wxNullPtr), 0));
 
@@ -633,7 +634,6 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
                         if (favorite_tree.GetItemText(current_item) == hive_name)
                         {
                             found_item = current_item;
-                            wxLogDebug("Loading, hive name: %s", hive_name);
                             break;
                         }
 
@@ -652,21 +652,14 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
 
                     if (found_item.IsOk())
                     {
-                        // wxLogDebug("Another hive by the name %s already exist. Please try with a different name.",
-                        // hive_name);
                         if (show_extension)
                             favorite_tree.AppendItem(found_item,
                                                      wxString::Format("%s.%s", filename, file_extension));
                         else
                             favorite_tree.AppendItem(found_item, filename);
                     }
-                    // else
-                    // {
-                    //     favorite_tree.AppendItem(wxDataViewItem(wxNullPtr), hive_name);
-                    // }
                 }
                 else
-                    // vec.push_back(false);
                     vec.push_back(icon_empty);
 
                 if (show_extension)
@@ -743,13 +736,6 @@ Database::FilterDatabaseBySampleName(const std::string &sampleName, bool show_ex
                 vec.push_back(icon_filled);
             else
                 vec.push_back(icon_empty);
-
-            // if (favorite == 1)
-            //     vec.push_back(true);
-            // else
-            //     vec.push_back(false);
-
-            // vec.push_back(filename);
 
             if (show_extension)
             {
@@ -872,8 +858,10 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl &treeCtrl)
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
-            wxLogDebug("Record found, fetching..");
-            const auto hive = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0))));
+            wxLogDebug("Loading hives..");
+
+            const auto hive = wxString(std::string(reinterpret_cast<const char *>
+                                                   (sqlite3_column_text(statement.stmt, 0))));
 
             treeCtrl.AppendContainer(wxDataViewItem(wxNullPtr), hive);
         }

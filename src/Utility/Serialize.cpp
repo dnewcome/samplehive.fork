@@ -18,14 +18,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Serialize.hpp"
+#include "Utility/Serialize.hpp"
 
 #include <fstream>
 #include <sstream>
 
 #include <wx/colour.h>
 #include <wx/log.h>
-// #include <wx/stdpaths.h>
 #include <wx/filename.h>
 
 #include <yaml-cpp/emittermanip.h>
@@ -58,6 +57,8 @@ Serializer::Serializer(const std::string& filepath)
         m_Emitter << YAML::BeginMap;
         m_Emitter << YAML::Key << "Width" << YAML::Value << 1280;
         m_Emitter << YAML::Key << "Height" << YAML::Value << 720;
+        m_Emitter << YAML::Key << "ShowMenuBar" << YAML::Value << true;
+        m_Emitter << YAML::Key << "ShowStatusBar" << YAML::Value << true;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
         m_Emitter << YAML::Newline << YAML::Key << "Media";
@@ -74,17 +75,17 @@ Serializer::Serializer(const std::string& filepath)
         m_Emitter << YAML::Key << "Family" << YAML::Value << system_font_face;
         m_Emitter << YAML::Key << "Size" << YAML::Value << system_font_size;
         m_Emitter << YAML::EndMap;
-        m_Emitter << YAML::EndMap << YAML::Newline;
-
-        m_Emitter << YAML::Newline << YAML::Key << "Waveform";
+        m_Emitter << YAML::Key << "Waveform";
         m_Emitter << YAML::BeginMap;
         m_Emitter << YAML::Key << "Colour" << YAML::Value << colour.GetAsString().ToStdString();
+        m_Emitter << YAML::EndMap;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
         m_Emitter << YAML::Newline << YAML::Key << "Collection";
         m_Emitter << YAML::BeginMap;
         m_Emitter << YAML::Key << "AutoImport" << YAML::Value << false;
         m_Emitter << YAML::Key << "Directory" << YAML::Value << dir;
+        m_Emitter << YAML::Key << "FollowSymLink" << YAML::Value << false;
         m_Emitter << YAML::Key << "ShowFileExtension" << YAML::Value << true;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
@@ -95,10 +96,6 @@ Serializer::Serializer(const std::string& filepath)
 
         wxLogDebug("Generated %s successfully!", m_Filepath);
     }
-    else
-    {
-        wxLogDebug("Config file already exists! Skipping..");
-    }
 }
 
 Serializer::~Serializer()
@@ -106,32 +103,23 @@ Serializer::~Serializer()
 
 }
 
-int Serializer::DeserializeWinSize(std::string key, int size) const
+WindowSize Serializer::DeserializeWinSize() const
 {
     int width = 800, height = 600;
 
     try
     {
-        YAML::Node data = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(m_Filepath);
 
-        if (!data["Window"])
+        if (!config["Window"])
         {
-            return false;
+            return { width, height };
         }
 
-        if (auto win = data["Window"])
+        if (auto win = config["Window"])
         {
-            if (key == "Height")
-            {
-                size = height;
-                size = win["Height"].as<int>();
-            }
-
-            if (key == "Width")
-            {
-                size = width;
-                size = win["Width"].as<int>();
-            }
+            height = win["Height"].as<int>();
+            width = win["Width"].as<int>();
         }
     }
     catch(const YAML::ParserException& ex)
@@ -139,14 +127,73 @@ int Serializer::DeserializeWinSize(std::string key, int size) const
         std::cout << ex.what() << std::endl;
     }
 
-    wxLogDebug("Window size: %d", size);
+    wxLogDebug("Window size: %d, %d", width, height);
 
-    return size;
+    return { width, height };
 }
 
-bool Serializer::DeserializeBrowserControls(std::string key, bool control) const
+void Serializer::SerializeShowMenuAndStatusBar(std::string key, bool value)
 {
-    bool autoplay = false; bool loop = false; bool muted = false;
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto bar = config["Window"])
+        {
+            if (key == "menubar")
+                 bar["ShowMenuBar"] = value;
+
+            if (key == "statusbar")
+                 bar["ShowStatusBar"] = value;
+
+            out << config;
+
+            std::ofstream ofstrm(m_Filepath);
+            ofstrm << out.c_str();
+        }
+        else
+            wxLogDebug("Error! Cannot store show bar values.");
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+bool Serializer::DeserializeShowMenuAndStatusBar(std::string key) const
+{
+    bool show = false;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto bar = config["Window"])
+        {
+            if (key == "menubar")
+                 show = bar["ShowMenuBar"].as<bool>();
+
+            if (key == "statusbar")
+                 show = bar["ShowStatusBar"].as<bool>();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot fetch show bar values.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+    return show;
+}
+
+void Serializer::SerializeBrowserControls(std::string key, bool value)
+{
+    YAML::Emitter out;
 
     try
     {
@@ -155,37 +202,56 @@ bool Serializer::DeserializeBrowserControls(std::string key, bool control) const
         if (auto media = config["Media"])
         {
             if (key == "autoplay")
-            {
-                control = autoplay;
-                autoplay = media["Autoplay"].as<bool>();
-            }
+                media["Autoplay"] = value;
 
             if (key == "loop")
-            {
-                control = loop;
-                loop = media["Loop"].as<bool>();
-            }
+                media["Loop"] = value;
 
             if (key == "muted")
-            {
-                control = muted;
-                muted = media["Muted"].as<bool>();
-            }
+                media["Muted"] = value;
+
+            out << config;
+
+            std::ofstream ofstrm(m_Filepath);
+            ofstrm << out.c_str();
         }
         else
+            wxLogDebug("Error! Cannot store media values.");
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+bool Serializer::DeserializeBrowserControls(std::string key) const
+{
+    bool control = false;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto media = config["Media"])
         {
-            wxLogDebug("Error! Cannot fetch values.");
+            if (key == "autoplay")
+                control = media["Autoplay"].as<bool>();
+
+            if (key == "loop")
+                control = media["Loop"].as<bool>();
+
+            if (key == "muted")
+                control = media["Muted"].as<bool>();
         }
+        else
+            wxLogDebug("Error! Cannot fetch values.");
     }
     catch(const YAML::ParserException& ex)
     {
         std::cout << ex.what() << std::endl;
     }
 
-    wxLogDebug("Autoplay: %s, Loop: %s, Muted: %s",
-               autoplay ? "enabled" : "disabled",
-               loop ? "enabled" : "disabled",
-               muted ? "muted" : "unmuted");
+    wxLogDebug("%s: %s", key, control ? "enabled" : "disabled");
 
     return control;
 }
@@ -205,10 +271,6 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
 
         if (auto fontSetting = display["Font"])
         {
-            wxLogDebug("Changing font settings");
-            wxLogDebug("Font face: %s", font_face);
-            wxLogDebug("Font size: %d", font_size);
-
             fontSetting["Family"] = font_face;
             fontSetting["Size"] = font_size;
 
@@ -228,8 +290,10 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
     }
 }
 
-FontType Serializer::DeserializeDisplaySettings() const
+wxFont Serializer::DeserializeDisplaySettings() const
 {
+    wxFont font;
+
     wxString face;
     int size = 0 ;
 
@@ -243,6 +307,9 @@ FontType Serializer::DeserializeDisplaySettings() const
         {
             face = font_setting["Family"].as<std::string>();
             size = font_setting["Size"].as<int>();
+
+            font.SetFaceName(face);
+            font.SetPointSize(size);
         }
         else
         {
@@ -254,7 +321,7 @@ FontType Serializer::DeserializeDisplaySettings() const
         std::cout << ex.what() << std::endl;
     }
 
-    return { face, size };
+    return font;
 }
 
 void Serializer::SerializeWaveformColour(wxColour& colour)
@@ -267,11 +334,10 @@ void Serializer::SerializeWaveformColour(wxColour& colour)
     {
         YAML::Node config = YAML::LoadFile(m_Filepath);
 
-        if (auto waveform = config["Waveform"])
-        {
-            wxLogDebug("Changing waveform colour");
-            wxLogDebug("Waveform colour: %s", colour_string);
+        auto display = config["Display"];
 
+        if (auto waveform = display["Waveform"])
+        {
             waveform["Colour"] = colour_string;
 
             out << config;
@@ -298,7 +364,9 @@ wxColour Serializer::DeserializeWaveformColour() const
     {
         YAML::Node config = YAML::LoadFile(m_Filepath);
 
-        if (auto waveform = config["Waveform"])
+        auto display = config["Display"];
+
+        if (auto waveform = display["Waveform"])
         {
             colour = waveform["Colour"].as<std::string>();
         }
@@ -315,12 +383,9 @@ wxColour Serializer::DeserializeWaveformColour() const
     return static_cast<wxString>(colour);
 }
 
-void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& checkBox)
+void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string& importDir)
 {
     YAML::Emitter out;
-
-    std::string import_dir = textCtrl.GetValue().ToStdString();
-    bool auto_import = checkBox.GetValue();
 
     try
     {
@@ -328,8 +393,8 @@ void Serializer::SerializeAutoImportSettings(wxTextCtrl& textCtrl, wxCheckBox& c
 
         if (auto autoImportInfo = config["Collection"])
         {
-            autoImportInfo["AutoImport"] = auto_import;
-            autoImportInfo["Directory"] = import_dir;
+            autoImportInfo["AutoImport"] = autoImport;
+            autoImportInfo["Directory"] = importDir;
 
             out << config;
 
@@ -366,19 +431,70 @@ ImportDirInfo Serializer::DeserializeAutoImportSettings() const
             wxLogDebug("Error! Cannot fetch import dir values.");
         }
     }
+    catch (const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+    return { auto_import, dir };
+}
+
+void Serializer::SerializeFollowSymLink(bool followSymLinks)
+{
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto followSymLinks = config["Collection"])
+        {
+            followSymLinks["FollowSymLinks"] = followSymLinks;
+
+            out << config;
+
+            std::ofstream ofstrm(m_Filepath);
+            ofstrm << out.c_str();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot store follow symbolic links value.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+bool Serializer::DeserializeFollowSymLink() const
+{
+    bool follow_sym_links = false;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(m_Filepath);
+
+        if (auto followSymLinks = config["Collection"])
+        {
+            follow_sym_links = followSymLinks["FollowSymLinks"].as<bool>();
+        }
+        else
+        {
+            wxLogDebug("Error! Cannot fetch follow symbolic links value.");
+        }
+    }
     catch(const YAML::ParserException& ex)
     {
         std::cout << ex.what() << std::endl;
     }
 
-    return { auto_import, dir};
+    return follow_sym_links;
 }
 
-void Serializer::SerializeShowFileExtensionSetting(wxCheckBox& checkBox)
+void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
 {
     YAML::Emitter out;
-
-    bool show_extension = checkBox.GetValue();
 
     try
     {
@@ -386,18 +502,16 @@ void Serializer::SerializeShowFileExtensionSetting(wxCheckBox& checkBox)
 
         if (auto fileExtensionInfo = config["Collection"])
         {
-            fileExtensionInfo["ShowFileExtension"] = show_extension;
+            fileExtensionInfo["ShowFileExtension"] = showExtension;
 
             out << config;
-
-            wxLogDebug("Changing show file extension value.");
 
             std::ofstream ofstrm(m_Filepath);
             ofstrm << out.c_str();
         }
         else
         {
-            wxLogDebug("Error! Cannot store import dir values.");
+            wxLogDebug("Error! Cannot store show file extension value.");
         }
     }
     catch(const YAML::ParserException& ex)
@@ -421,7 +535,7 @@ bool Serializer::DeserializeShowFileExtensionSetting() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch import dir values.");
+            wxLogDebug("Error! Cannot fetch show file extension value.");
         }
     }
     catch(const YAML::ParserException& ex)
@@ -430,42 +544,4 @@ bool Serializer::DeserializeShowFileExtensionSetting() const
     }
 
     return show_extension;
-}
-
-void Serializer::SerializeDataViewTreeCtrlItems(wxTreeCtrl& tree, wxTreeItemId& item)
-{
-    std::string path = "tree.yaml";
-
-    std::ifstream ifstrm(path);
-
-    YAML::Emitter out;
-
-    out << YAML::BeginMap; // Container
-    out << YAML::Key << "Container" << YAML::Value << "";
-
-    if (tree.HasChildren(item))
-    {
-        out << YAML::Key << "Child";
-        out << YAML::BeginMap; // Child
-
-        for ( size_t i = 0; i < tree.GetChildrenCount(item); i++ )
-        {
-            // wxTreeItemIdValue cookie;
-            wxString child = tree.GetItemText(tree.GetSelection());
-            out << YAML::Key << "Item" << YAML::Value << child.ToStdString();
-        }
-
-        out << YAML::EndMap; // Child
-    }
-
-    out << YAML::EndMap; // Container
-
-    std::ofstream ofstrm(path);
-    ofstrm << out.c_str();
-}
-
-bool Serializer::DeserializeDataViewTreeCtrlItems(YAML::Emitter &out, wxDataViewItem item) const
-{
-
-    return false;
 }
