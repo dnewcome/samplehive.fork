@@ -289,13 +289,15 @@ MainFrame::MainFrame()
     if (m_Theme.IsDark())
     {
         m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
-                                          static_cast<wxString>(ICON_PLAY_LIGHT_16px),
+                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
+                                                                     (ICON_PLAY_LIGHT_16px)),
                                           wxDefaultPosition, wxDefaultSize, 0);
         m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
                                                 static_cast<wxString>(ICON_LOOP_LIGHT_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
         m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
-                                          static_cast<wxString>(ICON_STOP_LIGHT_16px),
+                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
+                                                                     (ICON_STOP_LIGHT_16px)),
                                           wxDefaultPosition, wxDefaultSize, 0);
         m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
                                                 static_cast<wxString>(ICON_MUTE_LIGHT_16px),
@@ -304,13 +306,15 @@ MainFrame::MainFrame()
     else
     {
         m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
-                                          static_cast<wxString>(ICON_PLAY_DARK_16px),
+                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
+                                                                     (ICON_PLAY_DARK_16px)),
                                           wxDefaultPosition, wxDefaultSize, 0);
         m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
                                                 static_cast<wxString>(ICON_LOOP_DARK_16px),
                                                 wxDefaultPosition, wxDefaultSize, 0);
         m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
-                                          static_cast<wxString>(ICON_STOP_DARK_16px),
+                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
+                                                                     (ICON_STOP_DARK_16px)),
                                           wxDefaultPosition, wxDefaultSize, 0);
         m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
                                                 static_cast<wxString>(ICON_MUTE_DARK_16px),
