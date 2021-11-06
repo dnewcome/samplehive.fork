@@ -19,12 +19,12 @@
  */
 
 #include "Utility/ControlID_Enums.hpp"
+#include "Utility/Log.hpp"
 #include "Database/Database.hpp"
 #include "GUI/Dialogs/TagEditor.hpp"
 
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
-#include <wx/log.h>
 #include <wx/msgdlg.h>
 #include <wx/stringimpl.h>
 #include <wx/textdlg.h>
@@ -255,7 +255,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
         case wxID_YES:
             if (m_TitleCheck->GetValue() && m_TitleText->GetValue() != tags.GetAudioInfo().title)
             {
-                wxLogDebug("Changing title tag..");
+                SH_LOG_INFO("Changing title tag..");
                 tags.SetTitle(title.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed title tag to %s", title);
@@ -263,19 +263,19 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
 
             if (m_ArtistCheck->GetValue() && m_ArtistText->GetValue() != tags.GetAudioInfo().artist)
             {
-                wxLogDebug("Changing artist tag..");
+                SH_LOG_INFO("Changing artist tag..");
                 tags.SetArtist(artist.ToStdString());
 
                 db.UpdateSamplePack(m_Filename, artist.ToStdString());
 
-                wxLogDebug("SAMPLE FILENAME HERE: %s", m_Filename);
+                SH_LOG_DEBUG("SAMPLE FILENAME HERE: %s", m_Filename);
 
                 info_msg = wxString::Format("Successfully changed artist tag to %s", artist);
             }
 
             if (m_AlbumCheck->GetValue() && m_AlbumText->GetValue() != tags.GetAudioInfo().album)
             {
-                wxLogDebug("Changing album tag..");
+                SH_LOG_INFO("Changing album tag..");
                 tags.SetAlbum(album.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed album tag to %s", album);
@@ -283,7 +283,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
 
             if (m_GenreCheck->GetValue() && m_GenreText->GetValue() != tags.GetAudioInfo().genre)
             {
-                wxLogDebug("Changing genre tag..");
+                SH_LOG_INFO("Changing genre tag..");
                 tags.SetGenre(genre.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed genre tag to %s", genre);
@@ -291,7 +291,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
 
             if (m_CommentCheck->GetValue() && m_CommentText->GetValue() != tags.GetAudioInfo().comment)
             {
-                wxLogDebug("Changing comment tag..");
+                SH_LOG_INFO("Changing comment tag..");
                 tags.SetComment(comment.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed comment tag to %s", comment);
@@ -299,7 +299,7 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
 
             if (m_SampleTypeCheck->GetValue() && m_SampleTypeChoice->GetStringSelection() != sampleType)
             {
-                wxLogDebug("Changing type tag..");
+                SH_LOG_INFO("Changing type tag..");
                 db.UpdateSampleType(filename, type.ToStdString());
 
                 info_msg = wxString::Format("Successfully changed type tag to %s", type);

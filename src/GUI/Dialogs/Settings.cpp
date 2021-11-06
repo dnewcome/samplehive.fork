@@ -21,10 +21,10 @@
 #include "GUI/Dialogs/Settings.hpp"
 #include "Utility/ControlID_Enums.hpp"
 #include "Utility/Serialize.hpp"
+#include "Utility/Log.hpp"
 
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
-#include <wx/log.h>
 #include <wx/stringimpl.h>
 
 Settings::Settings(const std::string& configFilepath, const std::string& databaseFilepath)
@@ -358,8 +358,8 @@ void Settings::OnChangeFontSize(wxSpinEvent& event)
     m_Window->SetFont(m_Font);
     this->SetFont(m_Font);
 
-    wxLogDebug("Font size: %d", font_size);
-    wxLogDebug("Font size: %d", m_Font.GetPointSize());
+    SH_LOG_DEBUG("Font size: {}", font_size);
+    SH_LOG_DEBUG("Font size: {}", m_Font.GetPointSize());
 }
 
 void Settings::LoadDefaultConfig()
@@ -422,11 +422,11 @@ void Settings::SetShowExtension(bool value)
 
 void Settings::PrintFont()
 {
-    wxLogDebug("Font face: %s", m_Font.GetFaceName());
-    wxLogDebug("Font size: %d", m_Font.GetPointSize());
-    wxLogDebug("Font family: %s", m_Font.GetFamilyString());
-    wxLogDebug("Font style: %s", m_Font.GetStyleString());
-    wxLogDebug("Font weight: %s", m_Font.GetWeightString());
+    SH_LOG_DEBUG("Font face: {}", m_Font.GetFaceName());
+    SH_LOG_DEBUG("Font size: {}", m_Font.GetPointSize());
+    SH_LOG_DEBUG("Font family: {}", m_Font.GetFamilyString());
+    SH_LOG_DEBUG("Font style: {}", m_Font.GetStyleString());
+    SH_LOG_DEBUG("Font weight: {}", m_Font.GetWeightString());
 }
 
 void Settings::SetCustomFont()
@@ -475,14 +475,14 @@ void Settings::OnChangeWaveformColour(wxColourPickerEvent& event)
 
     if (colour != wave_colour)
     {
-        wxLogDebug("Waveform colour changed.");
+        SH_LOG_INFO("Waveform colour changed.");
         bWaveformColourChanged = true;
 
         serializer.SerializeWaveformColour(colour);
     }
     else
     {
-        wxLogDebug("Waveform colour not changed.");
+        SH_LOG_INFO("Waveform colour not changed.");
         bWaveformColourChanged = false;
 
         serializer.SerializeWaveformColour(colour);

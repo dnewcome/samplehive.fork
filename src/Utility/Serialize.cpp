@@ -19,12 +19,12 @@
  */
 
 #include "Utility/Serialize.hpp"
+#include "Utility/Log.hpp"
 
 #include <fstream>
 #include <sstream>
 
 #include <wx/colour.h>
-#include <wx/log.h>
 #include <wx/filename.h>
 
 #include <yaml-cpp/emittermanip.h>
@@ -43,9 +43,12 @@ Serializer::Serializer(const std::string& filepath)
 
     std::string dir = wxGetHomeDir().ToStdString();
 
+    // Initialize the logger
+    // SampleHive::Log::InitLogger("Serializer");
+
     if (!ifstrm)
     {
-        wxLogDebug("Genrating configuration file..");
+        SH_LOG_INFO("Genrating configuration file..");
 
         m_Emitter << YAML::Comment("This is the configuration file for SampleHive,"
                                    "feel free to edit the file as needed");
@@ -94,7 +97,7 @@ Serializer::Serializer(const std::string& filepath)
         std::ofstream ofstrm(m_Filepath);
         ofstrm << m_Emitter.c_str();
 
-        wxLogDebug("Generated %s successfully!", m_Filepath);
+        SH_LOG_INFO("Generated {} successfully!", m_Filepath);
     }
 }
 
@@ -124,10 +127,10 @@ WindowSize Serializer::DeserializeWinSize() const
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
-    wxLogDebug("Window size: %d, %d", width, height);
+    SH_LOG_INFO("Window size: {}, {}", width, height);
 
     return { width, height };
 }
@@ -154,11 +157,11 @@ void Serializer::SerializeShowMenuAndStatusBar(std::string key, bool value)
             ofstrm << out.c_str();
         }
         else
-            wxLogDebug("Error! Cannot store show bar values.");
+            SH_LOG_ERROR("Error! Cannot store show bar values.");
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -180,12 +183,12 @@ bool Serializer::DeserializeShowMenuAndStatusBar(std::string key) const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch show bar values.");
+            SH_LOG_ERROR("Error! Cannot fetch show bar values.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return show;
@@ -216,11 +219,11 @@ void Serializer::SerializeBrowserControls(std::string key, bool value)
             ofstrm << out.c_str();
         }
         else
-            wxLogDebug("Error! Cannot store media values.");
+            SH_LOG_ERROR("Error! Cannot store media values.");
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -244,14 +247,14 @@ bool Serializer::DeserializeBrowserControls(std::string key) const
                 control = media["Muted"].as<bool>();
         }
         else
-            wxLogDebug("Error! Cannot fetch values.");
+            SH_LOG_ERROR("Error! Cannot fetch values.");
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
-    wxLogDebug("%s: %s", key, control ? "enabled" : "disabled");
+    SH_LOG_INFO("{}: {}", key, control ? "enabled" : "disabled");
 
     return control;
 }
@@ -281,12 +284,12 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
         }
         else
         {
-            wxLogDebug("Error! Cannot store font values.");
+            SH_LOG_ERROR("Error! Cannot store font values.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -313,12 +316,12 @@ wxFont Serializer::DeserializeDisplaySettings() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch font values.");
+            SH_LOG_ERROR("Error! Cannot fetch font values.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return font;
@@ -347,12 +350,12 @@ void Serializer::SerializeWaveformColour(wxColour& colour)
         }
         else
         {
-            wxLogDebug("Error! Cannot store waveform colour.");
+            SH_LOG_ERROR("Error! Cannot store waveform colour.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -372,12 +375,12 @@ wxColour Serializer::DeserializeWaveformColour() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch waveform colour.");
+            SH_LOG_ERROR("Error! Cannot fetch waveform colour.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return static_cast<wxString>(colour);
@@ -403,12 +406,12 @@ void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string&
         }
         else
         {
-            wxLogDebug("Error! Cannot store import dir values.");
+            SH_LOG_ERROR("Error! Cannot store import dir values.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -428,12 +431,12 @@ ImportDirInfo Serializer::DeserializeAutoImportSettings() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch import dir values.");
+            SH_LOG_ERROR("Error! Cannot fetch import dir values.");
         }
     }
-    catch (const YAML::ParserException& ex)
+    catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return { auto_import, dir };
@@ -458,12 +461,12 @@ void Serializer::SerializeFollowSymLink(bool followSymLinks)
         }
         else
         {
-            wxLogDebug("Error! Cannot store follow symbolic links value.");
+            SH_LOG_ERROR("Error! Cannot store follow symbolic links value.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 }
 
@@ -481,12 +484,12 @@ bool Serializer::DeserializeFollowSymLink() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch follow symbolic links value.");
+            SH_LOG_ERROR("Error! Cannot fetch follow symbolic links value.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return follow_sym_links;
@@ -511,14 +514,13 @@ void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
         }
         else
         {
-            wxLogDebug("Error! Cannot store show file extension value.");
+            SH_LOG_ERROR("Error! Cannot store show file extension value.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
-
 }
 
 bool Serializer::DeserializeShowFileExtensionSetting() const
@@ -535,12 +537,12 @@ bool Serializer::DeserializeShowFileExtensionSetting() const
         }
         else
         {
-            wxLogDebug("Error! Cannot fetch show file extension value.");
+            SH_LOG_ERROR("Error! Cannot fetch show file extension value.");
         }
     }
     catch(const YAML::ParserException& ex)
     {
-        std::cout << ex.what() << std::endl;
+        SH_LOG_ERROR(ex.what());
     }
 
     return show_extension;

@@ -126,6 +126,7 @@ src = [
   'src/Utility/Serialize.cpp',
   'src/Utility/Tags.cpp',
   'src/Utility/SH_Event.cpp',
+  'src/Utility/Log.cpp',
 
 ]
 
@@ -189,6 +190,17 @@ if not snd.found()
   snd = snd_subproject.dependency('sndfile')
 endif
 
+spdlog = dependency('spdlog', version: '>=1.8.5', required: false)
+
+if not spdlog.found()
+  spdlog_subproject = subproject('spdlog',
+                         default_options: [
+                           'default_library=static',
+                           'compile_library=true',])
+
+  spdlog = spdlog_subproject.get_variable('spdlog_dep')
+endif
+
 # Create samplehive-config.h based on configuration
 config_h = configure_file(output: 'SampleHiveConfig.hpp',
                           configuration: config_data,)
@@ -204,14 +216,14 @@ if wx_found
              cpp_args: [wx_cxx_flags],
              link_args: [wx_libs],
              include_directories : include_dirs,
-             dependencies: [wx, taglib, sqlite3, yaml, snd],
+             dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
              install: true,
              install_rpath: prefix / 'lib')
 else
   executable('SampleHive',
              sources: src,
              include_directories : include_dirs,
-             dependencies: [wx, taglib, sqlite3, yaml, snd],
+             dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
              install: true,
              install_rpath: prefix / 'lib')
 endif

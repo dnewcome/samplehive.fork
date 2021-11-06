@@ -19,6 +19,7 @@
  */
 
 #include "Database/Database.hpp"
+#include "Utility/Log.hpp"
 
 #include <deque>
 #include <exception>
@@ -26,7 +27,6 @@
 
 #include <wx/dataview.h>
 #include <wx/dvrenderers.h>
-#include <wx/log.h>
 #include <wx/msgdlg.h>
 #include <wx/string.h>
 #include <wx/stringimpl.h>
@@ -48,14 +48,15 @@ void debug_log_on_error(int rc)
     }
 }
 
-void show_modal_dialog_and_log(const std::string &message, const std::string &title, const std::string &error_msg)
+void show_modal_dialog_and_log(const std::string &message, const std::string &title,
+                               const std::string &error_msg)
 {
     std::stringstream ss;
     ss << message << error_msg;
 
     const auto msg = ss.str();
 
-    wxLogDebug(msg.c_str());
+    SH_LOG_ERROR(msg.c_str());
 
     wxMessageDialog msgDialog(NULL, _(msg), _(title), wxOK | wxICON_ERROR);
     msgDialog.ShowModal();
@@ -68,12 +69,12 @@ class Sqlite3Statement
         {
             throw_on_sqlite3_error(sqlite3_prepare_v2(database, query.c_str(), query.size(), &stmt, NULL));
         }
-         ~Sqlite3Statement()
+        ~Sqlite3Statement()
         {
             throw_on_sqlite3_error(sqlite3_finalize(stmt));
         }
 
-        sqlite3_stmt *stmt = nullptr;
+        sqlite3_stmt* stmt = nullptr;
 };
 
 Database::Database(const std::string &dbPath)
@@ -106,11 +107,11 @@ void Database::CreateTableSamples()
     try
     {
         throw_on_sqlite3_error(sqlite3_exec(m_Database, samples, NULL, 0, &m_ErrMsg));
-        wxLogDebug(_("Samples table created successfully."));
+        SH_LOG_INFO("SAMPLES table created successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot create table samples: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot create SAMPLES table", "Error", e.what());
     }
 }
 
@@ -122,11 +123,11 @@ void Database::CreateTableHives()
     try
     {
         throw_on_sqlite3_error(sqlite3_exec(m_Database, hives, NULL, 0, &m_ErrMsg));
-        wxLogDebug("Hives table created successfully.");
+        SH_LOG_INFO("HIVES table created successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot create hives table", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot create HIVES table", "Error", e.what());
     }
 }
 
@@ -165,17 +166,23 @@ void Database::InsertIntoSamples(const std::vector<Sample> &samples)
             std::string hive = "Favorites";
 
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 1, sample.GetFavorite()));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 3, file_extension.c_str(), file_extension.size(), SQLITE_STATIC));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 4, sample_pack.c_str(), sample_pack.size(), SQLITE_STATIC));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 5, type.c_str(), type.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                     filename.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 3, file_extension.c_str(),
+                                                     file_extension.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 4, sample_pack.c_str(),
+                                                     sample_pack.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 5, type.c_str(),
+                                                     type.size(), SQLITE_STATIC));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 6, sample.GetChannels()));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 7, sample.GetLength()));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 8, sample.GetSampleRate()));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 9, sample.GetBitrate()));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 10, path.c_str(), path.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 10, path.c_str(),
+                                                     path.size(), SQLITE_STATIC));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 11, sample.GetTrashed()));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 12, hive.c_str(), hive.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 12, hive.c_str(),
+                                                     hive.size(), SQLITE_STATIC));
 
             sqlite3_step(statement.stmt);
             throw_on_sqlite3_error(sqlite3_clear_bindings(statement.stmt));
@@ -184,11 +191,11 @@ void Database::InsertIntoSamples(const std::vector<Sample> &samples)
 
         throw_on_sqlite3_error(sqlite3_exec(m_Database, "END TRANSACTION", NULL, NULL, &m_ErrMsg));
 
-        wxLogDebug("Data inserted successfully.");
+        SH_LOG_INFO("Data inserted successfully into SAMPLES.");
     }
-    catch (const std::exception &exception)
+    catch (const std::exception &e)
     {
-        wxLogDebug(exception.what());
+        show_modal_dialog_and_log("Error! Cannot insert data into SAMPLES", "Error", e.what());
     }
 }
 
@@ -223,7 +230,8 @@ void Database::InsertIntoHives(const std::string &hiveName)
         //     std::string hive = "Favourites";
 
         // rc = sqlite3_bind_int(statement.stmt, 1, sample.GetFavorite());
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(),
+                                                 hiveName.size(), SQLITE_STATIC));
 
         throw_on_sqlite3_error(sqlite3_step(statement.stmt));
         // rc = sqlite3_clear_bindings(statement.stmt);
@@ -232,11 +240,11 @@ void Database::InsertIntoHives(const std::string &hiveName)
 
         // rc = sqlite3_exec(m_Database, "END TRANSACTION", NULL, NULL, &m_ErrMsg);
 
-        wxLogDebug("Data inserted successfully.");
+        SH_LOG_INFO("Data inserted successfully into HIVES.");
     }
-    catch (const std::exception &exception)
+    catch (const std::exception &e)
     {
-        wxLogDebug(exception.what());
+        show_modal_dialog_and_log("Error! Cannot insert data into HIVES", "Error", e.what());
     }
 }
 
@@ -248,21 +256,23 @@ void Database::UpdateHive(const std::string &hiveOldName, const std::string &hiv
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveNewName.c_str(), hiveNewName.size(), SQLITE_STATIC));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, hiveOldName.c_str(), hiveOldName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveNewName.c_str(),
+                                                 hiveNewName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, hiveOldName.c_str(),
+                                                 hiveOldName.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) != SQLITE_DONE)
         {
-            wxLogWarning("No data inserted.");
+            SH_LOG_INFO("Updating hive {} to {}", hiveOldName, hiveNewName);
         }
         else
         {
-            wxLogDebug("Hive updated successfully. %s", m_ErrMsg);
+            SH_LOG_INFO("Updated hive successfully.");
         }
     }
-    catch (const std::exception &exception)
+    catch (const std::exception& e)
     {
-        wxLogDebug(exception.what());
+        show_modal_dialog_and_log("Error! Cannot update hive", "Error", e.what());
     }
 }
 
@@ -274,19 +284,21 @@ void Database::UpdateHiveName(const std::string &filename, const std::string &hi
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(),
+                                                 hiveName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, updating..");
+            SH_LOG_INFO("Updating hive to {} for {}", hiveName, filename);
         }
 
-        wxLogDebug("Updated record successfully.");
+        SH_LOG_INFO("Updated hive name successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot update record: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot update hive name", "Error", e.what());
     }
 }
 
@@ -299,18 +311,19 @@ void Database::UpdateFavoriteColumn(const std::string &filename, int value)
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 1, value));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, updating..");
+            SH_LOG_INFO("Updating favorite value of {} to {}", filename, value);
         }
 
-        wxLogDebug("Updated record successfully.");
+        SH_LOG_INFO("Updated favorite column successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot update record: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot update favorite column", "Error", e.what());
     }
 }
 
@@ -322,19 +335,21 @@ void Database::UpdateSamplePack(const std::string &filename, const std::string &
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, samplePack.c_str(), samplePack.size(), SQLITE_STATIC));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, samplePack.c_str(),
+                                                 samplePack.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, updating..");
+            SH_LOG_INFO("Updating sample pack of {} to {}", filename, samplePack);
         }
 
-        wxLogDebug("Updated record successfully.");
+        SH_LOG_INFO("Updated sample pack successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot update record: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot update sample pack", "Error", e.what());
     }
 }
 
@@ -347,17 +362,19 @@ void Database::UpdateSampleType(const std::string &filename, const std::string &
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, type.c_str(), type.size(), SQLITE_STATIC));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, updating..");
+            SH_LOG_INFO("Updating sample type of {} to {}", filename, type);
         }
-        wxLogDebug("Updated record successfully.");
+
+        SH_LOG_INFO("Updated sample type successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot update record: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot update sample type", "Error", e.what());
     }
 }
 
@@ -371,20 +388,21 @@ std::string Database::GetSampleType(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, fetching..");
+            SH_LOG_INFO("Record found, fetching sample type for {}", filename);
 
             type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0)));
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected sample type from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot get sample type column value from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot get sample type from table", "Error", e.what());
     }
 
     return type;
@@ -400,19 +418,20 @@ int Database::GetFavoriteColumnValueByFilename(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, fetching..");
             value = sqlite3_column_int(statement.stmt, 0);
+            SH_LOG_INFO("Record found, fetching favorite column value for {}", filename);
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected favorite column from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot get favorite column value from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot get favorite column value from table", "Error", e.what());
     }
 
     return value;
@@ -428,19 +447,20 @@ std::string Database::GetHiveByFilename(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, fetching..");
             hive = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0)));
+            SH_LOG_INFO("Record found, fetching hive for {}", filename);
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected hive from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot get hive value from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot get hive value from table", "Error", e.what());
     }
 
     return hive;
@@ -454,18 +474,19 @@ void Database::RemoveSampleFromDatabase(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_DONE)
         {
-            wxLogDebug("Record found, Deleting..");
+            SH_LOG_INFO("Record found, Deleting {} from table", filename);
         }
 
-        wxLogDebug("Deleted data from table successfully.");
+        SH_LOG_INFO("Deleted sample from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot get hive value from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot delete sample from table", "Error", e.what());
     }
 }
 
@@ -477,18 +498,19 @@ void Database::RemoveHiveFromDatabase(const std::string &hiveName)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(),
+                                                 hiveName.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_DONE)
         {
-            wxLogDebug("Record found, Deleting..");
+            SH_LOG_INFO("Record found, Deleting hive {} from table", hiveName);
         }
 
-        wxLogDebug("Deleted data from table successfully.");
+        SH_LOG_INFO("Deleted hive from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot get hive value from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot delete hive from table", "Error", e.what());
     }
 }
 
@@ -502,19 +524,20 @@ std::string Database::GetSamplePathByFilename(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, fetching..");
             path = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0)));
+            SH_LOG_INFO("Record found, fetching sample path for {}", filename);
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected sample path from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot select sample path from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot select sample path from table", "Error", e.what());
     }
 
     return path;
@@ -530,19 +553,20 @@ std::string Database::GetSampleFileExtension(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogInfo("Record found, fetching..");
             extension = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 0)));
+            SH_LOG_INFO("Record found, fetching file extension for {}", filename);
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected file extension from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot select sample extension from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot select sample extension from table", "Error", e.what());
     }
 
     return extension;
@@ -571,7 +595,7 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
         {
             num_rows = sqlite3_column_int(statement1.stmt, 0);
 
-            wxLogDebug("Loading %d samples..", num_rows);
+            SH_LOG_INFO("Loading {} samples..", num_rows);
 
             vecSet.reserve(num_rows);
         }
@@ -585,17 +609,23 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
             int favorite = sqlite3_column_int(statement.stmt, 0);
-            wxString filename = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 1)));
-            wxString file_extension = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 2)));
-            wxString sample_pack = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 3)));
-            wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 4)));
+            wxString filename = std::string(reinterpret_cast<const char *>
+                                            (sqlite3_column_text(statement.stmt, 1)));
+            wxString file_extension = std::string(reinterpret_cast<const char *>
+                                                  (sqlite3_column_text(statement.stmt, 2)));
+            wxString sample_pack = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 3)));
+            wxString sample_type = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 4)));
             int channels = sqlite3_column_int(statement.stmt, 5);
             int length = sqlite3_column_int(statement.stmt, 6);
             int sample_rate = sqlite3_column_int(statement.stmt, 7);
             int bitrate = sqlite3_column_int(statement.stmt, 8);
-            wxString path = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 9)));
+            wxString path = std::string(reinterpret_cast<const char *>
+                                        (sqlite3_column_text(statement.stmt, 9)));
             int trashed = sqlite3_column_int(statement.stmt, 10);
-            wxString hive_name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 11)));
+            wxString hive_name = std::string(reinterpret_cast<const char *>
+                                             (sqlite3_column_text(statement.stmt, 11)));
 
             wxLongLong llLength = length;
             int total_min = static_cast<int>((llLength / 60000).GetValue());
@@ -615,7 +645,6 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
             {
                 if (favorite == 1)
                 {
-                    // vec.push_back(true);
                     vec.push_back(icon_filled);
 
                     std::deque<wxDataViewItem> nodes;
@@ -687,7 +716,7 @@ wxVector<wxVector<wxVariant>> Database::LoadSamplesDatabase(wxDataViewTreeCtrl &
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot load data from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot load data from SAMPLES", "Error", e.what());
     }
 
     return vecSet;
@@ -709,22 +738,28 @@ Database::FilterDatabaseBySampleName(const std::string &sampleName, bool show_ex
                                                 CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
                                                 FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%' ;");
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, sampleName.c_str(), sampleName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, sampleName.c_str(),
+                                                 sampleName.size(), SQLITE_STATIC));
 
         int row = 0;
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
-            wxLogDebug("Record found, fetching..");
+            SH_LOG_INFO("Record found, filtering db by {}", sampleName);
+
             int favorite = sqlite3_column_int(statement.stmt, 0);
-            wxString filename = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 1))));
-            wxString sample_pack = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 2))));
-            wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 3)));
+            wxString filename = wxString(std::string(reinterpret_cast<const char *>
+                                                     (sqlite3_column_text(statement.stmt, 1))));
+            wxString sample_pack = wxString(std::string(reinterpret_cast<const char *>
+                                                        (sqlite3_column_text(statement.stmt, 2))));
+            wxString sample_type = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 3)));
             int channels = sqlite3_column_int(statement.stmt, 4);
             int length = sqlite3_column_int(statement.stmt, 5);
             int sample_rate = sqlite3_column_int(statement.stmt, 6);
             int bitrate = sqlite3_column_int(statement.stmt, 7);
-            wxString path = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 8))));
+            wxString path = wxString(std::string(reinterpret_cast<const char *>
+                                                 (sqlite3_column_text(statement.stmt, 8))));
 
             wxLongLong llLength = length;
             int total_min = static_cast<int>((llLength / 60000).GetValue());
@@ -761,7 +796,7 @@ Database::FilterDatabaseBySampleName(const std::string &sampleName, bool show_ex
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot filter data from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot filter data from table", "Error", e.what());
     }
 
     return sampleVec;
@@ -783,22 +818,28 @@ Database::FilterDatabaseByHiveName(const std::string &hiveName, bool show_extens
                                                 CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
                                                 FROM SAMPLES WHERE HIVE = ? AND FAVORITE = 1;");
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(),
+                                                 hiveName.size(), SQLITE_STATIC));
 
         int row = 0;
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
-            wxLogDebug("Record found, fetching..");
+            SH_LOG_INFO("Record found, filtering db by {}", hiveName);
+
             int favorite = sqlite3_column_int(statement.stmt, 0);
-            wxString filename = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 1))));
-            wxString sample_pack = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 2))));
-            wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 3)));
+            wxString filename = wxString(std::string(reinterpret_cast<const char *>
+                                                     (sqlite3_column_text(statement.stmt, 1))));
+            wxString sample_pack = wxString(std::string(reinterpret_cast<const char *>
+                                                        (sqlite3_column_text(statement.stmt, 2))));
+            wxString sample_type = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 3)));
             int channels = sqlite3_column_int(statement.stmt, 4);
             int length = sqlite3_column_int(statement.stmt, 5);
             int sample_rate = sqlite3_column_int(statement.stmt, 6);
             int bitrate = sqlite3_column_int(statement.stmt, 7);
-            wxString path = wxString(std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 8))));
+            wxString path = wxString(std::string(reinterpret_cast<const char *>
+                                                 (sqlite3_column_text(statement.stmt, 8))));
 
             wxLongLong llLength = length;
             int total_min = static_cast<int>((llLength / 60000).GetValue());
@@ -811,21 +852,10 @@ Database::FilterDatabaseByHiveName(const std::string &hiveName, bool show_extens
             else
                 vec.push_back(icon_empty);
 
-            // if (favorite == 1)
-            //     vec.push_back(true);
-            // else
-            //     vec.push_back(false);
-
-            // vec.push_back(filename);
-
             if (show_extension)
-            {
                 vec.push_back(path.AfterLast('/'));
-            }
             else
-            {
                 vec.push_back(path.AfterLast('/').BeforeLast('.'));
-            }
 
             vec.push_back(sample_pack);
             vec.push_back(sample_type);
@@ -842,7 +872,7 @@ Database::FilterDatabaseByHiveName(const std::string &hiveName, bool show_extens
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot filter data from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot filter data from table", "Error", e.what());
     }
 
     return sampleVec;
@@ -858,7 +888,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl &treeCtrl)
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
-            wxLogDebug("Loading hives..");
+            SH_LOG_INFO("Loading hives..");
 
             const auto hive = wxString(std::string(reinterpret_cast<const char *>
                                                    (sqlite3_column_text(statement.stmt, 0))));
@@ -868,7 +898,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl &treeCtrl)
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot load hive from hives table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot load hive from hives table", "Error", e.what());
     }
 }
 
@@ -895,15 +925,15 @@ wxArrayString Database::CheckDuplicates(const wxArrayString &files)
             if (sqlite3_step(statement.stmt) != SQLITE_ROW)
                 sorted_files.push_back(files[i]);
             else
-                wxLogDebug("Already added: %s. Skipping..", files[i]);
+                SH_LOG_INFO("Already added: {}, skipping..", files[i]);
 
             rc = sqlite3_clear_bindings(statement.stmt);
             rc = sqlite3_reset(statement.stmt);
         }
     }
-    catch (const std::exception &exception)
+    catch (const std::exception &e)
     {
-        wxLogDebug(exception.what());
+        show_modal_dialog_and_log("Error! Cannot check duplicates from table", "Error", e.what());
     }
 
     return sorted_files;
@@ -917,21 +947,22 @@ bool Database::IsTrashed(const std::string &filename)
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, fetching..");
+            SH_LOG_INFO("Record found, fetching {} trash status", filename);
 
             if (sqlite3_column_int(statement.stmt, 0) == 1)
                 return true;
         }
 
-        wxLogDebug("Selected data from table successfully.");
+        SH_LOG_INFO("Selected trash status from table successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot select sample path from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot check for trash status from table", "Error", e.what());
     }
 
     return false;
@@ -946,18 +977,19 @@ void Database::UpdateTrashColumn(const std::string &filename, int value)
         Sqlite3Statement statement(m_Database, sql);
 
         throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 1, value));
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 2, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         if (sqlite3_step(statement.stmt) == SQLITE_ROW)
         {
-            wxLogDebug("Record found, updating..");
+            SH_LOG_INFO("Record found, updating trash status for {}", filename);
         }
 
-        wxLogDebug("Updated record successfully.");
+        SH_LOG_INFO("Updated trash status successfully.");
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot update record: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot update trash status", "Error", e.what());
     }
 }
 
@@ -978,22 +1010,29 @@ Database::RestoreFromTrashByFilename(const std::string &filename,
 
         Sqlite3Statement statement(m_Database, sql);
 
-        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(), filename.size(), SQLITE_STATIC));
+        throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, filename.c_str(),
+                                                 filename.size(), SQLITE_STATIC));
 
         while (SQLITE_ROW == sqlite3_step(statement.stmt))
         {
             int favorite = sqlite3_column_int(statement.stmt, 0);
-            wxString filename = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 1)));
-            wxString file_extension = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 2)));
-            wxString sample_pack = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 3)));
-            wxString sample_type = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 4)));
+            wxString filename = std::string(reinterpret_cast<const char *>
+                                            (sqlite3_column_text(statement.stmt, 1)));
+            wxString file_extension = std::string(reinterpret_cast<const char *>
+                                                  (sqlite3_column_text(statement.stmt, 2)));
+            wxString sample_pack = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 3)));
+            wxString sample_type = std::string(reinterpret_cast<const char *>
+                                               (sqlite3_column_text(statement.stmt, 4)));
             int channels = sqlite3_column_int(statement.stmt, 5);
             int length = sqlite3_column_int(statement.stmt, 6);
             int sample_rate = sqlite3_column_int(statement.stmt, 7);
             int bitrate = sqlite3_column_int(statement.stmt, 8);
-            wxString path = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 9)));
+            wxString path = std::string(reinterpret_cast<const char *>
+                                        (sqlite3_column_text(statement.stmt, 9)));
             int trashed = sqlite3_column_int(statement.stmt, 10);
-            wxString hive_name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(statement.stmt, 11)));
+            wxString hive_name = std::string(reinterpret_cast<const char *>
+                                             (sqlite3_column_text(statement.stmt, 11)));
 
             wxLongLong llLength = length;
             int total_min = static_cast<int>((llLength / 60000).GetValue());
@@ -1027,7 +1066,7 @@ Database::RestoreFromTrashByFilename(const std::string &filename,
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot load data from table: ", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot restore trash data from table", "Error", e.what());
     }
 
     return vecSet;

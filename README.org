@@ -48,13 +48,13 @@ SampleHive let's you manage your audio samples in a nice and simple way, just ad
 On Arch based distributions,
 
 #+begin_example
-sudo pacman -S wxgtk3 wxsvg sqlite taglib yaml-cpp libsndfile
+sudo pacman -S wxgtk3 wxsvg sqlite taglib yaml-cpp libsndfile spdlog
 #+end_example
 
 On Debian, Ubuntu and distributions based the on two,
 
 #+begin_example
-sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0 libexif-dev libpango1.0-dev libsndfile1-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0 libexif-dev libpango1.0-dev libsndfile1-dev libspdlog-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
 #+end_example
 
 You might also need to install =git=, =cmake=, =meson= and =g++= as well, if you don't already have them installed in order to build SampleHive.

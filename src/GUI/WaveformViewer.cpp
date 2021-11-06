@@ -22,6 +22,7 @@
 #include "Utility/Serialize.hpp"
 #include "Utility/Tags.hpp"
 #include "Utility/SH_Event.hpp"
+#include "Utility/Log.hpp"
 
 #include <vector>
 
@@ -31,7 +32,6 @@
 #include <wx/dcmemory.h>
 #include <wx/filefn.h>
 #include <wx/gdicmn.h>
-#include <wx/log.h>
 #include <wx/pen.h>
 
 #include <sndfile.hh>
@@ -70,7 +70,7 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
         || m_WaveformBitmap.GetHeight() != size.y
         || bBitmapDirty)
     {
-        wxLogDebug("Updating waveform bitmap..");
+        SH_LOG_INFO("Updating waveform bitmap..");
 
         m_WaveformBitmap = wxBitmap(wxImage(size.x, size.y), 32);
 
@@ -121,15 +121,15 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
     Tags tags(path);
 
     int length = tags.GetAudioInfo().length;
-    wxLogDebug("Sample length: %d", length);
+    SH_LOG_DEBUG("Sample length: {}", length);
 
     double position = m_MediaCtrl.Tell();
-    wxLogDebug("Current Sample Position: %f", position);
+    SH_LOG_DEBUG("Current Sample Position: {}", position);
 
     int panel_width = this->GetSize().GetWidth();
     double line_pos = panel_width * (position / length);
 
-    wxLogDebug("Drawing playhead at: %f", line_pos);
+    SH_LOG_DEBUG("Drawing playhead at: {}", line_pos);
 
     m_PlayheadColour = wxColor(255, 0, 0, 255);
 
@@ -185,7 +185,7 @@ void WaveformViewer::UpdateWaveformBitmap()
     float display_width = this->GetSize().GetWidth();
     float display_height = this->GetSize().GetHeight();
 
-    wxLogDebug("Calculating Waveform bars RMS..");
+    SH_LOG_INFO("Calculating Waveform bars RMS..");
 
     float chunk_size = (float)(frames) / (float)display_width;
     int number_of_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
@@ -235,7 +235,7 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     mdc.SetPen(wxPen(wxColour(m_WaveformColour), 2, wxPENSTYLE_SOLID));
 
-    wxLogDebug("Drawing bitmap..");
+    SH_LOG_DEBUG("Drawing bitmap..");
 
     for (int i = 0; i < waveform.size() - 1; i++)
     {
@@ -249,7 +249,7 @@ void WaveformViewer::UpdateWaveformBitmap()
         mdc.DrawLine(X, half_display_height + Y, X, half_display_height - Y);
     }
 
-    wxLogDebug("Done drawing bitmap..");
+    SH_LOG_DEBUG("Done drawing bitmap..");
 }
 
 void WaveformViewer::OnControlKeyDown(wxKeyEvent &event)
@@ -314,7 +314,7 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
     if (abs(pos.x - line_pos) <= 5 && pos.y <= 5)
     {
         SetCursor(wxCursor(wxCURSOR_HAND));
-        wxLogDebug("Cursor on playhead..");
+        SH_LOG_DEBUG("Cursor on playhead..");
     }
     else if (bSelectRange)
     {
@@ -322,7 +322,7 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
 
         Refresh();
 
-        wxLogDebug("CTRL pressed, pressing LMB will draw selection range at %d, %d", pos.x, pos.y);
+        SH_LOG_INFO("CTRL pressed, pressing LMB will draw selection range at {}, {}", pos.x, pos.y);
     }
     else
         return;
@@ -354,11 +354,11 @@ void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
         SetCursor(wxCURSOR_CLOSED_HAND);
         CaptureMouse();
 
-        wxLogDebug("Mouse Captured playhead..");
+        SH_LOG_DEBUG("Mouse Captured playhead..");
     }
     else if (event.ControlDown())
     {
-        wxLogDebug("LMB pressed");
+        SH_LOG_DEBUG("LMB pressed");
 
         SetCursor(wxCURSOR_CLOSED_HAND);
         CaptureMouse();
@@ -402,13 +402,13 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
 
     if (!wxWindow::HasCapture())
     {
-        wxLogDebug("Window doesn't have capture skipping..");
+        SH_LOG_INFO("Window doesn't have capture skipping..");
         return;
     }
 
     if (bSelectRange)
     {
-        wxLogDebug("LMB released");
+        SH_LOG_DEBUG("LMB released");
 
         m_CurrentPoint = wxPoint(pos.x, pos.y);
 
@@ -444,7 +444,7 @@ void WaveformViewer::ResetDC()
 
 void WaveformViewer::SendLoopPoints()
 {
-    wxLogDebug("%s Called", __FUNCTION__);
+    SH_LOG_DEBUG("{} Called", __FUNCTION__);
 
     SampleHive::SH_LoopPointsEvent event(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, this->GetId());
     event.SetEventObject(this);
@@ -472,7 +472,7 @@ void WaveformViewer::SendLoopPoints()
 
     HandleWindowEvent(event);
 
-    wxLogDebug("%s processed event, sending loop points..", __FUNCTION__);
+    SH_LOG_DEBUG("{} processed event, sending loop points..", __FUNCTION__);
 }
 
 void WaveformViewer::SendStatusBarStatus(const wxString& msg, int section)

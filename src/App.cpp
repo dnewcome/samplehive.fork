@@ -20,6 +20,7 @@
 
 #include "App.hpp"
 #include "SampleHiveConfig.hpp"
+#include "Utility/Log.hpp"
 
 #include <wx/bitmap.h>
 #include <wx/defs.h>
@@ -93,5 +94,5 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 void App::OnEventLoopEnter(wxEventLoopBase* event)
 {
     if (m_Frame->CreateWatcherIfNecessary())
-        wxLogDebug("Filesystem watcher created sucessfully");
+        SH_LOG_INFO("Filesystem watcher created sucessfully");
 }
