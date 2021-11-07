@@ -39,16 +39,15 @@
 class TagEditor : public wxDialog
 {
     public:
-        TagEditor(wxWindow* window, const std::string& dbPath, const std::string& filename, wxInfoBar& info_bar);
+        TagEditor(wxWindow* window, const std::string& filename);
         ~TagEditor();
 
     private:
         // -------------------------------------------------------------------
         wxWindow* m_Window;
-        const std::string m_DatabaseFilepath;
-        const std::string m_Filename;
 
-        wxInfoBar& m_InfoBar;
+        // -------------------------------------------------------------------
+        const std::string m_Filename;
 
     private:
         // -------------------------------------------------------------------
@@ -105,4 +104,7 @@ class TagEditor : public wxDialog
 
         // -------------------------------------------------------------------
         void OnClickApply(wxCommandEvent& event);
+
+        // -------------------------------------------------------------------
+        void SendInfoBarMessage(const wxString& msg, int mode);
 };

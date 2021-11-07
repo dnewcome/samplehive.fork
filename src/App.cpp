@@ -20,21 +20,22 @@
 
 #include "App.hpp"
 #include "SampleHiveConfig.hpp"
+#include "Utility/Paths.hpp"
 #include "Utility/Log.hpp"
 
 #include <wx/bitmap.h>
 #include <wx/defs.h>
+#include <wx/filefn.h>
 #include <wx/fswatcher.h>
 #include <wx/gdicmn.h>
 #include <wx/splash.h>
-
-#define SPLASH_LOGO SAMPLEHIVE_DATADIR "/logo/logo-samplehive_768x432.png"
 
 wxIMPLEMENT_APP(App);
 
 App::App()
 {
-
+    // Initialize the logger
+    SampleHive::Log::InitLogger("SampleHive");
 }
 
 App::~App()
@@ -74,6 +75,7 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
     wxApp::OnInitCmdLine(parser);
 
     parser.AddSwitch("v", "version", "Shows the application version", 0);
+    parser.AddSwitch("r", "reset", "Reset app data", 0);
     parser.Parse(true);
 }
 
@@ -84,8 +86,58 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
 
     if (parser.Found("version"))
     {
-        std::cout << NAME << ' ' << VERSION << std::endl;
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << std::endl;
         return false;
+    }
+    else if (parser.Found("reset"))
+    {
+        char ans;
+
+        std::cout << "Are you sure you want reset app data? [y/N] ";
+        std::cin >> ans;
+
+        if (ans == 'y' || ans == 'Y')
+        {
+            if (!wxFileExists(CONFIG_FILEPATH))
+            {
+                SH_LOG_ERROR("Error! File {} doesn't exist.", CONFIG_FILEPATH);
+                return false;
+            }
+
+            bool config_is_deleted = wxRemoveFile(CONFIG_FILEPATH);
+
+            if (config_is_deleted)
+                SH_LOG_INFO("Deleted {}", CONFIG_FILEPATH);
+            else
+                SH_LOG_ERROR("Could not delete {}", CONFIG_FILEPATH);
+
+            if (!wxFileExists(DATABASE_FILEPATH))
+            {
+                SH_LOG_ERROR("Error! File {} doesn't exist.", DATABASE_FILEPATH);
+                return false;
+            }
+
+            bool db_is_deleted = wxRemoveFile(DATABASE_FILEPATH);
+
+            if (db_is_deleted)
+                SH_LOG_INFO("Deleted {}", DATABASE_FILEPATH);
+            else
+                SH_LOG_ERROR("Could not delete {}", DATABASE_FILEPATH);
+
+            if (config_is_deleted && db_is_deleted)
+                SH_LOG_INFO("Successfully cleared app data");
+            else
+                SH_LOG_ERROR("Error! Could not clear app data");
+
+            return false;
+        }
+        else if (ans == 'n' || ans == 'N')
+            return false;
+        else
+        {
+            SH_LOG_ERROR("Unknown option '{}' please select a correct option", ans);
+            return false;
+        }
     }
 
     return true;

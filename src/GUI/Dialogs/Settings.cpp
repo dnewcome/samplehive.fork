@@ -22,21 +22,16 @@
 #include "Utility/ControlID_Enums.hpp"
 #include "Utility/Serialize.hpp"
 #include "Utility/Log.hpp"
+#include "Utility/Paths.hpp"
 
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
 #include <wx/stringimpl.h>
 
-Settings::Settings(const std::string& configFilepath, const std::string& databaseFilepath)
-    : m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
-{
-
-}
-
-Settings::Settings(wxWindow* window, const std::string& configFilepath, const std::string& databaseFilepath)
+Settings::Settings(wxWindow *window)
     : wxDialog(window, wxID_ANY, "Settings", wxDefaultPosition,
                wxSize(720, 270), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
-      m_Window(window), m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+      m_Window(window)
 {
     m_Panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -52,7 +47,7 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
     m_DisplayFontSizer = new wxBoxSizer(wxHORIZONTAL);
     m_WaveformColourSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxString fontChoices[] = { "System default" };
 
@@ -106,13 +101,13 @@ Settings::Settings(wxWindow* window, const std::string& configFilepath, const st
 
     m_ConfigLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY,
                                      "Default configuration file location", wxDefaultPosition, wxDefaultSize);
-    m_ConfigText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, configFilepath,
+    m_ConfigText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, CONFIG_FILEPATH,
                                   wxDefaultPosition, wxDefaultSize);
     m_ConfigBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseConfigDir, "Browse",
                                   wxDefaultPosition, wxDefaultSize, 0);
     m_DatabaseLabel = new wxStaticText(m_ConfigurationSettingPanel, wxID_ANY, "Default database location",
                                        wxDefaultPosition, wxDefaultSize);
-    m_DatabaseText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, databaseFilepath,
+    m_DatabaseText = new wxTextCtrl(m_ConfigurationSettingPanel, wxID_ANY, DATABASE_FILEPATH,
                                     wxDefaultPosition, wxDefaultSize);
     m_DatabaseBrowse = new wxButton(m_ConfigurationSettingPanel, SD_BrowseDatabaseDir, "Browse",
                                     wxDefaultPosition, wxDefaultSize, 0);
@@ -247,7 +242,7 @@ void Settings::OnClickDatabaseBrowse(wxCommandEvent& event)
 
 void Settings::OnCheckAutoImport(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (!m_AutoImportCheck->GetValue())
     {
@@ -271,21 +266,21 @@ void Settings::OnCheckAutoImport(wxCommandEvent& event)
 
 void Settings::OnCheckFollowSymLinks(wxCommandEvent& event)
 {
-    Serializer serialize(m_ConfigFilepath);
+    Serializer serializer;
 
-    serialize.SerializeFollowSymLink(m_FollowSymLinksCheck->GetValue());
+    serializer.SerializeFollowSymLink(m_FollowSymLinksCheck->GetValue());
 }
 
 void Settings::OnCheckShowFileExtension(wxCommandEvent& event)
 {
-    Serializer serialize(m_ConfigFilepath);
+    Serializer serializer;
 
-    serialize.SerializeShowFileExtensionSetting(m_ShowFileExtensionCheck->GetValue());
+    serializer.SerializeShowFileExtensionSetting(m_ShowFileExtensionCheck->GetValue());
 }
 
 void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxString initial_dir = wxGetHomeDir();
 
@@ -344,7 +339,7 @@ void Settings::OnSelectFont(wxCommandEvent& event)
 
 void Settings::OnChangeFontSize(wxSpinEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     int font_size = m_FontSize->GetValue();
 
@@ -364,7 +359,7 @@ void Settings::OnChangeFontSize(wxSpinEvent& event)
 
 void Settings::LoadDefaultConfig()
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxFont sys_font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
     wxString system_font = sys_font.GetFaceName();
@@ -414,7 +409,7 @@ void Settings::LoadDefaultConfig()
 
 void Settings::SetShowExtension(bool value)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     m_ShowFileExtensionCheck->SetValue(value);
     serializer.SerializeShowFileExtensionSetting(value);
@@ -431,7 +426,7 @@ void Settings::PrintFont()
 
 void Settings::SetCustomFont()
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxFont sys_font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
     std::string system_font = sys_font.GetFaceName().ToStdString();
@@ -468,7 +463,7 @@ wxString Settings::GetImportDirPath()
 
 void Settings::OnChangeWaveformColour(wxColourPickerEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
     wxColour colour = m_WaveformColourPickerCtrl->GetColour();
 
     wxColour wave_colour = serializer.DeserializeWaveformColour();

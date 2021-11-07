@@ -23,6 +23,7 @@
 #include "Utility/Tags.hpp"
 #include "Utility/SH_Event.hpp"
 #include "Utility/Log.hpp"
+#include "Utility/Paths.hpp"
 
 #include <vector>
 
@@ -37,12 +38,10 @@
 #include <sndfile.hh>
 
 WaveformViewer::WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
-                               wxMediaCtrl& mediaCtrl, Database& database,
-                               const std::string& configFilepath, const std::string& databaseFilepath)
+                               wxMediaCtrl& mediaCtrl, Database& database)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize,
               wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl),
-      m_ConfigFilepath(configFilepath), m_DatabaseFilepath(databaseFilepath)
+      m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl)
 {
     this->SetDoubleBuffered(true);
 
@@ -148,7 +147,7 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
 
 void WaveformViewer::UpdateWaveformBitmap()
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     int selected_row = m_Library.GetSelectedRow();
 

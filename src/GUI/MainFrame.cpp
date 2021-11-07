@@ -23,6 +23,7 @@
 #include "GUI/Dialogs/TagEditor.hpp"
 #include "Database/Database.hpp"
 #include "Utility/ControlID_Enums.hpp"
+#include "Utility/Paths.hpp"
 #include "Utility/Tags.hpp"
 #include "Utility/Sample.hpp"
 #include "Utility/Log.hpp"
@@ -68,34 +69,8 @@
 #include <wx/vector.h>
 #include <wx/utils.h>
 
-// Path to all the assets
-#define ICON_HIVE_16px SAMPLEHIVE_DATADIR "/icons/icon-hive_16x16.png"
-#define ICON_HIVE_24px SAMPLEHIVE_DATADIR "/icons/icon-hive_24x24.png"
-#define ICON_HIVE_32px SAMPLEHIVE_DATADIR "/icons/icon-hive_32x32.png"
-#define ICON_HIVE_64px SAMPLEHIVE_DATADIR "/icons/icon-hive_64x64.png"
-#define ICON_HIVE_128px SAMPLEHIVE_DATADIR "/icons/icon-hive_128x128.png"
-#define ICON_HIVE_256px SAMPLEHIVE_DATADIR "/icons/icon-hive_256x256.png"
-#define ICON_STAR_FILLED_16px SAMPLEHIVE_DATADIR "/icons/icon-star_filled_16x16.png"
-#define ICON_STAR_EMPTY_16px SAMPLEHIVE_DATADIR "/icons/icon-star_empty_16x16.png"
-#define ICON_PLAY_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-play-dark_16x16.png"
-#define ICON_STOP_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-stop-dark_16x16.png"
-#define ICON_AB_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-ab-dark_16x16.png"
-#define ICON_LOOP_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-loop-dark_16x16.png"
-#define ICON_MUTE_DARK_16px SAMPLEHIVE_DATADIR "/icons/icon-mute-dark_16x16.png"
-#define ICON_PLAY_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-play-light_16x16.png"
-#define ICON_STOP_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-stop-light_16x16.png"
-#define ICON_AB_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-ab-light_16x16.png"
-#define ICON_LOOP_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-loop-light_16x16.png"
-#define ICON_MUTE_LIGHT_16px SAMPLEHIVE_DATADIR "/icons/icon-mute-light_16x16.png"
-#define USER_HOME_DIR wxGetUserHome()
-#define APP_CONFIG_DIR USER_HOME_DIR + "/.config/SampleHive"
-#define APP_DATA_DIR USER_HOME_DIR + "/.local/share/SampleHive"
-#define CONFIG_FILEPATH APP_CONFIG_DIR + "/config.yaml"
-#define DATABASE_FILEPATH APP_DATA_DIR "/sample.hive"
-
 MainFrame::MainFrame()
-    : wxFrame(NULL, wxID_ANY, "SampleHive", wxDefaultPosition),
-      m_ConfigFilepath(CONFIG_FILEPATH), m_DatabaseFilepath(DATABASE_FILEPATH)
+    : wxFrame(NULL, wxID_ANY, "SampleHive", wxDefaultPosition)
 {
     // Initialize statusbar with 4 sections
     m_StatusBar = CreateStatusBar(4);
@@ -155,9 +130,6 @@ MainFrame::MainFrame()
 
     // Set the menu bar to use
     SetMenuBar(m_MenuBar);
-
-    // Initialize the logger
-    SampleHive::Log::InitLogger("SampleHive");
 
     // Load default yaml config file.
     LoadConfigFile();
@@ -430,13 +402,11 @@ MainFrame::MainFrame()
     m_Timer = new wxTimer(this);
 
     // Initialize the database
-    // m_Database = std::make_unique<Database>(*m_InfoBar, m_DatabaseFilepath);
-    m_Database = std::make_unique<Database>(m_DatabaseFilepath);
+    m_Database = std::make_unique<Database>(static_cast<std::string>(DATABASE_FILEPATH));
     m_Database->CreateTableSamples();
     m_Database->CreateTableHives();
 
-    m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database,
-                                            m_ConfigFilepath, m_DatabaseFilepath);
+    m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database);
 
     // Binding events.
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);
@@ -490,6 +460,7 @@ MainFrame::MainFrame()
 
     Bind(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, &MainFrame::OnRecieveLoopPoints, this);
     Bind(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, &MainFrame::OnRecieveStatusBarStatus, this);
+    Bind(SampleHive::SH_EVT_INFOBAR_MESSAGE_UPDATED, &MainFrame::OnRecieveInfoBarStatus, this);
 
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);
@@ -591,7 +562,7 @@ MainFrame::MainFrame()
 
 void MainFrame::OnClickSettings(wxCommandEvent& event)
 {
-    Settings* settings = new Settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings* settings = new Settings(this);
 
     switch (settings->ShowModal())
     {
@@ -615,7 +586,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
 
 void MainFrame::AddSamples(wxArrayString& files)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
     
     wxBusyCursor busy_cursor;
     wxWindowDisabler window_disabler;
@@ -786,7 +757,7 @@ void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 
 void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -1220,7 +1191,7 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
 
 void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxDataViewItem selected_hive = event.GetItem();
 
@@ -1617,7 +1588,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
 void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 {
     TagEditor* tagEditor;
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxString msg;
 
@@ -1953,8 +1924,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
         break;
         case MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, static_cast<std::string>(DATABASE_FILEPATH),
-                                      static_cast<std::string>(sample_path), *m_InfoBar);
+            tagEditor = new TagEditor(this, static_cast<std::string>(sample_path));
 
             switch (tagEditor->ShowModal())
             {
@@ -2056,7 +2026,7 @@ void MainFrame::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
 
 void MainFrame::LoadDatabase()
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     try
     {
@@ -2083,7 +2053,7 @@ void MainFrame::LoadDatabase()
 
 void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxTreeItemId selected_trashed_item = event.GetItem();
 
@@ -2171,7 +2141,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 
 void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -2319,7 +2289,7 @@ void MainFrame::OnClickAddHive(wxCommandEvent& event)
 
 void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxDataViewItem selected_item = m_Hives->GetSelection();
     wxString hive_name = m_Hives->GetItemText(selected_item);
@@ -2442,7 +2412,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
 void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxArrayTreeItemIds selected_item_ids;
     m_Trash->GetSelections(selected_item_ids);
@@ -2507,7 +2477,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
 
 void MainFrame::OnDoSearch(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     const auto search = m_SearchBox->GetValue().ToStdString();
 
@@ -2579,36 +2549,36 @@ void MainFrame::LoadConfigFile()
         }
     }
 
-    Serializer serialize(m_ConfigFilepath);
+    Serializer serializer;
 
     SH_LOG_INFO("Reading configuration file..");
 
     int height = 600, width = 800;
 
-    bAutoplay = serialize.DeserializeBrowserControls("autoplay");
-    bLoop = serialize.DeserializeBrowserControls("loop");
-    bMuted = serialize.DeserializeBrowserControls("muted");
+    bAutoplay = serializer.DeserializeBrowserControls("autoplay");
+    bLoop = serializer.DeserializeBrowserControls("loop");
+    bMuted = serializer.DeserializeBrowserControls("muted");
 
-    width = serialize.DeserializeWinSize().first;
-    height = serialize.DeserializeWinSize().second;
+    width = serializer.DeserializeWinSize().first;
+    height = serializer.DeserializeWinSize().second;
 
-    bShowMenuBar = serialize.DeserializeShowMenuAndStatusBar("menubar");
-    bShowStatusBar = serialize.DeserializeShowMenuAndStatusBar("statusbar");
+    bShowMenuBar = serializer.DeserializeShowMenuAndStatusBar("menubar");
+    bShowStatusBar = serializer.DeserializeShowMenuAndStatusBar("statusbar");
 
     m_ToggleMenuBar->Check(bShowMenuBar);
     m_MenuBar->Show(bShowMenuBar);
     m_ToggleStatusBar->Check(bShowStatusBar);
     m_StatusBar->Show(bShowStatusBar);
 
-    m_ToggleExtension->Check(serialize.DeserializeShowFileExtensionSetting());
+    m_ToggleExtension->Check(serializer.DeserializeShowFileExtensionSetting());
 
-    this->SetFont(serialize.DeserializeDisplaySettings());
+    this->SetFont(serializer.DeserializeDisplaySettings());
     this->SetSize(width, height);
     this->SetMinSize(wxSize(width, height));
     this->CenterOnScreen(wxBOTH);
     this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
-    this->SetTitle(NAME);
-    this->SetStatusText(wxString::Format("%s %s", NAME, VERSION), 3);
+    this->SetTitle(PROJECT_NAME);
+    this->SetStatusText(wxString::Format("%s %s", PROJECT_NAME, PROJECT_VERSION), 3);
     this->SetStatusText(_("Stopped"), 1);
 }
 
@@ -2640,7 +2610,7 @@ bool MainFrame::CreateWatcherIfNecessary()
 
 void MainFrame::CreateWatcher()
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxCHECK_RET(!m_FsWatcher, _("Watcher already initialized"));
 
@@ -2658,7 +2628,7 @@ void MainFrame::CreateWatcher()
 
 void MainFrame::AddWatchEntry(wxFSWPathType type, std::string path)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (path.empty())
     {
@@ -2673,6 +2643,12 @@ void MainFrame::AddWatchEntry(wxFSWPathType type, std::string path)
     SH_LOG_INFO("Adding {}: '{}'", path, type == wxFSWPath_Dir ? "directory" : "directory tree");
 
     wxFileName filename = wxFileName::DirName(path);
+
+    if (!filename.IsOk() || !filename.IsDir() || !filename.IsDirReadable())
+    {
+        SH_LOG_ERROR("Error! Something wrong with {} path", filename.GetFullPath());
+        return;
+    }
 
     if (!serializer.DeserializeFollowSymLink())
     {
@@ -2746,7 +2722,7 @@ void MainFrame::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 FileInfo MainFrame::GetFilenamePathAndExtension(const wxString& selected,
                                                 bool checkExtension, bool doGetFilename) const
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     wxString path;
     std::string extension, filename;
@@ -2820,7 +2796,7 @@ void MainFrame::OnSelectAddDirectory(wxCommandEvent& event)
 
 void MainFrame::OnSelectToggleExtension(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (m_ToggleExtension->IsChecked())
     {
@@ -2838,7 +2814,7 @@ void MainFrame::OnSelectToggleExtension(wxCommandEvent& event)
 
 void MainFrame::OnSelectToggleMenuBar(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (m_ToggleMenuBar->IsChecked())
     {
@@ -2862,7 +2838,7 @@ void MainFrame::OnSelectToggleMenuBar(wxCommandEvent& event)
 
 void MainFrame::OnSelectToggleStatusBar(wxCommandEvent& event)
 {
-    Serializer serializer(m_ConfigFilepath);
+    Serializer serializer;
 
     if (m_ToggleStatusBar->IsChecked())
     {
@@ -2891,7 +2867,7 @@ void MainFrame::OnSelectExit(wxCommandEvent& event)
 
 void MainFrame::OnSelectPreferences(wxCommandEvent& event)
 {
-    Settings* settings = new Settings(this, m_ConfigFilepath, m_DatabaseFilepath);
+    Settings* settings = new Settings(this);
 
     switch (settings->ShowModal())
     {
@@ -2918,7 +2894,7 @@ void MainFrame::OnSelectResetAppData(wxCommandEvent& event)
     wxMessageDialog clearDataDialog(this, wxString::Format(_("Warning! This will delete configuration file "
                                                              "\"%s\" and database file \"%s\" permanently, "
                                                              "are you sure you want to delete these files?"),
-                                                           m_ConfigFilepath, m_DatabaseFilepath),
+                                                           CONFIG_FILEPATH, DATABASE_FILEPATH),
                                     _("Clear app data?"),
                                     wxYES_NO | wxNO_DEFAULT | wxCENTRE, wxDefaultPosition);
 
@@ -2931,19 +2907,31 @@ void MainFrame::OnSelectResetAppData(wxCommandEvent& event)
 
             if (remove)
             {
-                bool config_is_deleted = wxRemoveFile(m_ConfigFilepath);
+                if (!wxFileExists(CONFIG_FILEPATH))
+                {
+                    SH_LOG_ERROR("Error! File {} doesn't exist.", CONFIG_FILEPATH);
+                    return;
+                }
+
+                bool config_is_deleted = wxRemoveFile(CONFIG_FILEPATH);
 
                 if (config_is_deleted)
-                    SH_LOG_INFO("Deleted {}", m_ConfigFilepath);
+                    SH_LOG_INFO("Deleted {}", CONFIG_FILEPATH);
                 else
-                    SH_LOG_ERROR("Could not delete {}", m_ConfigFilepath);
+                    SH_LOG_ERROR("Could not delete {}", CONFIG_FILEPATH);
 
-                bool db_is_deleted = wxRemoveFile(m_DatabaseFilepath);
+                if (!wxFileExists(DATABASE_FILEPATH))
+                {
+                    SH_LOG_ERROR("Error! File {} doesn't exist.", DATABASE_FILEPATH);
+                    return;
+                }
+
+                bool db_is_deleted = wxRemoveFile(DATABASE_FILEPATH);
 
                 if (db_is_deleted)
-                    SH_LOG_INFO("Deleted {}", m_DatabaseFilepath);
+                    SH_LOG_INFO("Deleted {}", DATABASE_FILEPATH);
                 else
-                    SH_LOG_ERROR("Could not delete {}", m_DatabaseFilepath);
+                    SH_LOG_ERROR("Could not delete {}", DATABASE_FILEPATH);
 
                 if (config_is_deleted && db_is_deleted)
                     m_InfoBar->ShowMessage(_("Successfully cleared app data"), wxICON_INFORMATION);
@@ -2963,17 +2951,17 @@ void MainFrame::OnSelectAbout(wxCommandEvent& event)
 {
     wxAboutDialogInfo aboutInfo;
 
-    aboutInfo.SetName(NAME);
+    aboutInfo.SetName(PROJECT_NAME);
     aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
-    aboutInfo.AddArtist("Apoorv");
-    aboutInfo.SetVersion(VERSION, _("Version 0.9.0_alpha.1"));
-    aboutInfo.SetDescription(_("A simple, modern audio sample browser/manager for GNU/Linux."));
-    aboutInfo.SetCopyright("(C) 2020-2021");
-    aboutInfo.SetWebSite("http://samplehive.gitlab.io");
-    aboutInfo.AddDeveloper("Apoorv");
+    aboutInfo.AddArtist(PROJECT_AUTHOR);
+    aboutInfo.SetVersion(PROJECT_VERSION, _("Version 0.9.0_alpha.1"));
+    aboutInfo.SetDescription(_(PROJECT_DESCRIPTION));
+    aboutInfo.SetCopyright("(C)" PROJECT_COPYRIGHT_YEARS);
+    aboutInfo.SetWebSite(PROJECT_WEBSITE);
+    aboutInfo.AddDeveloper(PROJECT_AUTHOR);
     aboutInfo.SetLicence(wxString::Format(wxString::FromAscii(
                              "%s %s\n"
-                             "Copyright (C) 2021  Apoorv Singh\n"
+                             "Copyright (C) %s  Apoorv Singh\n"
                              "\n"
                              "%s is free software: you can redistribute it and/or modify\n"
                              "it under the terms of the GNU General Public License as published by\n"
@@ -2987,7 +2975,8 @@ void MainFrame::OnSelectAbout(wxCommandEvent& event)
                              "\n"
                              "You should have received a copy of the GNU General Public License\n"
                              "along with this program.  If not, see <https://www.gnu.org/licenses/>.\n"
-                             ), NAME, VERSION, NAME, NAME));
+                             ), PROJECT_NAME, PROJECT_VERSION, PROJECT_COPYRIGHT_YEARS,
+                                PROJECT_NAME, PROJECT_NAME));
 
     wxAboutBox(aboutInfo);
 }
@@ -3036,6 +3025,17 @@ void MainFrame::OnRecieveStatusBarStatus(SampleHive::SH_StatusBarMessageEvent& e
     std::pair<wxString, int> status = event.GetMessageAndSection();
 
     m_StatusBar->PushStatusText(status.first, status.second);
+}
+
+void MainFrame::OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event)
+{
+    SH_LOG_INFO("{} called..", __FUNCTION__);
+
+    std::pair<wxString, int> info = event.GetInfoBarMessage();
+
+    m_InfoBar->ShowMessage(info.first, info.second);
+
+    SH_LOG_INFO("{} event processed", __FUNCTION__);
 }
 
 void MainFrame::ClearLoopPoints()

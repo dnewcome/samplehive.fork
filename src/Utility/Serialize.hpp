@@ -45,13 +45,10 @@ typedef std::pair<bool, wxString> ImportDirInfo;
 class Serializer
 {
     public:
-        Serializer(const std::string& filepath);
+        Serializer();
         ~Serializer();
 
     private:
-        // -------------------------------------------------------------------
-        const std::string& m_Filepath;
-
         // -------------------------------------------------------------------
         YAML::Emitter m_Emitter;
 

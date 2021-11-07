@@ -74,18 +74,18 @@ namespace SampleHive
 
     wxDEFINE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_StatusBarMessageEvent);
 
-    // SH_InfoBarMessageEvent::SH_InfoBarMessageEvent(wxEventType eventType, int winId)
-    //     : wxCommandEvent(eventType, winId)
-    // {
+    SH_InfoBarMessageEvent::SH_InfoBarMessageEvent(wxEventType eventType, int winId)
+        : wxCommandEvent(eventType, winId)
+    {
 
-    // }
+    }
 
-    // SH_InfoBarMessageEvent::~SH_InfoBarMessageEvent()
-    // {
+    SH_InfoBarMessageEvent::~SH_InfoBarMessageEvent()
+    {
 
-    // }
+    }
 
-    // wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
+    wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
 
     // SH_TimerEvent::SH_TimerEvent(wxEventType eventType, int winId)
     //     : wxCommandEvent(eventType, winId)

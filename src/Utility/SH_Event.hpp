@@ -95,7 +95,8 @@ namespace SampleHive
 
         public:
             std::pair<wxString, int> GetMessageAndSection() const { return { m_Msg, m_Section }; }
-            void SetMessageAndSection(std::pair<const wxString&, int> status) { m_Msg = status.first; m_Section = status.second; }
+            void SetMessageAndSection(std::pair<const wxString&, int> status)
+                                         { m_Msg = status.first; m_Section = status.second; }
 
         private:
             wxString m_Msg;
@@ -104,25 +105,26 @@ namespace SampleHive
 
     wxDECLARE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_StatusBarMessageEvent);
 
-    // class SH_InfoBarMessageEvent : public wxCommandEvent
-    // {
-    //     public:
-    //         SH_InfoBarMessageEvent(wxEventType eventType, int winId);
-    //         ~SH_InfoBarMessageEvent();
+    class SH_InfoBarMessageEvent : public wxCommandEvent
+    {
+        public:
+            SH_InfoBarMessageEvent(wxEventType eventType, int winId);
+            ~SH_InfoBarMessageEvent();
 
-    //     public:
-    //         virtual wxEvent* Clone() const { return new SH_InfoBarMessageEvent(*this); }
+        public:
+            virtual wxEvent* Clone() const { return new SH_InfoBarMessageEvent(*this); }
 
-    //     public:
-    //         std::pair<wxString, int> GetInfoBarMessage() const { return { m_Msg, m_Mode }; }
-    //         void SetInfoBarMessage(std::pair<wxString, int> infoBarMessageEvent) { m_Msg = infoBarMessageEvent.first; m_Mode = infoBarMessageEvent.second; }
+        public:
+            std::pair<wxString, int> GetInfoBarMessage() const { return { m_Msg, m_Mode }; }
+            void SetInfoBarMessage(std::pair<const wxString&, int> info)
+                                      { m_Msg = info.first; m_Mode = info.second; }
 
-    //     private:
-    //         wxString m_Msg;
-    //         int m_Mode;
-    // };
+        private:
+            wxString m_Msg;
+            int m_Mode;
+    };
 
-    // wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
+    wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
 
     // class SH_TimerEvent : public wxCommandEvent
     // {

@@ -20,6 +20,7 @@
 
 #include "Utility/Serialize.hpp"
 #include "Utility/Log.hpp"
+#include "Utility/Paths.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -30,10 +31,9 @@
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/node/parse.h>
 
-Serializer::Serializer(const std::string& filepath)
-    : m_Filepath(filepath)
+Serializer::Serializer()
 {
-    std::ifstream ifstrm(m_Filepath);
+    std::ifstream ifstrm(static_cast<std::string>(CONFIG_FILEPATH));
 
     wxFont font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
     std::string system_font_face = font.GetFaceName().ToStdString();
@@ -94,10 +94,10 @@ Serializer::Serializer(const std::string& filepath)
 
         m_Emitter << YAML::EndMap;
 
-        std::ofstream ofstrm(m_Filepath);
+        std::ofstream ofstrm(CONFIG_FILEPATH);
         ofstrm << m_Emitter.c_str();
 
-        SH_LOG_INFO("Generated {} successfully!", m_Filepath);
+        SH_LOG_INFO("Generated {} successfully!", CONFIG_FILEPATH);
     }
 }
 
@@ -112,7 +112,7 @@ WindowSize Serializer::DeserializeWinSize() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (!config["Window"])
         {
@@ -141,7 +141,7 @@ void Serializer::SerializeShowMenuAndStatusBar(std::string key, bool value)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto bar = config["Window"])
         {
@@ -153,7 +153,7 @@ void Serializer::SerializeShowMenuAndStatusBar(std::string key, bool value)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -171,7 +171,7 @@ bool Serializer::DeserializeShowMenuAndStatusBar(std::string key) const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto bar = config["Window"])
         {
@@ -200,7 +200,7 @@ void Serializer::SerializeBrowserControls(std::string key, bool value)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto media = config["Media"])
         {
@@ -215,7 +215,7 @@ void Serializer::SerializeBrowserControls(std::string key, bool value)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -233,7 +233,7 @@ bool Serializer::DeserializeBrowserControls(std::string key) const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto media = config["Media"])
         {
@@ -268,7 +268,7 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         auto display = config["Display"];
 
@@ -279,7 +279,7 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -302,7 +302,7 @@ wxFont Serializer::DeserializeDisplaySettings() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         auto display = config["Display"];
 
@@ -335,7 +335,7 @@ void Serializer::SerializeWaveformColour(wxColour& colour)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         auto display = config["Display"];
 
@@ -345,7 +345,7 @@ void Serializer::SerializeWaveformColour(wxColour& colour)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -365,7 +365,7 @@ wxColour Serializer::DeserializeWaveformColour() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         auto display = config["Display"];
 
@@ -392,7 +392,7 @@ void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string&
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto autoImportInfo = config["Collection"])
         {
@@ -401,7 +401,7 @@ void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string&
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -422,7 +422,7 @@ ImportDirInfo Serializer::DeserializeAutoImportSettings() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto autoImportInfo = config["Collection"])
         {
@@ -448,7 +448,7 @@ void Serializer::SerializeFollowSymLink(bool followSymLinks)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto followSymLinks = config["Collection"])
         {
@@ -456,7 +456,7 @@ void Serializer::SerializeFollowSymLink(bool followSymLinks)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -476,7 +476,7 @@ bool Serializer::DeserializeFollowSymLink() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto followSymLinks = config["Collection"])
         {
@@ -501,7 +501,7 @@ void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto fileExtensionInfo = config["Collection"])
         {
@@ -509,7 +509,7 @@ void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
 
             out << config;
 
-            std::ofstream ofstrm(m_Filepath);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << out.c_str();
         }
         else
@@ -529,7 +529,7 @@ bool Serializer::DeserializeShowFileExtensionSetting() const
 
     try
     {
-        YAML::Node config = YAML::LoadFile(m_Filepath);
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
 
         if (auto fileExtensionInfo = config["Collection"])
         {

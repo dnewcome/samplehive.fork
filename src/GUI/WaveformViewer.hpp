@@ -39,20 +39,17 @@ class WaveformViewer : public wxPanel
 {
     public:
         WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
-                       wxMediaCtrl& mediaCtrl, Database& database,
-                       const std::string& configFilepath, const std::string& databaseFilepath);
+                       wxMediaCtrl& mediaCtrl, Database& database);
         ~WaveformViewer();
 
     private:
         // -------------------------------------------------------------------
         wxWindow* m_Window;
 
+        // -------------------------------------------------------------------
         Database& m_Database;
         wxDataViewListCtrl& m_Library;
         wxMediaCtrl& m_MediaCtrl;
-
-        const std::string& m_ConfigFilepath;
-        const std::string& m_DatabaseFilepath;
 
     private:
         // -------------------------------------------------------------------

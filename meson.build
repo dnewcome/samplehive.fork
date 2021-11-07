@@ -22,23 +22,47 @@ project('SampleHive',
         version : 'v0.9.0_alpha.1',
         license : 'GPL v3',
         meson_version: '>= 0.58.0',
-        default_options : ['warning_level=1',
-                           'cpp_std=c++14'])
-
-meson_src_root = meson.current_source_dir()
-meson_build_root = meson.current_build_dir()
+        default_options : ['warning_level=2',
+                           'buildtype=debugoptimized',
+                           'b_lto=true',
+                           'b_lto_threads=2',
+                           'cpp_std=gnu++14'])
 
 # Create configuration data
 config_data = configuration_data()
 
 # Save project information
+meson_src_root = meson.current_source_dir()
+meson_build_root = meson.current_build_dir()
+
 project_name = meson.project_name()
 project_license = meson.project_license()
 project_version = meson.project_version()
+project_author = 'Apoorv'
+project_copyright_years = '2020-2021'
+project_description = 'A simple, modern audio sample browser/manager for GNU/Linux.'
+project_website = 'http://samplehive.gitlab.io/website'
 
-config_data.set_quoted('NAME', project_name)
-config_data.set_quoted('LICENSE', project_license)
-config_data.set_quoted('VERSION', project_version)
+build_type = get_option('buildtype')
+
+host_sys = host_machine.system()
+
+cpp_compiler_id = meson.get_compiler('cpp').get_id()
+cpp_compiler_version = meson.get_compiler('cpp').version()
+
+config_data.set_quoted('PROJECT_NAME', project_name)
+config_data.set_quoted('PROJECT_LICENSE', project_license)
+config_data.set_quoted('PROJECT_VERSION', project_version)
+config_data.set_quoted('PROJECT_AUTHOR', project_author)
+config_data.set_quoted('PROJECT_COPYRIGHT_YEARS', project_copyright_years)
+config_data.set_quoted('PROJECT_DESCRIPTION', project_description)
+config_data.set_quoted('PROJECT_WEBSITE', project_website)
+config_data.set_quoted('BUILD_TYPE', build_type)
+config_data.set_quoted('HOST_MACHINE', host_sys)
+config_data.set_quoted('MESON_SRC_ROOT', meson_src_root)
+config_data.set_quoted('MESON_BUILD_ROOT', meson_build_root)
+config_data.set_quoted('CPP_COMPILER', cpp_compiler_id)
+config_data.set_quoted('CPP_COMPILER_VERSION', cpp_compiler_version)
 
 # Save important directories
 prefix = get_option('prefix')
@@ -230,8 +254,11 @@ endif
 
 summary(
   {
-    'Debug': get_option('debug'),
+    'Build type': build_type,
     'Optimization': get_option('optimization'),
+    'Link time optimization': get_option('b_lto'),
+    'Warning level': get_option('warning_level'),
+    'Host system': host_sys,
   },
   section: 'General')
 
@@ -244,3 +271,15 @@ summary(
     'samplehive_datadir': samplehive_datadir,
   },
   section: 'Directories')
+
+summary(
+  {
+    'Project name': project_name,
+    'Project license': project_license,
+    'Project version': project_version,
+    'Project author': project_author,
+    'Project copyright years': project_copyright_years,
+    'Project description': project_description,
+    'Project website': project_website,
+  },
+  section: 'Project')

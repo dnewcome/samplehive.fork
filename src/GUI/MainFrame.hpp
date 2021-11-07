@@ -197,10 +197,6 @@ class MainFrame : public wxFrame
         bool bShowStatusBar = false;
         bool bLoopPointsSet = false;
 
-        // -------------------------------------------------------------------
-        const std::string m_ConfigFilepath;
-        const std::string m_DatabaseFilepath;
-
     private:
         // -------------------------------------------------------------------
         // Top panel control handlers
@@ -278,6 +274,7 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
         void OnRecieveStatusBarStatus(SampleHive::SH_StatusBarMessageEvent& event);
+        void OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event);
 
         // -------------------------------------------------------------------
         void LoadDatabase();

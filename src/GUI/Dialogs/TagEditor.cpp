@@ -19,7 +19,9 @@
  */
 
 #include "Utility/ControlID_Enums.hpp"
+#include "Utility/SH_Event.hpp"
 #include "Utility/Log.hpp"
+#include "Utility/Paths.hpp"
 #include "Database/Database.hpp"
 #include "GUI/Dialogs/TagEditor.hpp"
 
@@ -29,10 +31,10 @@
 #include <wx/stringimpl.h>
 #include <wx/textdlg.h>
 
-TagEditor::TagEditor(wxWindow* window, const std::string& dbPath, const std::string& filename, wxInfoBar& info_bar)
+TagEditor::TagEditor(wxWindow* window, const std::string& filename)
     : wxDialog(window, wxID_ANY, "Edit tags", wxDefaultPosition,
                wxSize(640, 360), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
-     m_Window(window), m_DatabaseFilepath(dbPath), m_Filename(filename), m_InfoBar(info_bar), tags(filename)
+     m_Window(window), m_Filename(filename), tags(filename)
 {
     m_Panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -226,8 +228,7 @@ void TagEditor::OnClickCustomTagButton(wxCommandEvent& event)
 
 void TagEditor::OnClickApply(wxCommandEvent& event)
 {
-    // Database db(m_InfoBar, m_DatabaseFilepath);
-    Database db(m_DatabaseFilepath);
+    Database db(static_cast<std::string>(DATABASE_FILEPATH));
 
     wxString title = m_TitleText->GetValue();
     wxString artist = m_ArtistText->GetValue();
@@ -311,7 +312,19 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             info_msg = "Error, cannot change tag!";
     }
 
-    m_InfoBar.ShowMessage(info_msg, wxICON_INFORMATION);
+    SendInfoBarMessage(info_msg, wxICON_INFORMATION);
+}
+
+void TagEditor::SendInfoBarMessage(const wxString& msg, int mode)
+{
+    SH_LOG_INFO("{} called..", __FUNCTION__);
+
+    SampleHive::SH_InfoBarMessageEvent event(SampleHive::SH_EVT_INFOBAR_MESSAGE_UPDATED, this->GetId());
+    event.SetEventObject(this);
+
+    event.SetInfoBarMessage({ msg, mode });
+
+    GetParent()->GetEventHandler()->ProcessEvent(event);
 }
 
 TagEditor::~TagEditor()
