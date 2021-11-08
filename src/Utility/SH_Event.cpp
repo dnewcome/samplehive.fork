@@ -61,18 +61,20 @@ namespace SampleHive
 
     // wxDEFINE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, SH_MediaEvent);
 
-    SH_StatusBarMessageEvent::SH_StatusBarMessageEvent(wxEventType eventType, int winId)
+    SH_StatusBarStatusEvent::SH_StatusBarStatusEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_StatusBarMessageEvent::~SH_StatusBarMessageEvent()
+    SH_StatusBarStatusEvent::~SH_StatusBarStatusEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_StatusBarMessageEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, SH_StatusBarStatusEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, SH_StatusBarStatusEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, SH_StatusBarStatusEvent);
 
     SH_InfoBarMessageEvent::SH_InfoBarMessageEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
@@ -85,18 +87,18 @@ namespace SampleHive
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
+    wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, SH_InfoBarMessageEvent);
 
-    // SH_TimerEvent::SH_TimerEvent(wxEventType eventType, int winId)
-    //     : wxCommandEvent(eventType, winId)
-    // {
+    SH_TimerEvent::SH_TimerEvent(wxEventType eventType, int winId)
+        : wxCommandEvent(eventType, winId)
+    {
 
-    // }
+    }
 
-    // SH_TimerEvent::~SH_TimerEvent()
-    // {
+    SH_TimerEvent::~SH_TimerEvent()
+    {
 
-    // }
+    }
 
-    // wxDEFINE_EVENT(SH_EVT_TIMER_STATUS_UPDATED, SH_TimerEvent);
+    wxDEFINE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
 }

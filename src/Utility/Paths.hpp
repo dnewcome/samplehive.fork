@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SampleHiveConfig.hpp"
+
 // Path to all the assets
 #define ICON_HIVE_16px SAMPLEHIVE_DATADIR "/icons/icon-hive_16x16.png"
 #define ICON_HIVE_24px SAMPLEHIVE_DATADIR "/icons/icon-hive_24x24.png"

@@ -19,7 +19,6 @@
  */
 
 #include "App.hpp"
-#include "SampleHiveConfig.hpp"
 #include "Utility/Paths.hpp"
 #include "Utility/Log.hpp"
 

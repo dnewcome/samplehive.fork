@@ -273,8 +273,11 @@ class MainFrame : public wxFrame
         // Recieve custom events
         // -------------------------------------------------------------------
         void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
-        void OnRecieveStatusBarStatus(SampleHive::SH_StatusBarMessageEvent& event);
+        void OnRecievePushStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
+        void OnRecievePopStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
+        void OnRecieveSetStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
         void OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event);
+        void OnRecieveTimerStopStatus(SampleHive::SH_TimerEvent& event);
 
         // -------------------------------------------------------------------
         void LoadDatabase();

@@ -319,7 +319,7 @@ void TagEditor::SendInfoBarMessage(const wxString& msg, int mode)
 {
     SH_LOG_INFO("{} called..", __FUNCTION__);
 
-    SampleHive::SH_InfoBarMessageEvent event(SampleHive::SH_EVT_INFOBAR_MESSAGE_UPDATED, this->GetId());
+    SampleHive::SH_InfoBarMessageEvent event(SampleHive::SH_EVT_INFOBAR_MESSAGE_SHOW, this->GetId());
     event.SetEventObject(this);
 
     event.SetInfoBarMessage({ msg, mode });

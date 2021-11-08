@@ -87,7 +87,7 @@ class WaveformViewer : public wxPanel
         // -------------------------------------------------------------------
         // Send custom events
         void SendLoopPoints();
-        void SendStatusBarStatus(const wxString& msg, int section);
+        void SendPushStatusBarStatus(const wxString& msg, int section);
 
     public:
         // -------------------------------------------------------------------

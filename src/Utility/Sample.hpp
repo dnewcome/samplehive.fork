@@ -39,7 +39,6 @@ class Sample
 {
     public:
         Sample();
-
         Sample(int favorite, const std::string& filename, const std::string& fileExtension,
                const std::string& samplePack, const std::string& type, int channels, int length,
                int sampleRate, int bitrate, const std::string& path, int trashed);

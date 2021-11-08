@@ -84,26 +84,35 @@ namespace SampleHive
 
     // wxDECLARE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, SH_MediaEvent);
 
-    class SH_StatusBarMessageEvent : public wxCommandEvent
+    class SH_StatusBarStatusEvent : public wxCommandEvent
     {
         public:
-            SH_StatusBarMessageEvent(wxEventType eventType, int winId);
-            ~SH_StatusBarMessageEvent();
+            SH_StatusBarStatusEvent(wxEventType eventType, int winId);
+            ~SH_StatusBarStatusEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_StatusBarMessageEvent(*this); }
+            virtual wxEvent* Clone() const { return new SH_StatusBarStatusEvent(*this); }
 
         public:
-            std::pair<wxString, int> GetMessageAndSection() const { return { m_Msg, m_Section }; }
-            void SetMessageAndSection(std::pair<const wxString&, int> status)
-                                         { m_Msg = status.first; m_Section = status.second; }
+            std::pair<wxString, int> GetPushMessageAndSection() const { return { m_Msg, m_PushSection }; }
+            void SetPushMessageAndSection(std::pair<const wxString&, int> status)
+                                             { m_Msg = status.first; m_PushSection = status.second; }
+
+            std::pair<wxString, int> GetStatusTextAndSection() const { return { m_Text, m_SetSection }; }
+            void SetStatusTextAndSection(std::pair<const wxString&, int> status)
+                                            { m_Text = status.first, m_SetSection = status.second; }
+
+            int GetPopMessageSection() const { return m_PopSection; }
+            void SetPopMessageSection(int section) { m_PopSection = section; }
 
         private:
-            wxString m_Msg;
-            int m_Section;
+            wxString m_Msg, m_Text;
+            int m_PushSection, m_PopSection, m_SetSection;
     };
 
-    wxDECLARE_EVENT(SH_EVT_STATUSBAR_MESSAGE_UPDATED, SH_StatusBarMessageEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, SH_StatusBarStatusEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, SH_StatusBarStatusEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, SH_StatusBarStatusEvent);
 
     class SH_InfoBarMessageEvent : public wxCommandEvent
     {
@@ -124,25 +133,17 @@ namespace SampleHive
             int m_Mode;
     };
 
-    wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_UPDATED, SH_InfoBarMessageEvent);
+    wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, SH_InfoBarMessageEvent);
 
-    // class SH_TimerEvent : public wxCommandEvent
-    // {
-    //     public:
-    //         SH_TimerEvent(wxEventType eventType, int winId);
-    //         ~SH_TimerEvent();
+    class SH_TimerEvent : public wxCommandEvent
+    {
+        public:
+            SH_TimerEvent(wxEventType eventType, int winId);
+            ~SH_TimerEvent();
 
-    //     public:
-    //         virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+        public:
+            virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+    };
 
-    //     public:
-    //         std::pair<int, bool> GetSecondsAndMode() const { return { m_Seconds, m_Mode }; }
-    //         void SetSecondsAndMode(std::pair<int, bool> timerStatus) { m_Seconds = timerStatus.first; m_Mode = timerStatus.second; }
-
-    //     private:
-    //         int m_Seconds;
-    //         bool m_Mode;
-    // };
-
-    // wxDECLARE_EVENT(SH_EVT_TIMER_STATUS_UPDATED, SH_TimerEvent);
+    wxDECLARE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
 }

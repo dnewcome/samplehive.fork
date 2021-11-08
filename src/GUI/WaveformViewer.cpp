@@ -427,7 +427,7 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         SetCursor(wxCURSOR_ARROW);
 
         m_MediaCtrl.Seek(seek_to, wxFromStart);
-        SendStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
+        SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
         m_MediaCtrl.Play();
     }
 }
@@ -474,12 +474,12 @@ void WaveformViewer::SendLoopPoints()
     SH_LOG_DEBUG("{} processed event, sending loop points..", __FUNCTION__);
 }
 
-void WaveformViewer::SendStatusBarStatus(const wxString& msg, int section)
+void WaveformViewer::SendPushStatusBarStatus(const wxString& msg, int section)
 {
-    SampleHive::SH_StatusBarMessageEvent event(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, this->GetId());
+    SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, this->GetId());
     event.SetEventObject(this);
 
-    event.SetMessageAndSection({ msg, section });
+    event.SetPushMessageAndSection({ msg, section });
 
     HandleWindowEvent(event);
 }

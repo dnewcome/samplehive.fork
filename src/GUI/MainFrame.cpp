@@ -459,8 +459,11 @@ MainFrame::MainFrame()
     Bind(wxEVT_BUTTON, &MainFrame::OnClickRemoveHive, this, BC_HiveRemove);
 
     Bind(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, &MainFrame::OnRecieveLoopPoints, this);
-    Bind(SampleHive::SH_EVT_STATUSBAR_MESSAGE_UPDATED, &MainFrame::OnRecieveStatusBarStatus, this);
-    Bind(SampleHive::SH_EVT_INFOBAR_MESSAGE_UPDATED, &MainFrame::OnRecieveInfoBarStatus, this);
+    Bind(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, &MainFrame::OnRecievePushStatusBarStatus, this);
+    Bind(SampleHive::SH_EVT_STATUSBAR_STATUS_POP, &MainFrame::OnRecievePopStatusBarStatus, this);
+    Bind(SampleHive::SH_EVT_STATUSBAR_STATUS_SET, &MainFrame::OnRecieveSetStatusBarStatus, this);
+    Bind(SampleHive::SH_EVT_INFOBAR_MESSAGE_SHOW, &MainFrame::OnRecieveInfoBarStatus, this);
+    Bind(SampleHive::SH_EVT_TIMER_STOP, &MainFrame::OnRecieveTimerStopStatus, this);
 
     // Adding widgets to their sizers
     m_MainSizer->Add(m_MainPanel, 1, wxALL | wxEXPAND, 0);
@@ -3012,19 +3015,31 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
     int loopB_min = static_cast<int>((m_LoopB / 60000).GetValue());
     int loopB_sec = static_cast<int>(((m_LoopB % 60000) / 1000).GetValue());
 
-    // SH_LOG_INFO(wxString::Format(_("Loop points set: A: %2i:%02i, B: %2i:%02i"),
-    //                             loopA_min, loopA_sec, loopB_min, loopB_sec));
+    SH_LOG_INFO(wxString::Format(_("Loop points set: A: %2i:%02i, B: %2i:%02i"),
+                                loopA_min, loopA_sec, loopB_min, loopB_sec));
 
     m_LoopABButton->SetValue(true);
 
     bLoopPointsSet = true;
 }
 
-void MainFrame::OnRecieveStatusBarStatus(SampleHive::SH_StatusBarMessageEvent& event)
+void MainFrame::OnRecievePushStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event)
 {
-    std::pair<wxString, int> status = event.GetMessageAndSection();
+    std::pair<wxString, int> status = event.GetPushMessageAndSection();
 
     m_StatusBar->PushStatusText(status.first, status.second);
+}
+
+void MainFrame::OnRecievePopStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event)
+{
+    m_StatusBar->PopStatusText(event.GetPopMessageSection());
+}
+
+void MainFrame::OnRecieveSetStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event)
+{
+    std::pair<wxString, int> status = event.GetStatusTextAndSection();
+
+    m_StatusBar->SetStatusText(status.first, status.second);
 }
 
 void MainFrame::OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event)
@@ -3036,6 +3051,12 @@ void MainFrame::OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event
     m_InfoBar->ShowMessage(info.first, info.second);
 
     SH_LOG_INFO("{} event processed", __FUNCTION__);
+}
+
+void MainFrame::OnRecieveTimerStopStatus(SampleHive::SH_TimerEvent& event)
+{
+    if (m_Timer->IsRunning())
+        m_Timer->Stop();
 }
 
 void MainFrame::ClearLoopPoints()
