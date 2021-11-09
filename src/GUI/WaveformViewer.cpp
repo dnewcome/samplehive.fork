@@ -160,7 +160,7 @@ void WaveformViewer::UpdateWaveformBitmap()
         m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     wxString filepath_without_extension = m_Database.GetSamplePathByFilename(selection.ToStdString());
 
-    std::string extension = serializer.DeserializeShowFileExtensionSetting() ?
+    std::string extension = serializer.DeserializeShowFileExtension() ?
         m_Database.GetSampleFileExtension(selection.ToStdString()) :
         m_Database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
 

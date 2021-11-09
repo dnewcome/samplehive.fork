@@ -178,7 +178,7 @@ class MainFrame : public wxFrame
 
         // -------------------------------------------------------------------
         // FileSystemWatcher
-        wxFileSystemWatcher* m_FsWatcher;
+        wxFileSystemWatcher* m_FsWatcher = nullptr;
 
         // -------------------------------------------------------------------
         wxLongLong m_LoopA, m_LoopB;
@@ -257,6 +257,10 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Statusbar event handler
         void OnResizeStatusBar(wxSizeEvent& event);
+
+        // -------------------------------------------------------------------
+        // Frame resize event handler
+        void OnResizeFrame(wxSizeEvent& event);
 
         // -------------------------------------------------------------------
         // Timer update event handler

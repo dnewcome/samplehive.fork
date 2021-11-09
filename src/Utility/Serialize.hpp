@@ -55,6 +55,7 @@ class Serializer
     public:
         // -------------------------------------------------------------------
         // Window size
+        void SerializeWinSize(int w, int h);
         WindowSize DeserializeWinSize() const;
 
         // -------------------------------------------------------------------
@@ -64,13 +65,16 @@ class Serializer
 
         // -------------------------------------------------------------------
         // Browser controls
-        void SerializeBrowserControls(std::string key, bool value);
-        bool DeserializeBrowserControls(std::string key) const;
+        void SerializeMediaOptions(std::string key, bool value);
+        bool DeserializeMediaOptions(std::string key) const;
+
+        void SerializeMediaVolume(int volume);
+        int DeserializeMediaVolume() const;
 
         // -------------------------------------------------------------------
         // Display settings
-        void SerializeDisplaySettings(wxFont& font);
-        wxFont DeserializeDisplaySettings() const;
+        void SerializeFontSettings(wxFont& font);
+        wxFont DeserializeFontSettings() const;
 
         // -------------------------------------------------------------------
         // Waveform colour
@@ -79,8 +83,8 @@ class Serializer
 
         // -------------------------------------------------------------------
         // Auto import settings
-        void SerializeAutoImportSettings(bool autoImport, const std::string& importDir);
-        ImportDirInfo DeserializeAutoImportSettings() const;
+        void SerializeAutoImport(bool autoImport, const std::string& importDir);
+        ImportDirInfo DeserializeAutoImport() const;
 
         // -------------------------------------------------------------------
         // Follow symbolic links
@@ -88,7 +92,12 @@ class Serializer
         bool DeserializeFollowSymLink() const;
 
         // -------------------------------------------------------------------
+        // Recursive import
+        void SerializeRecursiveImport(bool recursiveImport);
+        bool DeserializeRecursiveImport() const;
+
+        // -------------------------------------------------------------------
         // Show file extension
-        void SerializeShowFileExtensionSetting(bool showExtension);
-        bool DeserializeShowFileExtensionSetting() const;
+        void SerializeShowFileExtension(bool showExtension);
+        bool DeserializeShowFileExtension() const;
 };

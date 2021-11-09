@@ -69,6 +69,7 @@ Serializer::Serializer()
         m_Emitter << YAML::Key << "Autoplay" << YAML::Value << false;
         m_Emitter << YAML::Key << "Loop" << YAML::Value << false;
         m_Emitter << YAML::Key << "Muted" << YAML::Value << false;
+        m_Emitter << YAML::Key << "Volume" << YAML::Value << 100;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
         m_Emitter << YAML::Newline << YAML::Key << "Display";
@@ -89,6 +90,7 @@ Serializer::Serializer()
         m_Emitter << YAML::Key << "AutoImport" << YAML::Value << false;
         m_Emitter << YAML::Key << "Directory" << YAML::Value << dir;
         m_Emitter << YAML::Key << "FollowSymLink" << YAML::Value << false;
+        m_Emitter << YAML::Key << "RecursiveImport" << YAML::Value << false;
         m_Emitter << YAML::Key << "ShowFileExtension" << YAML::Value << true;
         m_Emitter << YAML::EndMap << YAML::Newline;
 
@@ -104,6 +106,35 @@ Serializer::Serializer()
 Serializer::~Serializer()
 {
 
+}
+
+void Serializer::SerializeWinSize(int w, int h)
+{
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto win = config["Window"])
+        {
+            win["Width"] = w;
+            win["Height"] = h;
+
+            out << config;
+
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+            ofstrm << out.c_str();
+        }
+        else
+        {
+            SH_LOG_ERROR("Error! Cannot store window size values.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
 }
 
 WindowSize Serializer::DeserializeWinSize() const
@@ -194,7 +225,7 @@ bool Serializer::DeserializeShowMenuAndStatusBar(std::string key) const
     return show;
 }
 
-void Serializer::SerializeBrowserControls(std::string key, bool value)
+void Serializer::SerializeMediaOptions(std::string key, bool value)
 {
     YAML::Emitter out;
 
@@ -227,7 +258,7 @@ void Serializer::SerializeBrowserControls(std::string key, bool value)
     }
 }
 
-bool Serializer::DeserializeBrowserControls(std::string key) const
+bool Serializer::DeserializeMediaOptions(std::string key) const
 {
     bool control = false;
 
@@ -247,7 +278,7 @@ bool Serializer::DeserializeBrowserControls(std::string key) const
                 control = media["Muted"].as<bool>();
         }
         else
-            SH_LOG_ERROR("Error! Cannot fetch values.");
+            SH_LOG_ERROR("Error! Cannot fetch media values.");
     }
     catch(const YAML::ParserException& ex)
     {
@@ -259,7 +290,56 @@ bool Serializer::DeserializeBrowserControls(std::string key) const
     return control;
 }
 
-void Serializer::SerializeDisplaySettings(wxFont& font)
+void Serializer::SerializeMediaVolume(int volume)
+{
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto media = config["Media"])
+        {
+            media["Volume"] = volume;
+
+            out << config;
+
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+            ofstrm << out.c_str();
+        }
+        else
+            SH_LOG_ERROR("Error! Cannot store volume values.");
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+}
+
+int Serializer::DeserializeMediaVolume() const
+{
+    int volume = 0;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto media = config["Media"])
+            volume = media["Volume"].as<int>();
+        else
+            SH_LOG_ERROR("Error! Cannot fetch volume values.");
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+
+    SH_LOG_INFO("Volume: {}", volume);
+
+    return volume;
+}
+
+void Serializer::SerializeFontSettings(wxFont& font)
 {
     YAML::Emitter out;
 
@@ -293,7 +373,7 @@ void Serializer::SerializeDisplaySettings(wxFont& font)
     }
 }
 
-wxFont Serializer::DeserializeDisplaySettings() const
+wxFont Serializer::DeserializeFontSettings() const
 {
     wxFont font;
 
@@ -386,7 +466,7 @@ wxColour Serializer::DeserializeWaveformColour() const
     return static_cast<wxString>(colour);
 }
 
-void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string& importDir)
+void Serializer::SerializeAutoImport(bool autoImport, const std::string& importDir)
 {
     YAML::Emitter out;
 
@@ -415,7 +495,7 @@ void Serializer::SerializeAutoImportSettings(bool autoImport, const std::string&
     }
 }
 
-ImportDirInfo Serializer::DeserializeAutoImportSettings() const
+ImportDirInfo Serializer::DeserializeAutoImport() const
 {
     wxString dir;
     bool auto_import = false;
@@ -452,7 +532,7 @@ void Serializer::SerializeFollowSymLink(bool followSymLinks)
 
         if (auto followSymLinks = config["Collection"])
         {
-            followSymLinks["FollowSymLinks"] = followSymLinks;
+            followSymLinks["FollowSymLink"] = followSymLinks;
 
             out << config;
 
@@ -480,7 +560,7 @@ bool Serializer::DeserializeFollowSymLink() const
 
         if (auto followSymLinks = config["Collection"])
         {
-            follow_sym_links = followSymLinks["FollowSymLinks"].as<bool>();
+            follow_sym_links = followSymLinks["FollowSymLink"].as<bool>();
         }
         else
         {
@@ -495,7 +575,60 @@ bool Serializer::DeserializeFollowSymLink() const
     return follow_sym_links;
 }
 
-void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
+void Serializer::SerializeRecursiveImport(bool recursiveImport)
+{
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto recursive = config["Collection"])
+        {
+            recursive["RecursiveImport"] = recursiveImport;
+
+            out << config;
+
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+            ofstrm << out.c_str();
+        }
+        else
+        {
+            SH_LOG_ERROR("Error! Cannot store recursive import value.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+}
+
+bool Serializer::DeserializeRecursiveImport() const
+{
+    bool recursive_import = false;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto recursive = config["Collection"])
+        {
+            recursive_import = recursive["RecursiveImport"].as<bool>();
+        }
+        else
+        {
+            SH_LOG_ERROR("Error! Cannot fetch recursive import value.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+
+    return recursive_import;
+}
+
+void Serializer::SerializeShowFileExtension(bool showExtension)
 {
     YAML::Emitter out;
 
@@ -523,7 +656,7 @@ void Serializer::SerializeShowFileExtensionSetting(bool showExtension)
     }
 }
 
-bool Serializer::DeserializeShowFileExtensionSetting() const
+bool Serializer::DeserializeShowFileExtension() const
 {
     bool show_extension = false;
 

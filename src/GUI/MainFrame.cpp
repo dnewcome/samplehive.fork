@@ -131,9 +131,6 @@ MainFrame::MainFrame()
     // Set the menu bar to use
     SetMenuBar(m_MenuBar);
 
-    // Load default yaml config file.
-    LoadConfigFile();
-
     // Initializing Sizers
     m_MainSizer = new wxBoxSizer(wxVERTICAL);
 
@@ -419,6 +416,7 @@ MainFrame::MainFrame()
     Bind(wxEVT_MENU, &MainFrame::OnSelectResetAppData, this, wxID_REFRESH);
     Bind(wxEVT_MENU, &MainFrame::OnSelectAbout, this, wxID_ABOUT);
 
+    this->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeFrame), NULL, this);
     m_StatusBar->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeStatusBar), NULL, this);
 
     Bind(wxEVT_DIRCTRL_FILEACTIVATED, &MainFrame::OnClickDirCtrl, this, BC_DirCtrl);
@@ -556,6 +554,9 @@ MainFrame::MainFrame()
     m_BottomRightPanelMainSizer->SetSizeHints(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->Layout();
 
+    // Load default yaml config file.
+    LoadConfigFile();
+
     // Restore the data previously added to Library
     LoadDatabase();
 
@@ -639,7 +640,7 @@ void MainFrame::AddSamples(wxArrayString& files)
         filename_without_extension = files[i].AfterLast('/').BeforeLast('.').ToStdString();
         extension = files[i].AfterLast('.').ToStdString();
 
-        filename = serializer.DeserializeShowFileExtensionSetting() ?
+        filename = serializer.DeserializeShowFileExtension() ?
             filename_with_extension : filename_without_extension;
         
         Sample sample;
@@ -790,7 +791,7 @@ void MainFrame::OnDragAndDropToHives(wxDropFilesEvent& event)
 
             files = file_data.GetFilenames();
 
-            wxString file_name = serializer.DeserializeShowFileExtensionSetting() ?
+            wxString file_name = serializer.DeserializeShowFileExtension() ?
                 files[i].BeforeLast('.') : files[i];
 
             SH_LOG_DEBUG("Dropping {} file(s) {} on {}", rows - i, files[i], m_Hives->GetItemText(drop_target));
@@ -945,7 +946,11 @@ void MainFrame::OnClickPlay(wxCommandEvent& event)
 
 void MainFrame::OnClickLoop(wxCommandEvent& event)
 {
+    Serializer serializer;
+
     bLoop = m_LoopButton->GetValue();
+
+    serializer.SerializeMediaOptions("loop", bLoop);
 }
 
 void MainFrame::OnClickStop(wxCommandEvent& event)
@@ -964,15 +969,21 @@ void MainFrame::OnClickStop(wxCommandEvent& event)
 
 void MainFrame::OnClickMute(wxCommandEvent& event)
 {
+    Serializer serializer;
+
     if (m_MuteButton->GetValue())
     {
         m_MediaCtrl->SetVolume(0.0);
         bMuted = true;
+
+        serializer.SerializeMediaOptions("muted", bMuted);
     }
     else
     {
-        m_MediaCtrl->SetVolume(1.0);
+        m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
         bMuted = false;
+
+        serializer.SerializeMediaOptions("muted", bMuted);
     }
 }
 
@@ -1032,25 +1043,35 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
 
 void MainFrame::OnCheckAutoplay(wxCommandEvent& event)
 {
+    Serializer serializer;
+
     if (m_AutoPlayCheck->GetValue())
     {
         bAutoplay = true;
+
+        serializer.SerializeMediaOptions("autoplay", bAutoplay);
     }
     else
     {
         bAutoplay = false;
+
+        serializer.SerializeMediaOptions("autoplay", bAutoplay);
     }
 }
 
 void MainFrame::OnSlideVolume(wxScrollEvent& event)
 {
-    m_MediaCtrl->SetVolume(float(m_VolumeSlider->GetValue()) / 100);
+    m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
 
     PushStatusText(wxString::Format(_("Volume: %d"), m_VolumeSlider->GetValue()), 1);
 }
 
 void MainFrame::OnReleaseVolumeSlider(wxScrollEvent& event)
 {
+    Serializer serializer;
+
+    serializer.SerializeMediaVolume(m_VolumeSlider->GetValue());
+
     int selected_row = m_Library->GetSelectedRow();
 
     if (selected_row < 0)
@@ -1298,7 +1319,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 {
                                     wxDataViewItem sample_item = m_Hives->GetNthChild(selected_hive, i);
 
-                                    wxString sample_name = serializer.DeserializeShowFileExtensionSetting() ?
+                                    wxString sample_name = serializer.DeserializeShowFileExtension() ?
                                         m_Hives->GetItemText(sample_item).BeforeLast('.') :
                                         m_Hives->GetItemText(sample_item);
 
@@ -1398,7 +1419,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                 for (int i = 0; i < m_Library->GetItemCount(); i++)
                                 {
                                     wxString matched_sample =
-                                        serializer.DeserializeShowFileExtensionSetting() ?
+                                        serializer.DeserializeShowFileExtension() ?
                                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                                         m_Library->GetTextValue(i, 1);
 
@@ -1407,7 +1428,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         child_item = m_Hives->GetNthChild(selected_hive, j);
 
                                         wxString child_name =
-                                            serializer.DeserializeShowFileExtensionSetting() ?
+                                            serializer.DeserializeShowFileExtension() ?
                                             m_Hives->GetItemText(child_item).BeforeLast('.') :
                                             m_Hives->GetItemText(child_item);
 
@@ -1457,7 +1478,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                     try
                     {
                         const auto dataset = m_Database->FilterDatabaseByHiveName(hive_name.ToStdString(),
-                                                                                  serializer.DeserializeShowFileExtensionSetting(),
+                                                                                  serializer.DeserializeShowFileExtension(),
                                                                                   ICON_STAR_FILLED_16px,
                                                                                   ICON_STAR_EMPTY_16px);
 
@@ -1489,7 +1510,7 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
                 {
                     try
                     {
-                        const auto dataset = m_Database->FilterDatabaseBySampleName("", serializer.DeserializeShowFileExtensionSetting(),
+                        const auto dataset = m_Database->FilterDatabaseBySampleName("", serializer.DeserializeShowFileExtension(),
                                                                                     ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
@@ -1528,11 +1549,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
             case MN_RemoveSample:
                 for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
-                    wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
+                    wxString matched_sample = serializer.DeserializeShowFileExtension() ?
                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                         m_Library->GetTextValue(i, 1);
 
-                    wxString selected_sample_name = serializer.DeserializeShowFileExtensionSetting() ?
+                    wxString selected_sample_name = serializer.DeserializeShowFileExtension() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_Hives->GetItemText(event.GetItem());
 
@@ -1560,11 +1581,11 @@ void MainFrame::OnShowHivesContextMenu(wxDataViewEvent& event)
             case MN_ShowInLibrary:
                 for(int i = 0; i < m_Library->GetItemCount(); i++)
                 {
-                    wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
+                    wxString matched_sample = serializer.DeserializeShowFileExtension() ?
                         m_Library->GetTextValue(i, 1).BeforeLast('.') :
                         m_Library->GetTextValue(i, 1);
 
-                    wxString selected_sample_name = serializer.DeserializeShowFileExtensionSetting() ?
+                    wxString selected_sample_name = serializer.DeserializeShowFileExtension() ?
                         m_Hives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_Hives->GetItemText(event.GetItem());
 
@@ -1669,7 +1690,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                 wxString name = m_Library->GetTextValue(selected_row, 1);
 
-                filename = serializer.DeserializeShowFileExtensionSetting() ?
+                filename = serializer.DeserializeShowFileExtension() ?
                     name.BeforeLast('.').ToStdString() : name.ToStdString();
 
                 db_status = m_Database->GetFavoriteColumnValueByFilename(filename);
@@ -1779,7 +1800,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_Hives->GetNthChild(container, k);
 
-                                wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
+                                wxString child_text = serializer.DeserializeShowFileExtension() ?
                                     m_Hives->GetItemText(child).BeforeLast('.') :
                                     m_Hives->GetItemText(child);
 
@@ -1815,7 +1836,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                             wxString text_value = m_Library->GetTextValue(row, 1);
 
-                            std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
+                            std::string multi_selection = serializer.DeserializeShowFileExtension() ?
                                 text_value.BeforeLast('.').ToStdString() : text_value.ToStdString() ;
 
                             m_Database->RemoveSampleFromDatabase(multi_selection);
@@ -1829,7 +1850,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                                 {
                                     child = m_Hives->GetNthChild(container, k);
 
-                                    wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
+                                    wxString child_text = serializer.DeserializeShowFileExtension() ?
                                         m_Hives->GetItemText(child).BeforeLast('.') :
                                         m_Hives->GetItemText(child);
 
@@ -1877,7 +1898,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     wxString text_value = m_Library->GetTextValue(item_row, 1);
 
-                    std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
+                    std::string multi_selection = serializer.DeserializeShowFileExtension() ?
                         m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
                         m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
@@ -1899,7 +1920,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             {
                                 child = m_Hives->GetNthChild(container, k);
 
-                                wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
+                                wxString child_text = serializer.DeserializeShowFileExtension() ?
                                     m_Hives->GetItemText(child).BeforeLast('.') :
                                     m_Hives->GetItemText(child);
 
@@ -2035,7 +2056,7 @@ void MainFrame::LoadDatabase()
     {
         const auto dataset = m_Database->LoadSamplesDatabase(*m_Hives, favorites_hive,
                                                              *m_Trash, trash_root,
-                                                             serializer.DeserializeShowFileExtensionSetting(),
+                                                             serializer.DeserializeShowFileExtension(),
                                                              ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
         if (dataset.empty())
@@ -2071,7 +2092,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
         {
             case MN_DeleteTrash:
             {
-                wxString trashed_item_name = serializer.DeserializeShowFileExtensionSetting() ?
+                wxString trashed_item_name = serializer.DeserializeShowFileExtension() ?
                     m_Trash->GetItemText(selected_trashed_item).BeforeLast('.') :
                     m_Trash->GetItemText(selected_trashed_item);
 
@@ -2111,7 +2132,7 @@ void MainFrame::OnShowTrashContextMenu(wxTreeEvent& event)
 
                         if (m_Database->RestoreFromTrashByFilename(files[i].ToStdString(),
                                                                    dataset,
-                                                                   serializer.DeserializeShowFileExtensionSetting(),
+                                                                   serializer.DeserializeShowFileExtension(),
                                                                    ICON_STAR_FILLED_16px,
                                                                    ICON_STAR_EMPTY_16px).empty())
                         {
@@ -2165,7 +2186,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             wxString text_value = m_Library->GetTextValue(item_row, 1);
 
-            std::string multi_selection = serializer.DeserializeShowFileExtensionSetting() ?
+            std::string multi_selection = serializer.DeserializeShowFileExtension() ?
                 m_Library->GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
                 m_Library->GetTextValue(item_row, 1).ToStdString() ;
 
@@ -2187,7 +2208,7 @@ void MainFrame::OnDragAndDropToTrash(wxDropFilesEvent& event)
                     {
                         child = m_Hives->GetNthChild(container, k);
 
-                        wxString child_text = serializer.DeserializeShowFileExtensionSetting() ?
+                        wxString child_text = serializer.DeserializeShowFileExtension() ?
                             m_Hives->GetItemText(child).BeforeLast('.') :
                             m_Hives->GetItemText(child);
 
@@ -2363,7 +2384,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
 
                     for (int i = 0; i < m_Library->GetItemCount(); i++)
                     {
-                        wxString matched_sample = serializer.DeserializeShowFileExtensionSetting() ?
+                        wxString matched_sample = serializer.DeserializeShowFileExtension() ?
                             m_Library->GetTextValue(i, 1).BeforeLast('.') :
                             m_Library->GetTextValue(i, 1);
 
@@ -2371,7 +2392,7 @@ void MainFrame::OnClickRemoveHive(wxCommandEvent& event)
                         {
                             child_item = m_Hives->GetNthChild(selected_item, j);
 
-                            wxString child_name = serializer.DeserializeShowFileExtensionSetting() ?
+                            wxString child_name = serializer.DeserializeShowFileExtension() ?
                                 m_Hives->GetItemText(child_item).BeforeLast('.') :
                                 m_Hives->GetItemText(child_item);
 
@@ -2456,7 +2477,7 @@ void MainFrame::OnClickRestoreTrashItem(wxCommandEvent& event)
             wxVector<wxVector<wxVariant>> dataset;
 
             if (m_Database->RestoreFromTrashByFilename(files[i].ToStdString(), dataset,
-                                                       serializer.DeserializeShowFileExtensionSetting(),
+                                                       serializer.DeserializeShowFileExtension(),
                                                        ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
             {
                 SH_LOG_INFO("Error! Database is empty.");
@@ -2487,7 +2508,7 @@ void MainFrame::OnDoSearch(wxCommandEvent& event)
     try
     {
         const auto dataset = m_Database->FilterDatabaseBySampleName(search,
-                                                                    serializer.DeserializeShowFileExtensionSetting(),
+                                                                    serializer.DeserializeShowFileExtension(),
                                                                     ICON_STAR_FILLED_16px,
                                                                     ICON_STAR_EMPTY_16px);
 
@@ -2558,12 +2579,25 @@ void MainFrame::LoadConfigFile()
 
     int height = 600, width = 800;
 
-    bAutoplay = serializer.DeserializeBrowserControls("autoplay");
-    bLoop = serializer.DeserializeBrowserControls("loop");
-    bMuted = serializer.DeserializeBrowserControls("muted");
+    bAutoplay = serializer.DeserializeMediaOptions("autoplay");
+    bLoop = serializer.DeserializeMediaOptions("loop");
+    bMuted = serializer.DeserializeMediaOptions("muted");
+
+    m_AutoPlayCheck->SetValue(bAutoplay);
+    m_LoopButton->SetValue(bLoop);
+    m_MuteButton->SetValue(bMuted);
+
+    m_VolumeSlider->SetValue(serializer.DeserializeMediaVolume());
+
+    if (!bMuted)
+        m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
+    else
+        m_MediaCtrl->SetVolume(0.0);
 
     width = serializer.DeserializeWinSize().first;
     height = serializer.DeserializeWinSize().second;
+
+    int min_width = 960, min_height = 540;
 
     bShowMenuBar = serializer.DeserializeShowMenuAndStatusBar("menubar");
     bShowStatusBar = serializer.DeserializeShowMenuAndStatusBar("statusbar");
@@ -2573,11 +2607,11 @@ void MainFrame::LoadConfigFile()
     m_ToggleStatusBar->Check(bShowStatusBar);
     m_StatusBar->Show(bShowStatusBar);
 
-    m_ToggleExtension->Check(serializer.DeserializeShowFileExtensionSetting());
+    m_ToggleExtension->Check(serializer.DeserializeShowFileExtension());
 
-    this->SetFont(serializer.DeserializeDisplaySettings());
+    this->SetFont(serializer.DeserializeFontSettings());
     this->SetSize(width, height);
-    this->SetMinSize(wxSize(width, height));
+    this->SetMinSize(wxSize(min_width, min_height));
     this->CenterOnScreen(wxBOTH);
     this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
     this->SetTitle(PROJECT_NAME);
@@ -2620,12 +2654,16 @@ void MainFrame::CreateWatcher()
     m_FsWatcher = new wxFileSystemWatcher();
     m_FsWatcher->SetOwner(this);
 
-    wxString path = serializer.DeserializeAutoImportSettings().second;
+    wxString path = serializer.DeserializeAutoImport().second;
 
-    if (serializer.DeserializeAutoImportSettings().first)
+    if (serializer.DeserializeAutoImport().first)
     {
         SH_LOG_INFO("Adding watch entry: {}", path);
-        AddWatchEntry(wxFSWPath_Tree, path.ToStdString());
+
+        if (serializer.DeserializeRecursiveImport())
+            AddWatchEntry(wxFSWPath_Tree, path.ToStdString());
+        else
+            AddWatchEntry(wxFSWPath_Dir, path.ToStdString());
     }
 }
 
@@ -2663,6 +2701,7 @@ void MainFrame::AddWatchEntry(wxFSWPathType type, std::string path)
     switch (type)
     {
         case wxFSWPath_Dir:
+            ok = m_FsWatcher->Add(filename);
             break;
         case wxFSWPath_Tree:
             ok = m_FsWatcher->AddTree(filename);
@@ -2735,7 +2774,7 @@ FileInfo MainFrame::GetFilenamePathAndExtension(const wxString& selected,
 
     if (checkExtension)
     {
-        extension = serializer.DeserializeShowFileExtensionSetting() ?
+        extension = serializer.DeserializeShowFileExtension() ?
             m_Database->GetSampleFileExtension(selected.ToStdString()) :
             m_Database->GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
     }
@@ -2803,13 +2842,13 @@ void MainFrame::OnSelectToggleExtension(wxCommandEvent& event)
 
     if (m_ToggleExtension->IsChecked())
     {
-        serializer.SerializeShowFileExtensionSetting(true);
+        serializer.SerializeShowFileExtension(true);
         m_InfoBar->ShowMessage(_("Extension showing, restart the application to view changes "
                                  "or press CTRL+E to toggle show/hide."), wxICON_INFORMATION);
     }
     else
     {
-        serializer.SerializeShowFileExtensionSetting(false);
+        serializer.SerializeShowFileExtension(false);
         m_InfoBar->ShowMessage(_("Extension hidden, restart the application to view changes "
                                  "or press CTRL+E to toggle show/hide."), wxICON_INFORMATION);
     }
@@ -2993,6 +3032,17 @@ void MainFrame::OnResizeStatusBar(wxSizeEvent& event)
 
     m_HiveBitmap->Move(rect.x + (rect.width - bitmap_size.x),
                        rect.y + (rect.height - bitmap_size.y));
+
+    event.Skip();
+}
+
+void MainFrame::OnResizeFrame(wxSizeEvent& event)
+{
+    Serializer serializer;
+
+    SH_LOG_DEBUG("Frame resized to {}, {}", GetSize().GetWidth(), GetSize().GetHeight());
+
+    serializer.SerializeWinSize(GetSize().GetWidth(), GetSize().GetHeight());
 
     event.Skip();
 }

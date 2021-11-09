@@ -56,6 +56,7 @@ enum ControlIDs
     SD_BrowseDatabaseDir,
     SD_AutoImport,
     SD_FollowSymLinks,
+    SD_RecursiveImport,
     SD_ShowFileExtension,
     SD_BrowseAutoImportDir,
     SD_FontType,

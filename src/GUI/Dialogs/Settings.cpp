@@ -72,7 +72,8 @@ Settings::Settings(wxWindow *window)
 
     m_CollectionMainSizer = new wxBoxSizer(wxVERTICAL);
     m_CollectionImportDirSizer = new wxBoxSizer(wxHORIZONTAL);
-    m_CollectionBottomSizer = new wxBoxSizer(wxVERTICAL);
+    m_CollectionImportOptionsSizer = new wxBoxSizer(wxHORIZONTAL);
+    m_CollectionShowExtensionSizer = new wxBoxSizer(wxVERTICAL);
 
     wxString defaultDir = wxGetHomeDir();
 
@@ -88,6 +89,10 @@ Settings::Settings(wxWindow *window)
                                            "Follow symbolic links", wxDefaultPosition, wxDefaultSize, 0);
     m_FollowSymLinksCheck->SetToolTip("Wheather to follow symbolic links");
     m_FollowSymLinksCheck->Disable();
+    m_RecursiveImportCheck = new wxCheckBox(m_CollectionSettingPanel, SD_RecursiveImport,
+                                           "Recursive search", wxDefaultPosition, wxDefaultSize, 0);
+    m_RecursiveImportCheck->SetToolTip("Recursively search for samples in the directory");
+    m_RecursiveImportCheck->Disable();
     m_ShowFileExtensionCheck = new wxCheckBox(m_CollectionSettingPanel, SD_ShowFileExtension,
                                               "Show file extension", wxDefaultPosition, wxDefaultSize, 0);
     m_ShowFileExtensionCheck->SetToolTip("Weather to show file extension");
@@ -124,6 +129,7 @@ Settings::Settings(wxWindow *window)
     // Bind events
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckAutoImport, this, SD_AutoImport);
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckFollowSymLinks, this, SD_FollowSymLinks);
+    Bind(wxEVT_CHECKBOX, &Settings::OnCheckRecursiveImport, this, SD_RecursiveImport);
     Bind(wxEVT_CHECKBOX, &Settings::OnCheckShowFileExtension, this, SD_ShowFileExtension);
     Bind(wxEVT_SPINCTRL, &Settings::OnChangeFontSize, this, SD_FontSize);
     Bind(wxEVT_BUTTON, &Settings::OnSelectFont, this, SD_FontBrowseButton);
@@ -157,11 +163,13 @@ Settings::Settings(wxWindow *window)
     m_CollectionImportDirSizer->Add(m_ImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_CollectionImportDirSizer->Add(m_BrowseAutoImportDirButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
 
-    m_CollectionBottomSizer->Add(m_FollowSymLinksCheck, 0, wxALL, 2);
-    m_CollectionBottomSizer->Add(m_ShowFileExtensionCheck, 0, wxALL, 2);
+    m_CollectionImportOptionsSizer->Add(m_FollowSymLinksCheck, 0, wxALL, 2);
+    m_CollectionImportOptionsSizer->Add(m_RecursiveImportCheck, 0, wxALL, 2);
+    m_CollectionShowExtensionSizer->Add(m_ShowFileExtensionCheck, 0, wxALL, 2);
 
     m_CollectionMainSizer->Add(m_CollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
-    m_CollectionMainSizer->Add(m_CollectionBottomSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionMainSizer->Add(m_CollectionImportOptionsSizer, 0, wxALL | wxEXPAND, 2);
+    m_CollectionMainSizer->Add(m_CollectionShowExtensionSizer, 0, wxALL | wxEXPAND, 2);
 
     m_ButtonSizer->Add(m_OkButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_ButtonSizer->Add(m_CancelButton, 0, wxALL | wxALIGN_BOTTOM, 2);
@@ -250,8 +258,9 @@ void Settings::OnCheckAutoImport(wxCommandEvent& event)
         m_ImportDirLocation->Disable();
         m_BrowseAutoImportDirButton->Disable();
         m_FollowSymLinksCheck->Disable();
+        m_RecursiveImportCheck->Disable();
 
-        serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
+        serializer.SerializeAutoImport(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
     }
     else
     {
@@ -259,8 +268,9 @@ void Settings::OnCheckAutoImport(wxCommandEvent& event)
         m_ImportDirLocation->Enable();
         m_BrowseAutoImportDirButton->Enable();
         m_FollowSymLinksCheck->Enable();
+        m_RecursiveImportCheck->Enable();
 
-        serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
+        serializer.SerializeAutoImport(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
     }
 }
 
@@ -271,11 +281,18 @@ void Settings::OnCheckFollowSymLinks(wxCommandEvent& event)
     serializer.SerializeFollowSymLink(m_FollowSymLinksCheck->GetValue());
 }
 
+void Settings::OnCheckRecursiveImport(wxCommandEvent& event)
+{
+    Serializer serializer;
+
+    serializer.SerializeRecursiveImport(m_RecursiveImportCheck->GetValue());
+}
+
 void Settings::OnCheckShowFileExtension(wxCommandEvent& event)
 {
     Serializer serializer;
 
-    serializer.SerializeShowFileExtensionSetting(m_ShowFileExtensionCheck->GetValue());
+    serializer.SerializeShowFileExtension(m_ShowFileExtensionCheck->GetValue());
 }
 
 void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
@@ -297,7 +314,7 @@ void Settings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
             wxString path = dir_dialog.GetPath();
             m_ImportDirLocation->SetValue(path);
 
-            serializer.SerializeAutoImportSettings(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
+            serializer.SerializeAutoImport(bAutoImport, m_ImportDirLocation->GetValue().ToStdString());
             break;
         }
         default:
@@ -348,7 +365,7 @@ void Settings::OnChangeFontSize(wxSpinEvent& event)
 
     m_Font.SetPointSize(font_size);
 
-    serializer.SerializeDisplaySettings(m_Font);
+    serializer.SerializeFontSettings(m_Font);
 
     m_Window->SetFont(m_Font);
     this->SetFont(m_Font);
@@ -365,8 +382,8 @@ void Settings::LoadDefaultConfig()
     wxString system_font = sys_font.GetFaceName();
     int system_font_size = sys_font.GetPointSize();
 
-    wxString font_face = serializer.DeserializeDisplaySettings().GetFaceName();
-    int font_size = serializer.DeserializeDisplaySettings().GetPointSize();
+    wxString font_face = serializer.DeserializeFontSettings().GetFaceName();
+    int font_size = serializer.DeserializeFontSettings().GetPointSize();
 
     if (system_font != font_face)
     {
@@ -392,18 +409,20 @@ void Settings::LoadDefaultConfig()
     m_FontSize->SetValue(font_size);
     SetCustomFont();
 
-    bAutoImport = serializer.DeserializeAutoImportSettings().first;
-    wxString location = serializer.DeserializeAutoImportSettings().second;
+    bAutoImport = serializer.DeserializeAutoImport().first;
 
     m_AutoImportCheck->SetValue(bAutoImport);
-    m_ImportDirLocation->SetValue(location);
-    m_ShowFileExtensionCheck->SetValue(serializer.DeserializeShowFileExtensionSetting());
+    m_ImportDirLocation->SetValue(serializer.DeserializeAutoImport().second);
+    m_ShowFileExtensionCheck->SetValue(serializer.DeserializeShowFileExtension());
+    m_FollowSymLinksCheck->SetValue(serializer.DeserializeFollowSymLink());
+    m_RecursiveImportCheck->SetValue(serializer.DeserializeRecursiveImport());
 
     if (bAutoImport)
     {
         m_ImportDirLocation->Enable();
         m_BrowseAutoImportDirButton->Enable();
         m_FollowSymLinksCheck->Enable();
+        m_RecursiveImportCheck->Enable();
     }
 }
 
@@ -412,7 +431,7 @@ void Settings::SetShowExtension(bool value)
     Serializer serializer;
 
     m_ShowFileExtensionCheck->SetValue(value);
-    serializer.SerializeShowFileExtensionSetting(value);
+    serializer.SerializeShowFileExtension(value);
 }
 
 void Settings::PrintFont()
@@ -432,22 +451,22 @@ void Settings::SetCustomFont()
     std::string system_font = sys_font.GetFaceName().ToStdString();
     int system_font_size = sys_font.GetPointSize();
 
-    wxString font_face = serializer.DeserializeDisplaySettings().GetFaceName();
-    int font_size = serializer.DeserializeDisplaySettings().GetPointSize();
+    wxString font_face = serializer.DeserializeFontSettings().GetFaceName();
+    int font_size = serializer.DeserializeFontSettings().GetPointSize();
 
     if (m_FontType->GetStringSelection() == "System default")
     {
         m_Window->SetFont(sys_font);
         this->SetFont(sys_font);
 
-        serializer.SerializeDisplaySettings(sys_font);
+        serializer.SerializeFontSettings(sys_font);
     }
     else
     {
         m_Window->SetFont(m_Font);
         this->SetFont(m_Font);
 
-        serializer.SerializeDisplaySettings(m_Font);
+        serializer.SerializeFontSettings(m_Font);
     }
 }
 

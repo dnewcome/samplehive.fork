@@ -89,9 +89,11 @@ class Settings : public wxDialog
         // Collection page
         wxBoxSizer* m_CollectionMainSizer;
         wxBoxSizer* m_CollectionImportDirSizer;
-        wxBoxSizer* m_CollectionBottomSizer;
+        wxBoxSizer* m_CollectionImportOptionsSizer;
+        wxBoxSizer* m_CollectionShowExtensionSizer;
         wxCheckBox* m_AutoImportCheck;
         wxCheckBox* m_FollowSymLinksCheck;
+        wxCheckBox* m_RecursiveImportCheck;
         wxCheckBox* m_ShowFileExtensionCheck;
         wxTextCtrl* m_ImportDirLocation;
         wxButton* m_BrowseAutoImportDirButton;
@@ -128,6 +130,7 @@ class Settings : public wxDialog
         void OnClickDatabaseBrowse(wxCommandEvent& event);
         void OnCheckAutoImport(wxCommandEvent& event);
         void OnCheckFollowSymLinks(wxCommandEvent& event);
+        void OnCheckRecursiveImport(wxCommandEvent& event);
         void OnCheckShowFileExtension(wxCommandEvent& event);
         void OnClickBrowseAutoImportDir(wxCommandEvent& event);
         void OnChangeFontSize(wxSpinEvent& event);
