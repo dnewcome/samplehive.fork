@@ -20,6 +20,7 @@
 
 #include "Database/Database.hpp"
 #include "Utility/Log.hpp"
+#include "Utility/Paths.hpp"
 
 #include <deque>
 #include <exception>
@@ -77,9 +78,9 @@ class Sqlite3Statement
         sqlite3_stmt* stmt = nullptr;
 };
 
-Database::Database(const std::string &dbPath)
+Database::Database()
 {
-    OpenDatabase(dbPath);
+    OpenDatabase();
 }
 
 Database::~Database()
@@ -1072,9 +1073,9 @@ Database::RestoreFromTrashByFilename(const std::string &filename,
     return vecSet;
 }
 
-void Database::OpenDatabase(const std::string &dbPath)
+void Database::OpenDatabase()
 {
-    throw_on_sqlite3_error(sqlite3_open(dbPath.c_str(), &m_Database));
+    throw_on_sqlite3_error(sqlite3_open(static_cast<std::string>(DATABASE_FILEPATH).c_str(), &m_Database));
 }
 
 void Database::CloseDatabase()

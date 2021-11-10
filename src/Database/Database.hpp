@@ -37,7 +37,7 @@
 class Database
 {
     public:
-        Database(const std::string& dbPath);
+        Database();
         ~Database();
 
     private:
@@ -48,7 +48,7 @@ class Database
 
     private:
         // -------------------------------------------------------------------
-        void OpenDatabase(const std::string& dbPath);
+        void OpenDatabase();
         void CloseDatabase();
 
     public:

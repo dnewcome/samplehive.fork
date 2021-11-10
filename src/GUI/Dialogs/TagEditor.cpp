@@ -228,7 +228,7 @@ void TagEditor::OnClickCustomTagButton(wxCommandEvent& event)
 
 void TagEditor::OnClickApply(wxCommandEvent& event)
 {
-    Database db(static_cast<std::string>(DATABASE_FILEPATH));
+    Database db;
 
     wxString title = m_TitleText->GetValue();
     wxString artist = m_ArtistText->GetValue();

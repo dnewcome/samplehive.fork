@@ -398,11 +398,6 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
-    // Initialize the database
-    m_Database = std::make_unique<Database>(static_cast<std::string>(DATABASE_FILEPATH));
-    m_Database->CreateTableSamples();
-    m_Database->CreateTableHives();
-
     m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database);
 
     // Binding events.
@@ -556,6 +551,18 @@ MainFrame::MainFrame()
 
     // Load default yaml config file.
     LoadConfigFile();
+
+    // Initialize the database
+    try
+    {
+        m_Database = std::make_unique<Database>();
+        m_Database->CreateTableSamples();
+        m_Database->CreateTableHives();
+    }
+    catch (std::exception& e)
+    {
+        SH_LOG_ERROR("Error! Cannot initialize database {}", e.what());
+    }
 
     // Restore the data previously added to Library
     LoadDatabase();
@@ -712,7 +719,7 @@ void MainFrame::OnClickDirCtrl(wxCommandEvent& event)
 void MainFrame::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 {
     SH_LOG_DEBUG("Start Inserting Samples");
-    
+
     if (event.GetNumberOfFiles() > 0)
     {
         wxString* dropped = event.GetFiles();
@@ -1631,13 +1638,13 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
     std::string extension = GetFilenamePathAndExtension(selection).Extension;
 
     wxMenu menu;
-    
+
     //true = add false = remove
     bool favorite_add = false;
 
     if (m_Database->GetFavoriteColumnValueByFilename(filename) == 1)
         menu.Append(MN_FavoriteSample, _("Remove from hive"), _("Remove the selected sample(s) from hive"));
-    else 
+    else
     {
         menu.Append(MN_FavoriteSample, _("Add to hive"), _("Add selected sample(s) to hive"));
         favorite_add = true;
@@ -1645,7 +1652,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
     menu.Append(MN_DeleteSample, _("Delete"), _("Delete the selected sample(s) from database"));
     menu.Append(MN_TrashSample, _("Trash"), _("Send the selected sample(s) to trash"));
-    
+
     if (m_Library->GetSelectedItemsCount() <= 1)
     {
         menu.Append(MN_EditTagSample, _("Edit tags"),
@@ -1710,7 +1717,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     m_Database->UpdateFavoriteColumn(filename, 1);
                     m_Database->UpdateHiveName(filename, hive_name);
-        
+
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
                     {
                         container = m_Hives->GetNthChild(root, i);
@@ -1724,7 +1731,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                         }
                     }
                 }
-                else 
+                else
                 {
                     //Remove From Favorites
                     m_Library->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
@@ -1732,7 +1739,7 @@ void MainFrame::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     m_Database->UpdateFavoriteColumn(filename, 0);
                     m_Database->UpdateHiveName(filename,
                                                m_Hives->GetItemText(favorites_hive).ToStdString());
-                    
+
                     for (int i = 0; i < m_Hives->GetChildCount(root); i++)
                     {
                         container = m_Hives->GetNthChild(root, i);
