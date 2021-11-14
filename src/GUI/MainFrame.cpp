@@ -398,6 +398,21 @@ MainFrame::MainFrame()
     // Intializing wxTimer
     m_Timer = new wxTimer(this);
 
+    // Load default yaml config file.
+    LoadConfigFile();
+
+    // Initialize the database
+    try
+    {
+        m_Database = std::make_unique<Database>();
+        m_Database->CreateTableSamples();
+        m_Database->CreateTableHives();
+    }
+    catch (std::exception& e)
+    {
+        SH_LOG_ERROR("Error! Cannot initialize database {}", e.what());
+    }
+
     m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database);
 
     // Binding events.
@@ -548,21 +563,6 @@ MainFrame::MainFrame()
     m_BottomRightPanelMainSizer->Fit(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->SetSizeHints(m_BottomRightPanel);
     m_BottomRightPanelMainSizer->Layout();
-
-    // Load default yaml config file.
-    LoadConfigFile();
-
-    // Initialize the database
-    try
-    {
-        m_Database = std::make_unique<Database>();
-        m_Database->CreateTableSamples();
-        m_Database->CreateTableHives();
-    }
-    catch (std::exception& e)
-    {
-        SH_LOG_ERROR("Error! Cannot initialize database {}", e.what());
-    }
 
     // Restore the data previously added to Library
     LoadDatabase();
