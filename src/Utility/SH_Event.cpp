@@ -101,4 +101,17 @@ namespace SampleHive
     }
 
     wxDEFINE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
+
+    SH_CallFunctionEvent::SH_CallFunctionEvent(wxEventType eventType, int winId)
+        : wxCommandEvent(eventType, winId)
+    {
+
+    }
+
+    SH_CallFunctionEvent::~SH_CallFunctionEvent()
+    {
+
+    }
+
+    wxDEFINE_EVENT(SH_EVT_CALL_FUNC_PLAY, SH_CallFunctionEvent);
 }

@@ -19,7 +19,7 @@
  */
 
 #include "GUI/Dialogs/Settings.hpp"
-#include "Utility/ControlID_Enums.hpp"
+#include "Utility/ControlIDs.hpp"
 #include "Utility/Serialize.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"

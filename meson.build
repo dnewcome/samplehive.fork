@@ -144,6 +144,7 @@ src = [
   'src/App.cpp',
 
   'src/GUI/MainFrame.cpp',
+  'src/GUI/TransportControls.cpp',
   'src/GUI/WaveformViewer.cpp',
 
   'src/GUI/Dialogs/Settings.cpp',

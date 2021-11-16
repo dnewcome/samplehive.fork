@@ -18,7 +18,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Utility/ControlID_Enums.hpp"
+#include "Utility/ControlIDs.hpp"
 #include "Utility/SH_Event.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"

@@ -22,7 +22,7 @@
 #include "GUI/Dialogs/Settings.hpp"
 #include "GUI/Dialogs/TagEditor.hpp"
 #include "Database/Database.hpp"
-#include "Utility/ControlID_Enums.hpp"
+#include "Utility/ControlIDs.hpp"
 #include "Utility/Paths.hpp"
 #include "Utility/Tags.hpp"
 #include "Utility/Sample.hpp"
@@ -140,7 +140,6 @@ MainFrame::MainFrame()
     m_TopPanelMainSizer = new wxBoxSizer(wxVERTICAL);
     m_BottomRightPanelMainSizer = new wxBoxSizer(wxVERTICAL);
 
-    m_BrowserControlSizer = new wxBoxSizer(wxHORIZONTAL);
     m_WaveformDisplaySizer = new wxBoxSizer(wxHORIZONTAL);
 
     m_HivesMainSizer = new wxBoxSizer(wxVERTICAL);
@@ -229,78 +228,6 @@ MainFrame::MainFrame()
     // Set split direction
     m_TopSplitter->SplitHorizontally(m_TopPanel, m_BottomSplitter);
     m_BottomSplitter->SplitVertically(m_BottomLeftPanel, m_BottomRightPanel);
-
-    m_TopControlsPanel = new wxPanel(m_TopPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                     wxTAB_TRAVERSAL | wxNO_BORDER);
-
-    // Looping region controls
-    if (m_Theme.IsDark())
-        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton,
-                                                  static_cast<wxString>(ICON_AB_LIGHT_16px),
-                                                  wxDefaultPosition, wxDefaultSize, 0);
-    else
-        m_LoopABButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_LoopABButton,
-                                                  static_cast<wxString>(ICON_AB_DARK_16px),
-                                                  wxDefaultPosition, wxDefaultSize, 0);
-
-    m_LoopABButton->SetToolTip(_("Loop selected region"));
-
-    // Initializing browser controls on top panel.
-    m_AutoPlayCheck = new wxCheckBox(m_TopControlsPanel, BC_Autoplay, _("Autoplay"),
-                                     wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
-    m_AutoPlayCheck->SetToolTip(_("Autoplay"));
-    m_VolumeSlider = new wxSlider(m_TopControlsPanel, BC_Volume, 100, 0, 100,
-                                  wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
-    m_VolumeSlider->SetToolTip(_("Volume"));
-    m_VolumeSlider->SetMinSize(wxSize(120, -1));
-    m_VolumeSlider->SetMaxSize(wxSize(120, -1));
-    m_SamplePosition = new wxStaticText(m_TopControlsPanel, BC_SamplePosition, "--:--/--:--",
-                                        wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
-
-    // Initialize browser control buttons
-    if (m_Theme.IsDark())
-    {
-        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
-                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
-                                                                     (ICON_PLAY_LIGHT_16px)),
-                                          wxDefaultPosition, wxDefaultSize, 0);
-        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
-                                                static_cast<wxString>(ICON_LOOP_LIGHT_16px),
-                                                wxDefaultPosition, wxDefaultSize, 0);
-        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
-                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
-                                                                     (ICON_STOP_LIGHT_16px)),
-                                          wxDefaultPosition, wxDefaultSize, 0);
-        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
-                                                static_cast<wxString>(ICON_MUTE_LIGHT_16px),
-                                                wxDefaultPosition, wxDefaultSize, 0);
-    }
-    else
-    {
-        m_PlayButton = new wxBitmapButton(m_TopControlsPanel, BC_Play,
-                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
-                                                                     (ICON_PLAY_DARK_16px)),
-                                          wxDefaultPosition, wxDefaultSize, 0);
-        m_LoopButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Loop,
-                                                static_cast<wxString>(ICON_LOOP_DARK_16px),
-                                                wxDefaultPosition, wxDefaultSize, 0);
-        m_StopButton = new wxBitmapButton(m_TopControlsPanel, BC_Stop,
-                                          wxBitmapBundle::FromBitmap(static_cast<wxString>
-                                                                     (ICON_STOP_DARK_16px)),
-                                          wxDefaultPosition, wxDefaultSize, 0);
-        m_MuteButton = new wxBitmapToggleButton(m_TopControlsPanel, BC_Mute,
-                                                static_cast<wxString>(ICON_MUTE_DARK_16px),
-                                                wxDefaultPosition, wxDefaultSize, 0);
-    }
-
-    m_PlayButton->SetToolTip(_("Play"));
-    m_LoopButton->SetToolTip(_("Loop"));
-    m_StopButton->SetToolTip(_("Stop"));
-    m_MuteButton->SetToolTip(_("Mute"));
-
-    m_SettingsButton = new wxButton(m_TopControlsPanel, BC_Settings, _("Settings"),
-                                    wxDefaultPosition, wxDefaultSize, 0);
-    m_SettingsButton->SetToolTip(_("Settings"));
 
     // Initializing wxSearchCtrl on bottom panel.
     m_SearchBox = new wxSearchCtrl(m_BottomRightPanel, BC_Search, _("Search for samples.."),
@@ -413,7 +340,8 @@ MainFrame::MainFrame()
         SH_LOG_ERROR("Error! Cannot initialize database {}", e.what());
     }
 
-    m_TopWaveformPanel = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database);
+    m_TransportControls = new TransportControls(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Timer);
+    m_WaveformViewer = new WaveformViewer(m_TopPanel, *m_Library, *m_MediaCtrl, *m_Database);
 
     // Binding events.
     Bind(wxEVT_MENU, &MainFrame::OnSelectAddFile, this, MN_AddFile);
@@ -437,15 +365,10 @@ MainFrame::MainFrame()
     Bind(wxEVT_DIRCTRL_FILEACTIVATED, &MainFrame::OnClickDirCtrl, this, BC_DirCtrl);
     Bind(wxEVT_TREE_BEGIN_DRAG, &MainFrame::OnDragFromDirCtrl, this, m_DirCtrl->GetTreeCtrl()->GetId());
 
-    Bind(wxEVT_BUTTON, &MainFrame::OnClickPlay, this, BC_Play);
-    Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickLoop, this, BC_Loop);
-    Bind(wxEVT_BUTTON, &MainFrame::OnClickStop, this, BC_Stop);
-    Bind(wxEVT_TOGGLEBUTTON, &MainFrame::OnClickMute, this, BC_Mute);
+    Bind(SampleHive::SH_EVT_CALL_FUNC_PLAY, &MainFrame::OnRecieveCallFunctionPlay, this);
+
     Bind(wxEVT_MEDIA_FINISHED, &MainFrame::OnMediaFinished, this, BC_MediaCtrl);
     Bind(wxEVT_BUTTON, &MainFrame::OnClickSettings, this, BC_Settings);
-    Bind(wxEVT_CHECKBOX, &MainFrame::OnCheckAutoplay, this, BC_Autoplay);
-    Bind(wxEVT_SCROLL_THUMBTRACK, &MainFrame::OnSlideVolume, this, BC_Volume);
-    Bind(wxEVT_SCROLL_THUMBRELEASE, &MainFrame::OnReleaseVolumeSlider, this, BC_Volume);
 
     Bind(wxEVT_TIMER, &MainFrame::UpdateElapsedTime, this);
 
@@ -483,20 +406,8 @@ MainFrame::MainFrame()
 
     m_TopSizer->Add(m_TopSplitter, 1, wxALL | wxEXPAND, 0);
 
-    m_BrowserControlSizer->Add(m_PlayButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_StopButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_LoopABButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_SettingsButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(0,0,1, wxALL | wxEXPAND, 0);
-    m_BrowserControlSizer->Add(m_SamplePosition, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(30,0,0, wxALL | wxEXPAND, 0);
-    m_BrowserControlSizer->Add(m_MuteButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_VolumeSlider, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_BrowserControlSizer->Add(m_AutoPlayCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-
-    m_TopPanelMainSizer->Add(m_TopWaveformPanel, 1, wxALL | wxEXPAND, 2);
-    m_TopPanelMainSizer->Add(m_TopControlsPanel, 0, wxALL | wxEXPAND, 2);
+    m_TopPanelMainSizer->Add(m_WaveformViewer, 1, wxALL | wxEXPAND, 2);
+    m_TopPanelMainSizer->Add(m_TransportControls, 0, wxALL | wxEXPAND, 2);
 
     m_BottomLeftPanelMainSizer->Add(m_Notebook, 1, wxALL | wxEXPAND, 0);
 
@@ -529,14 +440,9 @@ MainFrame::MainFrame()
     m_TopSizer->SetSizeHints(m_MainPanel);
     m_TopSizer->Layout();
 
-    m_TopControlsPanel->SetSizer(m_BrowserControlSizer);
-    m_BrowserControlSizer->Fit(m_TopControlsPanel);
-    m_BrowserControlSizer->SetSizeHints(m_TopControlsPanel);
-    m_BrowserControlSizer->Layout();
-
-    m_TopWaveformPanel->SetSizer(m_WaveformDisplaySizer);
-    m_WaveformDisplaySizer->Fit(m_TopWaveformPanel);
-    m_WaveformDisplaySizer->SetSizeHints(m_TopWaveformPanel);
+    m_WaveformViewer->SetSizer(m_WaveformDisplaySizer);
+    m_WaveformDisplaySizer->Fit(m_WaveformViewer);
+    m_WaveformDisplaySizer->SetSizeHints(m_WaveformViewer);
     m_WaveformDisplaySizer->Layout();
 
     // Sizer for TopPanel
@@ -590,7 +496,7 @@ void MainFrame::OnClickSettings(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_TopWaveformPanel->ResetDC();
+                m_WaveformViewer->ResetDC();
             }
             break;
         case wxID_CANCEL:
@@ -937,71 +843,9 @@ void MainFrame::OnDragFromLibrary(wxDataViewEvent& event)
     SH_LOG_DEBUG("Started dragging '{}'.", sample_path);
 }
 
-void MainFrame::OnClickPlay(wxCommandEvent& event)
-{
-    bStopped = false;
-
-    int selected_row = m_Library->GetSelectedRow();
-
-    if (selected_row < 0)
-        return;
-
-    wxString selection = m_Library->GetTextValue(selected_row, 1);
-
-    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
-
-    if (bLoopPointsSet && m_LoopABButton->GetValue())
-        PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
-    else
-        PlaySample(sample_path.ToStdString(), selection.ToStdString());
-}
-
-void MainFrame::OnClickLoop(wxCommandEvent& event)
-{
-    Serializer serializer;
-
-    bLoop = m_LoopButton->GetValue();
-
-    serializer.SerializeMediaOptions("loop", bLoop);
-}
-
-void MainFrame::OnClickStop(wxCommandEvent& event)
-{
-    m_MediaCtrl->Stop();
-
-    bStopped = true;
-
-    if (m_Timer->IsRunning())
-        m_Timer->Stop();
-
-    m_SamplePosition->SetLabel("--:--/--:--");
-
-    this->SetStatusText(_("Stopped"), 1);
-}
-
-void MainFrame::OnClickMute(wxCommandEvent& event)
-{
-    Serializer serializer;
-
-    if (m_MuteButton->GetValue())
-    {
-        m_MediaCtrl->SetVolume(0.0);
-        bMuted = true;
-
-        serializer.SerializeMediaOptions("muted", bMuted);
-    }
-    else
-    {
-        m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
-        bMuted = false;
-
-        serializer.SerializeMediaOptions("muted", bMuted);
-    }
-}
-
 void MainFrame::OnMediaFinished(wxMediaEvent& event)
 {
-    if (bLoop)
+    if (m_TransportControls->CanLoop())
     {
         if (!m_MediaCtrl->Play())
         {
@@ -1019,7 +863,7 @@ void MainFrame::OnMediaFinished(wxMediaEvent& event)
             SH_LOG_DEBUG("TIMER STOPPED");
         }
 
-        m_SamplePosition->SetLabel("--:--/--:--");
+        m_TransportControls->SetSamplePositionText("--:--/--:--");
         PopStatusText(1);
         this->SetStatusText(_("Stopped"), 1);
     }
@@ -1043,62 +887,15 @@ void MainFrame::UpdateElapsedTime(wxTimerEvent& event)
     duration.Printf(wxT("%2i:%02i"), total_min, total_sec);
     position.Printf(wxT("%2i:%02i"), current_min, current_sec);
 
-    m_SamplePosition->SetLabel(wxString::Format(wxT("%s/%s"), position.c_str(), duration.c_str()));
+    m_TransportControls->SetSamplePositionText(wxString::Format(wxT("%s/%s"),
+                                                                     position.c_str(), duration.c_str()));
 
-    m_TopControlsPanel->Refresh();
-    m_TopWaveformPanel->Refresh();
+    m_TransportControls->Refresh();
+    m_WaveformViewer->Refresh();
 
-    if (bLoopPointsSet && m_LoopABButton->GetValue())
+    if (bLoopPointsSet && m_TransportControls->IsLoopABOn())
         if (static_cast<double>(m_MediaCtrl->Tell()) >= m_LoopB.ToDouble())
             m_MediaCtrl->Seek(m_LoopA.ToDouble(), wxFromStart);
-}
-
-void MainFrame::OnCheckAutoplay(wxCommandEvent& event)
-{
-    Serializer serializer;
-
-    if (m_AutoPlayCheck->GetValue())
-    {
-        bAutoplay = true;
-
-        serializer.SerializeMediaOptions("autoplay", bAutoplay);
-    }
-    else
-    {
-        bAutoplay = false;
-
-        serializer.SerializeMediaOptions("autoplay", bAutoplay);
-    }
-}
-
-void MainFrame::OnSlideVolume(wxScrollEvent& event)
-{
-    m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
-
-    PushStatusText(wxString::Format(_("Volume: %d"), m_VolumeSlider->GetValue()), 1);
-}
-
-void MainFrame::OnReleaseVolumeSlider(wxScrollEvent& event)
-{
-    Serializer serializer;
-
-    serializer.SerializeMediaVolume(m_VolumeSlider->GetValue());
-
-    int selected_row = m_Library->GetSelectedRow();
-
-    if (selected_row < 0)
-        return;
-
-    wxString selection = m_Library->GetTextValue(selected_row, 1);
-
-    // Wait a second then remove the status from statusbar
-    wxSleep(1);
-    PopStatusText(1);
-
-    if (m_MediaCtrl->GetState() == wxMEDIASTATE_STOPPED)
-        this->SetStatusText(_("Stopped"), 1);
-    else
-        PushStatusText(wxString::Format(_("Now playing: %s"), selection), 1);
 }
 
 void MainFrame::OnClickLibrary(wxDataViewEvent& event)
@@ -1116,9 +913,9 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     }
 
     // Update the waveform bitmap
-    m_TopWaveformPanel->ResetDC();
+    m_WaveformViewer->ResetDC();
 
-    m_LoopABButton->SetValue(false);
+    m_TransportControls->SetLoopABValue(false);
 
     if (m_Timer->IsRunning())
     {
@@ -1145,9 +942,9 @@ void MainFrame::OnClickLibrary(wxDataViewEvent& event)
     {
         ClearLoopPoints();
 
-        if (bAutoplay)
+        if (m_TransportControls->CanAutoplay())
         {
-            if (bLoopPointsSet && m_LoopABButton->GetValue())
+            if (bLoopPointsSet && m_TransportControls->IsLoopABOn())
                 PlaySample(sample_path.ToStdString(), selection.ToStdString(),
                            true, m_LoopA.ToDouble(), wxFromStart);
             else
@@ -2591,21 +2388,6 @@ void MainFrame::LoadConfigFile()
 
     int height = 600, width = 800;
 
-    bAutoplay = serializer.DeserializeMediaOptions("autoplay");
-    bLoop = serializer.DeserializeMediaOptions("loop");
-    bMuted = serializer.DeserializeMediaOptions("muted");
-
-    m_AutoPlayCheck->SetValue(bAutoplay);
-    m_LoopButton->SetValue(bLoop);
-    m_MuteButton->SetValue(bMuted);
-
-    m_VolumeSlider->SetValue(serializer.DeserializeMediaVolume());
-
-    if (!bMuted)
-        m_MediaCtrl->SetVolume(double(m_VolumeSlider->GetValue()) / 100);
-    else
-        m_MediaCtrl->SetVolume(0.0);
-
     width = serializer.DeserializeWinSize().first;
     height = serializer.DeserializeWinSize().second;
 
@@ -2933,7 +2715,7 @@ void MainFrame::OnSelectPreferences(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_TopWaveformPanel->ResetDC();
+                m_WaveformViewer->ResetDC();
             }
             break;
         case wxID_CANCEL:
@@ -3100,7 +2882,7 @@ void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
     SH_LOG_INFO(wxString::Format(_("Loop points set: A: %2i:%02i, B: %2i:%02i"),
                                 loopA_min, loopA_sec, loopB_min, loopB_sec));
 
-    m_LoopABButton->SetValue(true);
+    m_TransportControls->SetLoopABValue(true);
 
     bLoopPointsSet = true;
 }
@@ -3139,6 +2921,18 @@ void MainFrame::OnRecieveTimerStopStatus(SampleHive::SH_TimerEvent& event)
 {
     if (m_Timer->IsRunning())
         m_Timer->Stop();
+}
+
+void MainFrame::OnRecieveCallFunctionPlay(SampleHive::SH_CallFunctionEvent& event)
+{
+    wxString selection = event.GetSlection();
+
+    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
+
+    if (bLoopPointsSet && m_TransportControls->IsLoopABOn())
+        PlaySample(sample_path.ToStdString(), selection.ToStdString(), true, m_LoopA.ToDouble(), wxFromStart);
+    else
+        PlaySample(sample_path.ToStdString(), selection.ToStdString());
 }
 
 void MainFrame::ClearLoopPoints()

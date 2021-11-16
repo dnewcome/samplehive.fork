@@ -21,6 +21,7 @@
 #pragma once
 
 #include "Database/Database.hpp"
+#include "GUI/TransportControls.hpp"
 #include "GUI/WaveformViewer.hpp"
 #include "SampleHiveConfig.hpp"
 #include "Utility/Serialize.hpp"
@@ -119,21 +120,11 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel controls
         wxPanel* m_TopPanel;
-        WaveformViewer* m_TopWaveformPanel;
-        wxPanel* m_TopControlsPanel;
+        TransportControls* m_TransportControls;
+        WaveformViewer* m_WaveformViewer;
         wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
         wxBoxSizer* m_WaveformDisplaySizer;
-        wxBoxSizer* m_BrowserControlSizer;
-        wxBitmapButton* m_PlayButton;
-        wxBitmapToggleButton* m_LoopButton;
-        wxBitmapButton* m_StopButton;
-        wxButton* m_SettingsButton;
-        wxBitmapToggleButton* m_MuteButton;
-        wxBitmapToggleButton* m_LoopABButton;
-        wxStaticText* m_SamplePosition;
-        wxSlider* m_VolumeSlider;
-        wxCheckBox* m_AutoPlayCheck;
 
         // -------------------------------------------------------------------
         // Left panel controls
@@ -188,10 +179,6 @@ class MainFrame : public wxFrame
 
     private:
         // -------------------------------------------------------------------
-        bool bAutoplay = false;
-        bool bLoop = false;
-        bool bMuted = false;
-        bool bStopped = false;
         bool bFiltered = false;
         bool bShowMenuBar = false;
         bool bShowStatusBar = false;
@@ -200,14 +187,7 @@ class MainFrame : public wxFrame
     private:
         // -------------------------------------------------------------------
         // Top panel control handlers
-        void OnClickPlay(wxCommandEvent& event);
-        void OnClickLoop(wxCommandEvent& event);
-        void OnClickStop(wxCommandEvent& event);
-        void OnClickMute(wxCommandEvent& event);
         void OnMediaFinished(wxMediaEvent& event);
-        void OnCheckAutoplay(wxCommandEvent& event);
-        void OnSlideVolume(wxScrollEvent& event);
-        void OnReleaseVolumeSlider(wxScrollEvent& event);
         void OnClickSettings(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
@@ -286,6 +266,7 @@ class MainFrame : public wxFrame
         void OnRecieveSetStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
         void OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event);
         void OnRecieveTimerStopStatus(SampleHive::SH_TimerEvent& event);
+        void OnRecieveCallFunctionPlay(SampleHive::SH_CallFunctionEvent& event);
 
         // -------------------------------------------------------------------
         void LoadDatabase();

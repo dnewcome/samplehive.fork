@@ -146,4 +146,23 @@ namespace SampleHive
     };
 
     wxDECLARE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
+
+    class SH_CallFunctionEvent : public wxCommandEvent
+    {
+        public:
+            SH_CallFunctionEvent(wxEventType eventType, int winId);
+            ~SH_CallFunctionEvent();
+
+        public:
+            virtual wxEvent* Clone() const { return new SH_CallFunctionEvent(*this); }
+
+        public:
+            wxString GetSlection() { return m_Selection; }
+            void SetSelection(const wxString& selection) { m_Selection = selection; }
+
+        private:
+            wxString m_Selection;
+    };
+
+    wxDECLARE_EVENT(SH_EVT_CALL_FUNC_PLAY, SH_CallFunctionEvent);
 }
