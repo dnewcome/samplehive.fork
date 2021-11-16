@@ -262,6 +262,10 @@ class MainFrame : public wxFrame
         // Frame resize event handler
         void OnResizeFrame(wxSizeEvent& event);
 
+        // Splitter window sash pos event handler
+        void OnTopSplitterSashPosChanged(wxSplitterEvent& event);
+        void OnBottomSplitterSashPosChanged(wxSplitterEvent& event);
+
         // -------------------------------------------------------------------
         // Timer update event handler
         void UpdateElapsedTime(wxTimerEvent& event);

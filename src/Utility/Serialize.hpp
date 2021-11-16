@@ -64,6 +64,11 @@ class Serializer
         bool DeserializeShowMenuAndStatusBar(std::string key) const;
 
         // -------------------------------------------------------------------
+        // Splitter window sash pos
+        void SerializeSplitterSashPos(std::string key, int pos);
+        int DeserializeSplitterSashPos(std::string key) const;
+
+        // -------------------------------------------------------------------
         // Browser controls
         void SerializeMediaOptions(std::string key, bool value);
         bool DeserializeMediaOptions(std::string key) const;

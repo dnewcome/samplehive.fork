@@ -426,6 +426,11 @@ MainFrame::MainFrame()
     Bind(wxEVT_MENU, &MainFrame::OnSelectResetAppData, this, wxID_REFRESH);
     Bind(wxEVT_MENU, &MainFrame::OnSelectAbout, this, wxID_ABOUT);
 
+    Bind(wxEVT_SPLITTER_SASH_POS_CHANGING, &MainFrame::OnTopSplitterSashPosChanged,
+         this, m_TopSplitter->GetId());
+    Bind(wxEVT_SPLITTER_SASH_POS_CHANGING, &MainFrame::OnBottomSplitterSashPosChanged,
+         this, m_BottomSplitter->GetId());
+
     this->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeFrame), NULL, this);
     m_StatusBar->Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnResizeStatusBar), NULL, this);
 
@@ -3054,10 +3059,30 @@ void MainFrame::OnResizeFrame(wxSizeEvent& event)
     event.Skip();
 }
 
+void MainFrame::OnTopSplitterSashPosChanged(wxSplitterEvent& event)
+{
+    Serializer serializer;
+
+    SH_LOG_DEBUG("TopSplitter at {}", m_TopSplitter->GetSashPosition());
+
+    serializer.SerializeSplitterSashPos("top", m_TopSplitter->GetSashPosition());
+}
+
+void MainFrame::OnBottomSplitterSashPosChanged(wxSplitterEvent& event)
+{
+    Serializer serializer;
+
+    SH_LOG_DEBUG("BottomSplitter at {}", m_BottomSplitter->GetSashPosition());
+
+    serializer.SerializeSplitterSashPos("bottom", m_BottomSplitter->GetSashPosition());
+}
+
 void MainFrame::SetAfterFrameCreate()
 {
-    m_TopSplitter->SetSashPosition(200);
-    m_BottomSplitter->SetSashPosition(300);
+    Serializer serializer;
+
+    m_TopSplitter->SetSashPosition(serializer.DeserializeSplitterSashPos("top"));
+    m_BottomSplitter->SetSashPosition(serializer.DeserializeSplitterSashPos("bottom"));
 }
 
 void MainFrame::OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event)
@@ -3146,5 +3171,9 @@ void MainFrame::PlaySample(const std::string& filepath, const std::string& sampl
 
 MainFrame::~MainFrame()
 {
+    // Delete wxTimer
+    delete m_Timer;
+
+    // Delete wxFilesystemWatcher
     delete m_FsWatcher;
 }

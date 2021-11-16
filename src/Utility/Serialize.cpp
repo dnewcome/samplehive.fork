@@ -60,6 +60,8 @@ Serializer::Serializer()
         m_Emitter << YAML::BeginMap;
         m_Emitter << YAML::Key << "Width" << YAML::Value << 1280;
         m_Emitter << YAML::Key << "Height" << YAML::Value << 720;
+        m_Emitter << YAML::Key << "TopSplitterSashPos" << YAML::Value << 200;
+        m_Emitter << YAML::Key << "BottomSplitterSashPos" << YAML::Value << 300;
         m_Emitter << YAML::Key << "ShowMenuBar" << YAML::Value << true;
         m_Emitter << YAML::Key << "ShowStatusBar" << YAML::Value << true;
         m_Emitter << YAML::EndMap << YAML::Newline;
@@ -223,6 +225,65 @@ bool Serializer::DeserializeShowMenuAndStatusBar(std::string key) const
     }
 
     return show;
+}
+
+void Serializer::SerializeSplitterSashPos(std::string key, int pos)
+{
+    YAML::Emitter out;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto sash = config["Window"])
+        {
+            if (key == "top")
+                sash["TopSplitterSashPos"] = pos;
+
+            if (key == "bottom")
+                sash["BottomSplitterSashPos"] = pos;
+
+            out << config;
+
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+            ofstrm << out.c_str();
+        }
+        else
+            SH_LOG_ERROR("Error! Cannot store sash pos values.");
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+}
+
+int Serializer::DeserializeSplitterSashPos(std::string key) const
+{
+    int pos = 0;
+
+    try
+    {
+        YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+        if (auto bar = config["Window"])
+        {
+            if (key == "top")
+                 pos = bar["TopSplitterSashPos"].as<int>();
+
+            if (key == "bottom")
+                 pos = bar["BottomSplitterSashPos"].as<int>();
+        }
+        else
+        {
+            SH_LOG_ERROR("Error! Cannot fetch sash pos values.");
+        }
+    }
+    catch(const YAML::ParserException& ex)
+    {
+        SH_LOG_ERROR(ex.what());
+    }
+
+    return pos;
 }
 
 void Serializer::SerializeMediaOptions(std::string key, bool value)
