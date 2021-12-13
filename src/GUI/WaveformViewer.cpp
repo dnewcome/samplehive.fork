@@ -20,6 +20,7 @@
 
 #include "GUI/WaveformViewer.hpp"
 #include "Utility/Serialize.hpp"
+#include "Utility/Signal.hpp"
 #include "Utility/Tags.hpp"
 #include "Utility/SH_Event.hpp"
 #include "Utility/Log.hpp"
@@ -37,7 +38,7 @@
 
 #include <sndfile.hh>
 
-WaveformViewer::WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
+cWaveformViewer::cWaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
                                wxMediaCtrl& mediaCtrl, Database& database)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize,
               wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
@@ -45,20 +46,27 @@ WaveformViewer::WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
 {
     this->SetDoubleBuffered(true);
 
-    Bind(wxEVT_PAINT, &WaveformViewer::OnPaint, this);
-    Bind(wxEVT_MOTION, &WaveformViewer::OnMouseMotion, this);
-    Bind(wxEVT_LEFT_DOWN, &WaveformViewer::OnMouseLeftButtonDown, this);
-    Bind(wxEVT_LEFT_UP, &WaveformViewer::OnMouseLeftButtonUp, this);
-    // Bind(wxEVT_KEY_DOWN, &WaveformViewer::OnControlKeyDown, this);
-    Bind(wxEVT_KEY_UP, &WaveformViewer::OnControlKeyUp, this);
+    Bind(wxEVT_PAINT, &cWaveformViewer::OnPaint, this);
+    Bind(wxEVT_MOTION, &cWaveformViewer::OnMouseMotion, this);
+    Bind(wxEVT_LEFT_DOWN, &cWaveformViewer::OnMouseLeftButtonDown, this);
+    Bind(wxEVT_LEFT_UP, &cWaveformViewer::OnMouseLeftButtonUp, this);
+    // Bind(wxEVT_KEY_DOWN, &cWaveformViewer::OnControlKeyDown, this);
+    Bind(wxEVT_KEY_UP, &cWaveformViewer::OnControlKeyUp, this);
+
+    m_Sizer = new wxBoxSizer(wxVERTICAL);
+
+    this->SetSizer(m_Sizer);
+    m_Sizer->Fit(this);
+    m_Sizer->SetSizeHints(this);
+    m_Sizer->Layout();
 }
 
-WaveformViewer::~WaveformViewer()
+cWaveformViewer::~cWaveformViewer()
 {
 
 }
 
-void WaveformViewer::OnPaint(wxPaintEvent& event)
+void cWaveformViewer::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
 
@@ -101,13 +109,14 @@ void WaveformViewer::OnPaint(wxPaintEvent& event)
                                 this->GetSize().GetHeight() + 5));
 
         bAreaSelected = true;
-        SendLoopPoints();
+        // SendLoopPoints();
+        SampleHive::Signal::SendLoopPoints(CalculateLoopPoints(), *this);
     }
     else
         bAreaSelected = false;
 }
 
-void WaveformViewer::RenderPlayhead(wxDC& dc)
+void cWaveformViewer::RenderPlayhead(wxDC& dc)
 {
     int selected_row = m_Library.GetSelectedRow();
 
@@ -145,7 +154,7 @@ void WaveformViewer::RenderPlayhead(wxDC& dc)
                 line_pos, this->GetSize().GetHeight() - 1);
 }
 
-void WaveformViewer::UpdateWaveformBitmap()
+void cWaveformViewer::UpdateWaveformBitmap()
 {
     Serializer serializer;
 
@@ -251,7 +260,7 @@ void WaveformViewer::UpdateWaveformBitmap()
     SH_LOG_DEBUG("Done drawing bitmap..");
 }
 
-void WaveformViewer::OnControlKeyDown(wxKeyEvent &event)
+void cWaveformViewer::OnControlKeyDown(wxKeyEvent &event)
 {
     switch (event.GetKeyCode())
     {
@@ -266,7 +275,7 @@ void WaveformViewer::OnControlKeyDown(wxKeyEvent &event)
     event.Skip();
 }
 
-void WaveformViewer::OnControlKeyUp(wxKeyEvent &event)
+void cWaveformViewer::OnControlKeyUp(wxKeyEvent &event)
 {
     switch (event.GetKeyCode())
     {
@@ -287,7 +296,7 @@ void WaveformViewer::OnControlKeyUp(wxKeyEvent &event)
     event.Skip();
 }
 
-void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
+void cWaveformViewer::OnMouseMotion(wxMouseEvent& event)
 {
     int selected_row = m_Library.GetSelectedRow();
 
@@ -327,7 +336,7 @@ void WaveformViewer::OnMouseMotion(wxMouseEvent& event)
         return;
 }
 
-void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
+void cWaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 {
     int selected_row = m_Library.GetSelectedRow();
 
@@ -376,7 +385,7 @@ void WaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
     event.Skip();
 }
 
-void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
+void cWaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
 {
     int selected_row = m_Library.GetSelectedRow();
 
@@ -427,12 +436,13 @@ void WaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         SetCursor(wxCURSOR_ARROW);
 
         m_MediaCtrl.Seek(seek_to, wxFromStart);
-        SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
+        // SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
+        SampleHive::Signal::SendInfoBarMessage(wxString::Format(_("Now playing: %s"), selected), 1, *this);
         m_MediaCtrl.Play();
     }
 }
 
-void WaveformViewer::ResetDC()
+void cWaveformViewer::ResetDC()
 {
     bBitmapDirty = true;
     bSelectRange = false;
@@ -441,17 +451,12 @@ void WaveformViewer::ResetDC()
     Refresh();
 }
 
-void WaveformViewer::SendLoopPoints()
+std::pair<double, double> cWaveformViewer::CalculateLoopPoints()
 {
-    SH_LOG_DEBUG("{} Called", __FUNCTION__);
-
-    SampleHive::SH_LoopPointsEvent event(SampleHive::SH_EVT_LOOP_POINTS_UPDATED, this->GetId());
-    event.SetEventObject(this);
-
     int selected_row = m_Library.GetSelectedRow();
 
     if (selected_row < 0)
-        return;
+        return { 0.0, 0.0 };
 
     wxString selected = m_Library.GetTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
@@ -467,19 +472,15 @@ void WaveformViewer::SendLoopPoints()
     double loopA = ((double)a / panel_width) * length;
     double loopB = ((double)b / panel_width) * length;
 
-    event.SetLoopPoints({ loopA, loopB });
-
-    HandleWindowEvent(event);
-
-    SH_LOG_DEBUG("{} processed event, sending loop points..", __FUNCTION__);
+    return { loopA, loopB };
 }
 
-void WaveformViewer::SendPushStatusBarStatus(const wxString& msg, int section)
-{
-    SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, this->GetId());
-    event.SetEventObject(this);
+// void cWaveformViewer::SendPushStatusBarStatus(const wxString& msg, int section)
+// {
+//     SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, this->GetId());
+//     event.SetEventObject(this);
 
-    event.SetPushMessageAndSection({ msg, section });
+//     event.SetPushMessageAndSection({ msg, section });
 
-    HandleWindowEvent(event);
-}
+//     HandleWindowEvent(event);
+// }

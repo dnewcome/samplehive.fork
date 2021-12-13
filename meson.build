@@ -146,6 +146,14 @@ src = [
   'src/GUI/MainFrame.cpp',
   'src/GUI/TransportControls.cpp',
   'src/GUI/WaveformViewer.cpp',
+  'src/GUI/Notebook.cpp',
+  'src/GUI/DirectoryBrowser.cpp',
+  'src/GUI/Hives.cpp',
+  'src/GUI/Trash.cpp',
+  'src/GUI/ListCtrl.cpp',
+  'src/GUI/SearchBar.cpp',
+  'src/GUI/InfoBar.cpp',
+  'src/GUI/Library.cpp',
 
   'src/GUI/Dialogs/Settings.cpp',
   'src/GUI/Dialogs/TagEditor.cpp',
@@ -156,6 +164,7 @@ src = [
   'src/Utility/Serialize.cpp',
   'src/Utility/Tags.cpp',
   'src/Utility/SH_Event.cpp',
+  'src/Utility/Signal.cpp',
   'src/Utility/Log.cpp',
 
 ]

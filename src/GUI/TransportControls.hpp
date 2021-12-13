@@ -1,26 +1,27 @@
 #pragma once
 
-#include "wx/bmpbuttn.h"
-#include "wx/button.h"
-#include "wx/checkbox.h"
-#include "wx/dataview.h"
-#include "wx/event.h"
-#include "wx/mediactrl.h"
-#include "wx/settings.h"
-#include "wx/sizer.h"
-#include "wx/slider.h"
-#include "wx/stattext.h"
-#include "wx/tglbtn.h"
-#include "wx/panel.h"
-#include "wx/timer.h"
-#include "wx/window.h"
+#include <wx/bmpbuttn.h>
+#include <wx/button.h>
+#include <wx/checkbox.h>
+#include <wx/dataview.h>
+#include <wx/event.h>
+#include <wx/mediactrl.h>
+#include <wx/settings.h>
+#include <wx/sizer.h>
+#include <wx/slider.h>
+#include <wx/stattext.h>
+#include <wx/tglbtn.h>
+#include <wx/panel.h>
+#include <wx/timer.h>
+#include <wx/version.h>
+#include <wx/window.h>
 
-class TransportControls : public wxPanel
+class cTransportControls : public wxPanel
 {
     public:
         // -------------------------------------------------------------------
-        TransportControls(wxWindow* window, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl, wxTimer& timer);
-        ~TransportControls();
+        cTransportControls(wxWindow* window, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl, wxTimer& timer);
+        ~cTransportControls();
 
     public:
         // -------------------------------------------------------------------
@@ -58,15 +59,6 @@ class TransportControls : public wxPanel
         void OnCheckAutoplay(wxCommandEvent& event);
         void OnSlideVolume(wxScrollEvent& event);
         void OnReleaseVolumeSlider(wxScrollEvent& event);
-
-    private:
-        // -------------------------------------------------------------------
-        // Custom events for sending infomation to MainFrame
-        void SendPushStatusBarStatus(const wxString& msg, int section);
-        void SendSetStatusBarStatus(const wxString& msg, int section);
-        void SendPopStatusBarStatus(int section);
-        void SendCallFunctionPlay(const wxString& selection);
-        void SendTimerStopStatus();
 
     private:
         // -------------------------------------------------------------------

@@ -35,16 +35,18 @@
 #include <wx/timer.h>
 #include <wx/window.h>
 
-class WaveformViewer : public wxPanel
+class cWaveformViewer : public wxPanel
 {
     public:
-        WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
-                       wxMediaCtrl& mediaCtrl, Database& database);
-        ~WaveformViewer();
+        cWaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
+                        wxMediaCtrl& mediaCtrl, Database& database);
+        ~cWaveformViewer();
 
     private:
         // -------------------------------------------------------------------
         wxWindow* m_Window;
+
+        wxBoxSizer* m_Sizer;
 
         // -------------------------------------------------------------------
         Database& m_Database;
@@ -85,9 +87,12 @@ class WaveformViewer : public wxPanel
         void OnControlKeyDown(wxKeyEvent& event);
 
         // -------------------------------------------------------------------
+        std::pair<double, double> CalculateLoopPoints();
+
+        // -------------------------------------------------------------------
         // Send custom events
-        void SendLoopPoints();
-        void SendPushStatusBarStatus(const wxString& msg, int section);
+        // void SendLoopPoints();
+        // void SendPushStatusBarStatus(const wxString& msg, int section);
 
     public:
         // -------------------------------------------------------------------

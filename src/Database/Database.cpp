@@ -53,7 +53,7 @@ void show_modal_dialog_and_log(const std::string &message, const std::string &ti
                                const std::string &error_msg)
 {
     std::stringstream ss;
-    ss << message << error_msg;
+    ss << message << ": " << error_msg;
 
     const auto msg = ss.str();
 
@@ -899,7 +899,7 @@ void Database::LoadHivesDatabase(wxDataViewTreeCtrl &treeCtrl)
     }
     catch (const std::exception &e)
     {
-        show_modal_dialog_and_log("Error! Cannot load hive from hives table", "Error", e.what());
+        show_modal_dialog_and_log("Error! Cannot load data from HIVES", "Error", e.what());
     }
 }
 

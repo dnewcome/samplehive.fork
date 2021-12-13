@@ -106,5 +106,5 @@ class TagEditor : public wxDialog
         void OnClickApply(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
-        void SendInfoBarMessage(const wxString& msg, int mode);
+        // void SendInfoBarMessage(const wxString& msg, int mode);
 };

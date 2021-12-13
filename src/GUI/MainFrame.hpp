@@ -21,11 +21,13 @@
 #pragma once
 
 #include "Database/Database.hpp"
+#include "GUI/Library.hpp"
 #include "GUI/TransportControls.hpp"
 #include "GUI/WaveformViewer.hpp"
-#include "SampleHiveConfig.hpp"
+#include "GUI/Notebook.hpp"
 #include "Utility/Serialize.hpp"
 #include "Utility/SH_Event.hpp"
+#include "SampleHiveConfig.hpp"
 
 #include <memory>
 #include <string>
@@ -85,7 +87,7 @@ class MainFrame : public wxFrame
     private:
         // -------------------------------------------------------------------
         // Main Panel
-        wxPanel* m_MainPanel;
+        // wxPanel* m_MainPanel;
         wxBoxSizer* m_MainSizer;
 
         // -------------------------------------------------------------------
@@ -120,41 +122,43 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel controls
         wxPanel* m_TopPanel;
-        TransportControls* m_TransportControls;
-        WaveformViewer* m_WaveformViewer;
-        wxBoxSizer* m_TopSizer;
+        cTransportControls* m_TransportControls;
+        cWaveformViewer* m_WaveformViewer;
+        // wxBoxSizer* m_TopSizer;
         wxBoxSizer* m_TopPanelMainSizer;
-        wxBoxSizer* m_WaveformDisplaySizer;
+        // wxBoxSizer* m_WaveformDisplaySizer;
 
         // -------------------------------------------------------------------
         // Left panel controls
-        wxPanel* m_BottomLeftPanel;
-        wxPanel* m_HivesPanel;
-        wxPanel* m_TrashPanel;
-        wxNotebook* m_Notebook;
-        wxBoxSizer* m_BottomLeftPanelMainSizer;
-        wxBoxSizer* m_HivesMainSizer;
-        wxBoxSizer* m_HivesFavoritesSizer;
-        wxBoxSizer* m_HivesButtonSizer;
-        wxBoxSizer* m_TrashMainSizer;
-        wxBoxSizer* m_TrashItemSizer;
-        wxBoxSizer* m_TrashButtonSizer;
-        wxGenericDirCtrl* m_DirCtrl;
-        wxDataViewTreeCtrl* m_Hives;
-        wxDataViewItem favorites_hive;
-        wxTreeItemId trash_root;
-        wxTreeCtrl* m_Trash;
-        wxButton* m_AddHiveButton;
-        wxButton* m_RemoveHiveButton;
-        wxButton* m_RestoreTrashedItemButton;
+        // wxPanel* m_BottomLeftPanel;
+        cNotebook* m_Notebook;
+        // wxPanel* m_HivesPanel;
+        // wxPanel* m_TrashPanel;
+        // wxNotebook* m_Notebook;
+        // wxBoxSizer* m_BottomLeftPanelMainSizer;
+        // wxBoxSizer* m_HivesMainSizer;
+        // wxBoxSizer* m_HivesFavoritesSizer;
+        // wxBoxSizer* m_HivesButtonSizer;
+        // wxBoxSizer* m_TrashMainSizer;
+        // wxBoxSizer* m_TrashItemSizer;
+        // wxBoxSizer* m_TrashButtonSizer;
+        // wxGenericDirCtrl* m_DirCtrl;
+        // wxDataViewTreeCtrl* m_Hives;
+        // wxDataViewItem favorites_hive;
+        // wxTreeItemId trash_root;
+        // wxTreeCtrl* m_Trash;
+        // wxButton* m_AddHiveButton;
+        // wxButton* m_RemoveHiveButton;
+        // wxButton* m_RestoreTrashedItemButton;
 
         // -------------------------------------------------------------------
         // Right panel controls
-        wxPanel* m_BottomRightPanel;
-        wxBoxSizer* m_BottomRightPanelMainSizer;
-        wxSearchCtrl* m_SearchBox;
-        wxInfoBar* m_InfoBar;
-        wxDataViewListCtrl* m_Library;
+        cLibrary* m_Library;
+        // wxPanel* m_BottomRightPanel;
+        // wxBoxSizer* m_BottomRightPanelMainSizer;
+        // wxSearchCtrl* m_SearchBox;
+        // wxInfoBar* m_InfoBar;
+        // wxDataViewListCtrl* m_Library;
 
         // -------------------------------------------------------------------
         // MediaCtrl
@@ -175,7 +179,7 @@ class MainFrame : public wxFrame
         wxLongLong m_LoopA, m_LoopB;
 
         // -------------------------------------------------------------------
-        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
+        // wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
 
     private:
         // -------------------------------------------------------------------
@@ -188,39 +192,39 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Top panel control handlers
         void OnMediaFinished(wxMediaEvent& event);
-        void OnClickSettings(wxCommandEvent& event);
+        // void OnClickSettings(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // DirCtrl event handlers
-        void OnClickDirCtrl(wxCommandEvent& event);
-        void OnDragFromDirCtrl(wxTreeEvent& event);
+        // void OnClickDirCtrl(wxCommandEvent& event);
+        // void OnDragFromDirCtrl(wxTreeEvent& event);
 
         // -------------------------------------------------------------------
         // TrashPane event handlers
-        void OnShowTrashContextMenu(wxTreeEvent& event);
-        void OnClickRestoreTrashItem(wxCommandEvent& event);
-        void OnDragAndDropToTrash(wxDropFilesEvent& event);
+        // void OnShowTrashContextMenu(wxTreeEvent& event);
+        // void OnClickRestoreTrashItem(wxCommandEvent& event);
+        // void OnDragAndDropToTrash(wxDropFilesEvent& event);
 
         // -------------------------------------------------------------------
         // Hives panel button event handlers
-        void OnDragAndDropToHives(wxDropFilesEvent& event);
-        void OnClickAddHive(wxCommandEvent& event);
-        void OnClickRemoveHive(wxCommandEvent& event);
-        void OnShowHivesContextMenu(wxDataViewEvent& event);
-        void OnHiveStartEditing(wxDataViewEvent& event);
+        // void OnDragAndDropToHives(wxDropFilesEvent& event);
+        // void OnClickAddHive(wxCommandEvent& event);
+        // void OnClickRemoveHive(wxCommandEvent& event);
+        // void OnShowHivesContextMenu(wxDataViewEvent& event);
+        // void OnHiveStartEditing(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // SearchCtrl event handlers
-        void OnDoSearch(wxCommandEvent& event);
-        void OnCancelSearch(wxCommandEvent& event);
+        // void OnDoSearch(wxCommandEvent& event);
+        // void OnCancelSearch(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         // Library event handlers
-        void OnClickLibrary(wxDataViewEvent& event);
-        void OnDragAndDropToLibrary(wxDropFilesEvent& event);
-        void OnDragFromLibrary(wxDataViewEvent& event);
-        void OnShowLibraryContextMenu(wxDataViewEvent& event);
-        void OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event);
+        // void OnClickLibrary(wxDataViewEvent& event);
+        // void OnDragAndDropToLibrary(wxDropFilesEvent& event);
+        // void OnDragFromLibrary(wxDataViewEvent& event);
+        // void OnShowLibraryContextMenu(wxDataViewEvent& event);
+        // void OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event);
 
         // -------------------------------------------------------------------
         // App menu items event handlers
@@ -251,8 +255,8 @@ class MainFrame : public wxFrame
         void UpdateElapsedTime(wxTimerEvent& event);
 
         // -------------------------------------------------------------------
-        void AddSamples(wxArrayString& files);
-        void OnAutoImportDir(const wxString& pathToDirectory);
+        // void AddSamples(wxArrayString& files);
+        // void OnAutoImportDir(const wxString& pathToDirectory);
 
         // -------------------------------------------------------------------
         void PlaySample(const std::string& filepath, const std::string& sample, bool seek = false,
@@ -260,23 +264,24 @@ class MainFrame : public wxFrame
 
         // Recieve custom events
         // -------------------------------------------------------------------
-        void OnRecieveLoopPoints(SampleHive::SH_LoopPointsEvent& event);
-        void OnRecievePushStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
-        void OnRecievePopStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
-        void OnRecieveSetStatusBarStatus(SampleHive::SH_StatusBarStatusEvent& event);
-        void OnRecieveInfoBarStatus(SampleHive::SH_InfoBarMessageEvent& event);
-        void OnRecieveTimerStopStatus(SampleHive::SH_TimerEvent& event);
-        void OnRecieveCallFunctionPlay(SampleHive::SH_CallFunctionEvent& event);
+        void OnRecieveLoopPoints(SampleHive::LoopPointsEvent& event);
+        void OnRecievePushStatusBarStatus(SampleHive::StatusBarStatusEvent& event);
+        void OnRecievePopStatusBarStatus(SampleHive::StatusBarStatusEvent& event);
+        void OnRecieveSetStatusBarStatus(SampleHive::StatusBarStatusEvent& event);
+        void OnRecieveInfoBarStatus(SampleHive::InfoBarMessageEvent& event);
+        void OnRecieveTimerStopStatus(SampleHive::TimerEvent& event);
+        void OnRecieveCallFunctionPlay(SampleHive::CallFunctionEvent& event);
+        void OnRecieveWaveformUpdateStatus(SampleHive::WaveformUpdateEvent& event);
 
         // -------------------------------------------------------------------
-        void LoadDatabase();
-        void RefreshDatabase();
+        // void LoadDatabase();
+        // void RefreshDatabase();
         void LoadConfigFile();
 
         // -------------------------------------------------------------------
         // Getters
-        FileInfo GetFilenamePathAndExtension(const wxString& selected,
-                                             bool checkExtension = true, bool doGetFilename = true) const;
+        // FileInfo GetFilenamePathAndExtension(const wxString& selected,
+        //                                      bool checkExtension = true, bool doGetFilename = true) const;
 
         // -------------------------------------------------------------------
         // Directory watchers
@@ -293,6 +298,8 @@ class MainFrame : public wxFrame
 
         // -------------------------------------------------------------------
         void ClearLoopPoints();
+
+        void InitDatabase();
 
         // -------------------------------------------------------------------
         friend class App;

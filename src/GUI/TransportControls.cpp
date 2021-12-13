@@ -1,12 +1,13 @@
 #include "GUI/TransportControls.hpp"
 #include "Utility/ControlIDs.hpp"
 #include "Utility/SH_Event.hpp"
+#include "Utility/Signal.hpp"
 #include "Utility/Serialize.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 
-TransportControls::TransportControls(wxWindow* window, wxDataViewListCtrl& library,
-                                     wxMediaCtrl& mediaCtrl, wxTimer& timer)
+cTransportControls::cTransportControls(wxWindow* window, wxDataViewListCtrl& library,
+                                       wxMediaCtrl& mediaCtrl, wxTimer& timer)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER),
       m_Library(library), m_MediaCtrl(mediaCtrl), m_Timer(timer)
 {
@@ -21,6 +22,7 @@ TransportControls::TransportControls(wxWindow* window, wxDataViewListCtrl& libra
         m_pLoopABButton = new wxBitmapToggleButton(this, BC_LoopABButton,
                                                    static_cast<wxString>(ICON_AB_DARK_16px),
                                                    wxDefaultPosition, wxDefaultSize, 0);
+
     m_pLoopABButton->SetToolTip(_("Loop selected region"));
 
     // Autoplay checkbox
@@ -101,20 +103,20 @@ TransportControls::TransportControls(wxWindow* window, wxDataViewListCtrl& libra
     m_pMainSizer->SetSizeHints(this);
     m_pMainSizer->Layout();
 
-    Bind(wxEVT_BUTTON, &TransportControls::OnClickPlay, this, BC_Play);
-    Bind(wxEVT_TOGGLEBUTTON, &TransportControls::OnClickLoop, this, BC_Loop);
-    Bind(wxEVT_BUTTON, &TransportControls::OnClickStop, this, BC_Stop);
-    Bind(wxEVT_TOGGLEBUTTON, &TransportControls::OnClickMute, this, BC_Mute);
+    Bind(wxEVT_BUTTON, &cTransportControls::OnClickPlay, this, BC_Play);
+    Bind(wxEVT_TOGGLEBUTTON, &cTransportControls::OnClickLoop, this, BC_Loop);
+    Bind(wxEVT_BUTTON, &cTransportControls::OnClickStop, this, BC_Stop);
+    Bind(wxEVT_TOGGLEBUTTON, &cTransportControls::OnClickMute, this, BC_Mute);
     // Bind(wxEVT_BUTTON, &Controls::OnClickSettings, this, BC_Settings);
-    Bind(wxEVT_CHECKBOX, &TransportControls::OnCheckAutoplay, this, BC_Autoplay);
-    Bind(wxEVT_SCROLL_THUMBTRACK, &TransportControls::OnSlideVolume, this, BC_Volume);
-    Bind(wxEVT_SCROLL_THUMBRELEASE, &TransportControls::OnReleaseVolumeSlider, this, BC_Volume);
+    Bind(wxEVT_CHECKBOX, &cTransportControls::OnCheckAutoplay, this, BC_Autoplay);
+    Bind(wxEVT_SCROLL_THUMBTRACK, &cTransportControls::OnSlideVolume, this, BC_Volume);
+    Bind(wxEVT_SCROLL_THUMBRELEASE, &cTransportControls::OnReleaseVolumeSlider, this, BC_Volume);
 
     // Load control values from config file
     LoadConfigFile();
 }
 
-void TransportControls::OnClickPlay(wxCommandEvent& event)
+void cTransportControls::OnClickPlay(wxCommandEvent& event)
 {
     m_bStopped = false;
 
@@ -126,10 +128,10 @@ void TransportControls::OnClickPlay(wxCommandEvent& event)
     wxString selection = m_Library.GetTextValue(selected_row, 1);
 
     // Send custom event to MainFrame to play the sample
-    SendCallFunctionPlay(selection);
+    SampleHive::Signal::SendCallFunctionPlay(selection, *this);
 }
 
-void TransportControls::OnClickLoop(wxCommandEvent& event)
+void cTransportControls::OnClickLoop(wxCommandEvent& event)
 {
     Serializer serializer;
 
@@ -138,7 +140,7 @@ void TransportControls::OnClickLoop(wxCommandEvent& event)
     serializer.SerializeMediaOptions("loop", m_bLoop);
 }
 
-void TransportControls::OnClickStop(wxCommandEvent& event)
+void cTransportControls::OnClickStop(wxCommandEvent& event)
 {
     if (!m_MediaCtrl.Stop())
         SH_LOG_ERROR("Error! Unable to stop media.");
@@ -146,15 +148,15 @@ void TransportControls::OnClickStop(wxCommandEvent& event)
     m_bStopped = true;
 
     // Send custom event to MainFrame to stop the timer
-    SendTimerStopStatus();
+    SampleHive::Signal::SendTimerStopStatus(*this);
 
     m_pSamplePosition->SetLabel("--:--/--:--");
 
     // Send custom event to MainFrame to set the statusbar status
-    SendSetStatusBarStatus(_("Stopped"), 1);
+    SampleHive::Signal::SendSetStatusBarStatus(_("Stopped"), 1, *this);
 }
 
-void TransportControls::OnClickMute(wxCommandEvent& event)
+void cTransportControls::OnClickMute(wxCommandEvent& event)
 {
     Serializer serializer;
 
@@ -174,7 +176,7 @@ void TransportControls::OnClickMute(wxCommandEvent& event)
     }
 }
 
-void TransportControls::OnCheckAutoplay(wxCommandEvent& event)
+void cTransportControls::OnCheckAutoplay(wxCommandEvent& event)
 {
     Serializer serializer;
 
@@ -192,15 +194,16 @@ void TransportControls::OnCheckAutoplay(wxCommandEvent& event)
     }
 }
 
-void TransportControls::OnSlideVolume(wxScrollEvent& event)
+void cTransportControls::OnSlideVolume(wxScrollEvent& event)
 {
     m_MediaCtrl.SetVolume(double(m_pVolumeSlider->GetValue()) / 100);
 
     // Send custom event to MainFrame to push status to statusbar
-    SendPushStatusBarStatus(wxString::Format(_("Volume: %d"), m_pVolumeSlider->GetValue()), 1);
+    SampleHive::Signal::SendPushStatusBarStatus(wxString::Format(_("Volume: %d"),
+                                                                 m_pVolumeSlider->GetValue()), 1, *this);
 }
 
-void TransportControls::OnReleaseVolumeSlider(wxScrollEvent& event)
+void cTransportControls::OnReleaseVolumeSlider(wxScrollEvent& event)
 {
     Serializer serializer;
 
@@ -217,15 +220,16 @@ void TransportControls::OnReleaseVolumeSlider(wxScrollEvent& event)
     wxSleep(1);
 
     // Send custom event to MainFrame to pop status from statusbar
-    SendPopStatusBarStatus(1);
+    SampleHive::Signal::SendPopStatusBarStatus(1, *this);
 
     if (m_MediaCtrl.GetState() == wxMEDIASTATE_STOPPED)
-        SendSetStatusBarStatus(_("Stopped"), 1);
+        SampleHive::Signal::SendSetStatusBarStatus(_("Stopped"), 1, *this);
     else
-        SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selection), 1);
+        SampleHive::Signal::SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selection),
+                                                    1, *this);
 }
 
-void TransportControls::LoadConfigFile()
+void cTransportControls::LoadConfigFile()
 {
     Serializer serializer;
 
@@ -247,55 +251,7 @@ void TransportControls::LoadConfigFile()
         m_MediaCtrl.SetVolume(0.0);
 }
 
-void TransportControls::SendPushStatusBarStatus(const wxString& msg, int section)
-{
-    SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, this->GetId());
-    event.SetEventObject(this);
-
-    event.SetPushMessageAndSection({ msg, section });
-
-    HandleWindowEvent(event);
-}
-
-void TransportControls::SendPopStatusBarStatus(int section)
-{
-    SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_POP, this->GetId());
-    event.SetEventObject(this);
-
-    event.SetPopMessageSection(section);
-
-    HandleWindowEvent(event);
-}
-
-void TransportControls::SendSetStatusBarStatus(const wxString& text, int section)
-{
-    SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_SET, this->GetId());
-    event.SetEventObject(this);
-
-    event.SetStatusTextAndSection({ text, section });
-
-    HandleWindowEvent(event);
-}
-
-void TransportControls::SendCallFunctionPlay(const wxString& selection)
-{
-    SampleHive::SH_CallFunctionEvent event(SampleHive::SH_EVT_CALL_FUNC_PLAY, this->GetId());
-    event.SetEventObject(this);
-
-    event.SetSelection(selection);
-
-    HandleWindowEvent(event);
-}
-
-void TransportControls::SendTimerStopStatus()
-{
-    SampleHive::SH_TimerEvent event(SampleHive::SH_EVT_TIMER_STOP, this->GetId());
-    event.SetEventObject(this);
-
-    HandleWindowEvent(event);
-}
-
-TransportControls::~TransportControls()
+cTransportControls::~cTransportControls()
 {
 
 }

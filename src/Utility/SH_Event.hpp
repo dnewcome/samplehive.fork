@@ -26,14 +26,14 @@
 
 namespace SampleHive
 {
-    class SH_LoopPointsEvent : public wxCommandEvent
+    class LoopPointsEvent : public wxCommandEvent
     {
         public:
-            SH_LoopPointsEvent(wxEventType eventType, int winId);
-            ~SH_LoopPointsEvent();
+            LoopPointsEvent(wxEventType eventType, int winId);
+            ~LoopPointsEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_LoopPointsEvent(*this); }
+            virtual wxEvent* Clone() const { return new LoopPointsEvent(*this); }
 
         public:
             std::pair<double, double> GetLoopPoints() const { return { m_LoopA, m_LoopB }; };
@@ -44,16 +44,16 @@ namespace SampleHive
             double m_LoopA, m_LoopB;
     };
 
-    wxDECLARE_EVENT(SH_EVT_LOOP_POINTS_UPDATED, SH_LoopPointsEvent);
+    wxDECLARE_EVENT(SH_EVT_LOOP_POINTS_UPDATED, LoopPointsEvent);
 
-    // class SH_AddSampleEvent : public wxCommandEvent
+    // class AddSampleEvent : public wxCommandEvent
     // {
     //     public:
-    //         SH_AddSampleEvent(wxEventType eventType, int winId);
-    //         ~SH_AddSampleEvent();
+    //         AddSampleEvent(wxEventType eventType, int winId);
+    //         ~AddSampleEvent();
 
     //     public:
-    //         virtual wxEvent* Clone() const { return new SH_AddSampleEvent(*this); }
+    //         virtual wxEvent* Clone() const { return new AddSampleEvent(*this); }
 
     //     public:
     //         wxArrayString GetArrayString() const { return m_Files; };
@@ -63,16 +63,16 @@ namespace SampleHive
     //         wxArrayString m_Files;
     // };
 
-    // wxDECLARE_EVENT(SH_EVT_STATUS_ADD_SAMPLE, SH_AddSampleEvent);
+    // wxDECLARE_EVENT(SH_EVT_STATUS_ADD_SAMPLE, AddSampleEvent);
 
-    // class SH_MediaEvent : public wxCommandEvent
+    // class MediaEvent : public wxCommandEvent
     // {
     //     public:
-    //         SH_MediaEvent(wxEventType eventType, int winId);
-    //         ~SH_MediaEvent();
+    //         MediaEvent(wxEventType eventType, int winId);
+    //         ~MediaEvent();
 
     //     public:
-    //         virtual wxEvent* Clone() const { return new SH_MediaEvent(*this); }
+    //         virtual wxEvent* Clone() const { return new MediaEvent(*this); }
 
     //     public:
     //         void SetPath(const wxString& path) { m_Path = path; }
@@ -82,16 +82,16 @@ namespace SampleHive
     //         wxString m_Path;
     // };
 
-    // wxDECLARE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, SH_MediaEvent);
+    // wxDECLARE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, MediaEvent);
 
-    class SH_StatusBarStatusEvent : public wxCommandEvent
+    class StatusBarStatusEvent : public wxCommandEvent
     {
         public:
-            SH_StatusBarStatusEvent(wxEventType eventType, int winId);
-            ~SH_StatusBarStatusEvent();
+            StatusBarStatusEvent(wxEventType eventType, int winId);
+            ~StatusBarStatusEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_StatusBarStatusEvent(*this); }
+            virtual wxEvent* Clone() const { return new StatusBarStatusEvent(*this); }
 
         public:
             std::pair<wxString, int> GetPushMessageAndSection() const { return { m_Msg, m_PushSection }; }
@@ -110,18 +110,18 @@ namespace SampleHive
             int m_PushSection, m_PopSection, m_SetSection;
     };
 
-    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, SH_StatusBarStatusEvent);
-    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, SH_StatusBarStatusEvent);
-    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, SH_StatusBarStatusEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, StatusBarStatusEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, StatusBarStatusEvent);
+    wxDECLARE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, StatusBarStatusEvent);
 
-    class SH_InfoBarMessageEvent : public wxCommandEvent
+    class InfoBarMessageEvent : public wxCommandEvent
     {
         public:
-            SH_InfoBarMessageEvent(wxEventType eventType, int winId);
-            ~SH_InfoBarMessageEvent();
+            InfoBarMessageEvent(wxEventType eventType, int winId);
+            ~InfoBarMessageEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_InfoBarMessageEvent(*this); }
+            virtual wxEvent* Clone() const { return new InfoBarMessageEvent(*this); }
 
         public:
             std::pair<wxString, int> GetInfoBarMessage() const { return { m_Msg, m_Mode }; }
@@ -133,28 +133,28 @@ namespace SampleHive
             int m_Mode;
     };
 
-    wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, SH_InfoBarMessageEvent);
+    wxDECLARE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, InfoBarMessageEvent);
 
-    class SH_TimerEvent : public wxCommandEvent
+    class TimerEvent : public wxCommandEvent
     {
         public:
-            SH_TimerEvent(wxEventType eventType, int winId);
-            ~SH_TimerEvent();
+            TimerEvent(wxEventType eventType, int winId);
+            ~TimerEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_TimerEvent(*this); }
+            virtual wxEvent* Clone() const { return new TimerEvent(*this); }
     };
 
-    wxDECLARE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
+    wxDECLARE_EVENT(SH_EVT_TIMER_STOP, TimerEvent);
 
-    class SH_CallFunctionEvent : public wxCommandEvent
+    class CallFunctionEvent : public wxCommandEvent
     {
         public:
-            SH_CallFunctionEvent(wxEventType eventType, int winId);
-            ~SH_CallFunctionEvent();
+            CallFunctionEvent(wxEventType eventType, int winId);
+            ~CallFunctionEvent();
 
         public:
-            virtual wxEvent* Clone() const { return new SH_CallFunctionEvent(*this); }
+            virtual wxEvent* Clone() const { return new CallFunctionEvent(*this); }
 
         public:
             wxString GetSlection() { return m_Selection; }
@@ -164,5 +164,18 @@ namespace SampleHive
             wxString m_Selection;
     };
 
-    wxDECLARE_EVENT(SH_EVT_CALL_FUNC_PLAY, SH_CallFunctionEvent);
+    wxDECLARE_EVENT(SH_EVT_CALL_FUNC_PLAY, CallFunctionEvent);
+
+    class WaveformUpdateEvent : public wxCommandEvent
+    {
+        public:
+            WaveformUpdateEvent(wxEventType eventType, int winId);
+            ~WaveformUpdateEvent();
+
+        public:
+            virtual wxEvent* Clone() const { return new WaveformUpdateEvent(*this); }
+    };
+
+    wxDECLARE_EVENT(SH_EVT_UPDATE_WAVEFORM, WaveformUpdateEvent);
+
 }

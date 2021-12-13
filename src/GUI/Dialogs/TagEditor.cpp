@@ -20,6 +20,7 @@
 
 #include "Utility/ControlIDs.hpp"
 #include "Utility/SH_Event.hpp"
+#include "Utility/Signal.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 #include "Database/Database.hpp"
@@ -312,20 +313,20 @@ void TagEditor::OnClickApply(wxCommandEvent& event)
             info_msg = "Error, cannot change tag!";
     }
 
-    SendInfoBarMessage(info_msg, wxICON_INFORMATION);
+    SampleHive::Signal::SendInfoBarMessage(info_msg, wxICON_INFORMATION, *this, true);
 }
 
-void TagEditor::SendInfoBarMessage(const wxString& msg, int mode)
-{
-    SH_LOG_INFO("{} called..", __FUNCTION__);
+// void TagEditor::SendInfoBarMessage(const wxString& msg, int mode)
+// {
+//     SH_LOG_INFO("{} called..", __FUNCTION__);
 
-    SampleHive::SH_InfoBarMessageEvent event(SampleHive::SH_EVT_INFOBAR_MESSAGE_SHOW, this->GetId());
-    event.SetEventObject(this);
+//     SampleHive::SH_InfoBarMessageEvent event(SampleHive::SH_EVT_INFOBAR_MESSAGE_SHOW, this->GetId());
+//     event.SetEventObject(this);
 
-    event.SetInfoBarMessage({ msg, mode });
+//     event.SetInfoBarMessage({ msg, mode });
 
-    GetParent()->GetEventHandler()->ProcessEvent(event);
-}
+//     GetParent()->GetEventHandler()->ProcessEvent(event);
+// }
 
 TagEditor::~TagEditor()
 {

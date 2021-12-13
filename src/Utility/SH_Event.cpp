@@ -22,96 +22,109 @@
 
 namespace SampleHive
 {
-    SH_LoopPointsEvent::SH_LoopPointsEvent(wxEventType eventType, int winId)
+    LoopPointsEvent::LoopPointsEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_LoopPointsEvent::~SH_LoopPointsEvent()
+    LoopPointsEvent::~LoopPointsEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_LOOP_POINTS_UPDATED, SH_LoopPointsEvent);
+    wxDEFINE_EVENT(SH_EVT_LOOP_POINTS_UPDATED, LoopPointsEvent);
 
-    // SH_AddSampleEvent::SH_AddSampleEvent(wxEventType eventType, int winId)
+    // AddSampleEvent::AddSampleEvent(wxEventType eventType, int winId)
     //     : wxCommandEvent(eventType, winId)
     // {
 
     // }
 
-    // SH_AddSampleEvent::~SH_AddSampleEvent()
+    // AddSampleEvent::~AddSampleEvent()
     // {
 
     // }
 
-    // wxDEFINE_EVENT(SH_EVT_STATUS_ADD_SAMPLE, SH_AddSampleEvent);
+    // wxDEFINE_EVENT(SH_EVT_STATUS_ADD_SAMPLE, AddSampleEvent);
 
-    // SH_MediaEvent::SH_MediaEvent(wxEventType eventType, int winId)
+    // MediaEvent::MediaEvent(wxEventType eventType, int winId)
     //     : wxCommandEvent(eventType, winId)
     // {
 
     // }
 
-    // SH_MediaEvent::~SH_MediaEvent()
+    // MediaEvent::~MediaEvent()
     // {
 
     // }
 
-    // wxDEFINE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, SH_MediaEvent);
+    // wxDEFINE_EVENT(SH_EVT_MEDIA_STATUS_UPDATED, MediaEvent);
 
-    SH_StatusBarStatusEvent::SH_StatusBarStatusEvent(wxEventType eventType, int winId)
+    StatusBarStatusEvent::StatusBarStatusEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_StatusBarStatusEvent::~SH_StatusBarStatusEvent()
+    StatusBarStatusEvent::~StatusBarStatusEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, SH_StatusBarStatusEvent);
-    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, SH_StatusBarStatusEvent);
-    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, SH_StatusBarStatusEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_PUSH, StatusBarStatusEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_POP, StatusBarStatusEvent);
+    wxDEFINE_EVENT(SH_EVT_STATUSBAR_STATUS_SET, StatusBarStatusEvent);
 
-    SH_InfoBarMessageEvent::SH_InfoBarMessageEvent(wxEventType eventType, int winId)
+    InfoBarMessageEvent::InfoBarMessageEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_InfoBarMessageEvent::~SH_InfoBarMessageEvent()
+    InfoBarMessageEvent::~InfoBarMessageEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, SH_InfoBarMessageEvent);
+    wxDEFINE_EVENT(SH_EVT_INFOBAR_MESSAGE_SHOW, InfoBarMessageEvent);
 
-    SH_TimerEvent::SH_TimerEvent(wxEventType eventType, int winId)
+    TimerEvent::TimerEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_TimerEvent::~SH_TimerEvent()
+    TimerEvent::~TimerEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_TIMER_STOP, SH_TimerEvent);
+    wxDEFINE_EVENT(SH_EVT_TIMER_STOP, TimerEvent);
 
-    SH_CallFunctionEvent::SH_CallFunctionEvent(wxEventType eventType, int winId)
+    CallFunctionEvent::CallFunctionEvent(wxEventType eventType, int winId)
         : wxCommandEvent(eventType, winId)
     {
 
     }
 
-    SH_CallFunctionEvent::~SH_CallFunctionEvent()
+    CallFunctionEvent::~CallFunctionEvent()
     {
 
     }
 
-    wxDEFINE_EVENT(SH_EVT_CALL_FUNC_PLAY, SH_CallFunctionEvent);
+    wxDEFINE_EVENT(SH_EVT_CALL_FUNC_PLAY, CallFunctionEvent);
+
+    WaveformUpdateEvent::WaveformUpdateEvent(wxEventType eventType, int winId)
+        : wxCommandEvent(eventType, winId)
+    {
+
+    }
+
+    WaveformUpdateEvent::~WaveformUpdateEvent()
+    {
+
+    }
+
+    wxDEFINE_EVENT(SH_EVT_UPDATE_WAVEFORM, WaveformUpdateEvent);
 }
