@@ -183,9 +183,6 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         wxLongLong m_LoopA, m_LoopB;
 
-        // -------------------------------------------------------------------
-        wxSystemAppearance m_Theme = wxSystemSettings::GetAppearance();
-
     private:
         // -------------------------------------------------------------------
         bool bAutoplay = false;
@@ -261,10 +258,6 @@ class MainFrame : public wxFrame
         // -------------------------------------------------------------------
         // Frame resize event handler
         void OnResizeFrame(wxSizeEvent& event);
-
-        // Splitter window sash pos event handler
-        void OnTopSplitterSashPosChanged(wxSplitterEvent& event);
-        void OnBottomSplitterSashPosChanged(wxSplitterEvent& event);
 
         // -------------------------------------------------------------------
         // Timer update event handler

@@ -25,6 +25,7 @@
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 
+#include <exception>
 #include <vector>
 
 #include <wx/brush.h>
@@ -35,6 +36,7 @@
 #include <wx/gdicmn.h>
 #include <wx/pen.h>
 
+#include <sndfile.h>
 #include <sndfile.hh>
 
 WaveformViewer::WaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
@@ -178,77 +180,85 @@ void WaveformViewer::UpdateWaveformBitmap()
 
     std::vector<float> waveform;
 
-    // TODO, FIXME: Don't reload file on every window resize
-    snd_file.read(&sample.at(0), frames * channels);
-
-    float display_width = this->GetSize().GetWidth();
-    float display_height = this->GetSize().GetHeight();
-
-    SH_LOG_INFO("Calculating Waveform bars RMS..");
-
-    float chunk_size = (float)(frames) / (float)display_width;
-    int number_of_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
-
-    // Start with low non-zero value
-    float normalize = 0.00001;
-
-    for (int i = 0; i < number_of_chunks; i++)
+    try
     {
-        double sum = 0, mono = 0;
+        // TODO, FIXME: Don't reload file on every window resize
+        snd_file.read(&sample.at(0), frames * channels);
 
-        int start_point = static_cast<int>(i * chunk_size * channels);
+        float display_width = this->GetSize().GetWidth();
+        float display_height = this->GetSize().GetHeight();
 
-        // Iterate on the chunk, get the square of sum of monos
-        for (int j = 0; j < chunk_size; j++)
+        SH_LOG_INFO("Calculating Waveform bars RMS..");
+
+        float chunk_size = (float)(frames) / (float)display_width;
+        int number_of_chunks = static_cast<int>(static_cast<float>(frames) / chunk_size);
+
+        // Start with low non-zero value
+        float normalize = 0.00001;
+
+        for (int i = 0; i < number_of_chunks; i++)
         {
-            if (channels == 2)
-                mono = 0.5f * (sample[start_point + (2 * j)] + sample[start_point + (2 * j) + 1]);
-            else
-                mono = sample[start_point + j];
+            double sum = 0, mono = 0;
 
-            sum += mono * mono; // Square
+            int start_point = static_cast<int>(i * chunk_size * channels);
+
+            // Iterate on the chunk, get the square of sum of monos
+            for (int j = 0; j < chunk_size; j++)
+            {
+                if (channels == 2)
+                    mono = 0.5f * (sample[start_point + (2 * j)] + sample[start_point + (2 * j) + 1]);
+                else
+                    mono = sample[start_point + j];
+
+                sum += mono * mono; // Square
+            }
+
+            sum /= chunk_size;      // Mean
+            sum = pow(sum, 0.5);    // Root
+
+            // We might bleed a bit on the end and get some near infs, dunno
+            // what is causing astronomically big numbers from sample[]
+            if ((sum < 200.0) && (sum > normalize))
+                normalize = sum;
+
+            waveform.push_back(sum);
         }
 
-        sum /= chunk_size;      // Mean
-        sum = pow(sum, 0.5);    // Root
+        // Actually normalize
+        for (int i = 0; i < waveform.size(); i++)
+            waveform[i] /= normalize;
 
-        // We might bleed a bit on the end and get some near infs, dunno
-        // what is causing astronomically big numbers from sample[]
-        if ((sum < 200.0) && (sum > normalize))
-            normalize = sum;
+        // Draw code
+        wxMemoryDC mdc(m_WaveformBitmap);
 
-        waveform.push_back(sum);
+        mdc.SetBackground(wxBrush(wxColour(0, 0, 0, 150), wxBRUSHSTYLE_SOLID));
+        mdc.Clear();
+
+        m_WaveformColour = serializer.DeserializeWaveformColour();
+
+        mdc.SetPen(wxPen(wxColour(m_WaveformColour), 2, wxPENSTYLE_SOLID));
+
+        SH_LOG_DEBUG("Drawing bitmap..");
+
+        for (int i = 0; i < waveform.size() - 1; i++)
+        {
+            float half_display_height = static_cast<float>(display_height) / 2.0f;
+
+            // X is percentage of i relative to waveform.size() multiplied by
+            // the width, Y is the half height times the value up or down
+            float X = display_width * ((float)i / waveform.size());
+            float Y = waveform[i] * half_display_height;
+
+            mdc.DrawLine(X, half_display_height + Y, X, half_display_height - Y);
+        }
+
+        SH_LOG_DEBUG("Done drawing bitmap..");
     }
-
-    // Actually normalize
-    for (int i = 0; i < waveform.size(); i++)
-        waveform[i] /= normalize;
-
-    // Draw code
-    wxMemoryDC mdc(m_WaveformBitmap);
-
-    mdc.SetBackground(wxBrush(wxColour(0, 0, 0, 150), wxBRUSHSTYLE_SOLID));
-    mdc.Clear();
-
-    m_WaveformColour = serializer.DeserializeWaveformColour();
-
-    mdc.SetPen(wxPen(wxColour(m_WaveformColour), 2, wxPENSTYLE_SOLID));
-
-    SH_LOG_DEBUG("Drawing bitmap..");
-
-    for (int i = 0; i < waveform.size() - 1; i++)
+    catch (std::exception& e)
     {
-        float half_display_height = static_cast<float>(display_height) / 2.0f;
-
-        // X is percentage of i relative to waveform.size() multiplied by
-        // the width, Y is the half height times the value up or down
-        float X = display_width * ((float)i / waveform.size());
-        float Y = waveform[i] * half_display_height;
-
-        mdc.DrawLine(X, half_display_height + Y, X, half_display_height - Y);
+        SH_LOG_ERROR("Error! SNDFILE {}", e.what());
+        SH_LOG_ERROR("Error! SNDFILE {}", sf_strerror(snd_file.rawHandle()));
     }
-
-    SH_LOG_DEBUG("Done drawing bitmap..");
 }
 
 void WaveformViewer::OnControlKeyDown(wxKeyEvent &event)

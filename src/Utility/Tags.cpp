@@ -21,8 +21,11 @@
 #include "Utility/Tags.hpp"
 #include "SampleHiveConfig.hpp"
 
+// #include <iomanip>
+
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
+// #include <taglib/tpropertymap.h>
 
 #ifndef USE_SYSTEM_INCLUDE_PATH
     #include <taglib/toolkit/tstring.h>
@@ -44,14 +47,15 @@ Tags::~Tags()
 AudioInfo Tags::GetAudioInfo()
 {
     wxString artist, album, genre, title, comment;
-    int channels = 0, length = 0, sample_rate = 0, bitrate = 0;
+    int channels = 0, length_ms = 0, length_s = 0, sample_rate = 0, bitrate = 0;
 
-    TagLib::FileRef f (static_cast<const char*>(m_Filepath.c_str()), true, TagLib::AudioProperties::ReadStyle::Average);
+    TagLib::FileRef f(static_cast<const char*>(m_Filepath.c_str()), true, TagLib::AudioProperties::ReadStyle::Average);
 
     if (!f.isNull() && f.tag() && f.audioProperties())
     {
         TagLib::Tag* tag = f.tag();
         TagLib::AudioProperties* properties = f.audioProperties();
+        // TagLib::PropertyMap property_map = f.file()->properties();
 
         TagLib::String Title = tag->title();
         TagLib::String Artist = tag->artist();
@@ -64,8 +68,8 @@ AudioInfo Tags::GetAudioInfo()
 
         bitrate = properties->bitrate();
         channels = properties->channels();
-        length = properties->lengthInMilliseconds();
-        int length_sec = properties->lengthInSeconds();
+        length_ms = properties->lengthInMilliseconds();
+        length_s = properties->lengthInSeconds();
         sample_rate = properties->sampleRate();
 
         title = wxString::FromUTF8(Title.toCString(true));
@@ -75,13 +79,33 @@ AudioInfo Tags::GetAudioInfo()
         comment = wxString::FromUTF8(Comment.toCString(true));
 
         bValid = true;
+
+        // unsigned int longest = 0;
+
+        // for(TagLib::PropertyMap::ConstIterator i = property_map.begin(); i != property_map.end(); ++i)
+        // {
+        //     if (i->first.size() > longest)
+        //     {
+        //         longest = i->first.size();
+        //     }
+        // }
+
+        // std::cout << "-- TAG (properties) --" << std::endl;
+
+        // for(TagLib::PropertyMap::ConstIterator i = property_map.begin(); i != property_map.end(); ++i)
+        // {
+        //     for(TagLib::StringList::ConstIterator j = i->second.begin(); j != i->second.end(); ++j)
+        //     {
+        //         std::cout << std::left << std::setw(longest) << i->first << " - " << '"' << *j << '"' << std::endl;
+        //     }
+        // }
     }
     else
     {
         bValid = false;
     }
 
-    return { title, artist, album, genre, comment, channels, length, sample_rate, bitrate };
+    return { title, artist, album, genre, comment, channels, length_ms, sample_rate, bitrate };
 }
 
 void Tags::SetTitle(std::string title)
