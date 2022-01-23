@@ -40,89 +40,11 @@
 #include <wx/toplevel.h>
 #include <wx/window.h>
 
-class Settings : public wxDialog
+class cSettings : public wxDialog
 {
     public:
-        Settings(wxWindow* window);
-        ~Settings();
-
-    private:
-        // -------------------------------------------------------------------
-        wxWindow* m_Window;
-
-    private:
-        // -------------------------------------------------------------------
-        // Top panel for wxDialog
-        wxPanel* m_Panel;
-
-        // -------------------------------------------------------------------
-        // Notebook page panels
-        wxPanel* m_DisplaySettingPanel;
-        wxPanel* m_CollectionSettingPanel;
-        wxPanel* m_ConfigurationSettingPanel;
-
-        // -------------------------------------------------------------------
-        // Top panel sizers
-        wxBoxSizer* m_MainSizer;
-        wxBoxSizer* m_NotebookSizer;
-        wxBoxSizer* m_ButtonSizer;
-
-        // -------------------------------------------------------------------
-        // Notebook
-        wxNotebook* m_Notebook;
-
-        // -------------------------------------------------------------------
-        // Display page
-        wxBoxSizer* m_DisplayTopSizer;
-        wxBoxSizer* m_DisplayFontSizer;
-        wxStaticText* m_RowHeightText;
-        wxStaticText* m_FontTypeText;
-        wxChoice* m_RowHeight;
-        wxChoice* m_FontType;
-        wxButton* m_FontBrowseButton;
-        wxSpinCtrl* m_FontSize;
-        wxBoxSizer* m_WaveformColourSizer;
-        wxStaticText* m_WaveformColourLabel;
-        wxColourPickerCtrl* m_WaveformColourPickerCtrl;
-
-        // -------------------------------------------------------------------
-        // Collection page
-        wxBoxSizer* m_CollectionMainSizer;
-        wxBoxSizer* m_CollectionImportDirSizer;
-        wxBoxSizer* m_CollectionImportOptionsSizer;
-        wxBoxSizer* m_CollectionShowExtensionSizer;
-        wxCheckBox* m_AutoImportCheck;
-        wxCheckBox* m_FollowSymLinksCheck;
-        wxCheckBox* m_RecursiveImportCheck;
-        wxCheckBox* m_ShowFileExtensionCheck;
-        wxTextCtrl* m_ImportDirLocation;
-        wxButton* m_BrowseAutoImportDirButton;
-
-        // -------------------------------------------------------------------
-        // General configuration page
-        wxFlexGridSizer* m_GeneralMainSizer;
-        wxStaticText* m_ConfigLabel;
-        wxStaticText* m_DatabaseLabel;
-        wxTextCtrl* m_ConfigText;
-        wxTextCtrl* m_DatabaseText;
-        wxButton* m_ConfigBrowse;
-        wxButton* m_DatabaseBrowse;
-
-        // -------------------------------------------------------------------
-        // Common buttons for wxDialog
-        wxButton* m_OkButton;
-        wxButton* m_CancelButton;
-
-    private:
-        // -------------------------------------------------------------------
-        wxFont m_Font;
-
-    private:
-        // -------------------------------------------------------------------
-        bool bAutoImport = false;
-        // bool bFollowSymLinks = false;
-        // bool bShowExtension = true;
-        bool bWaveformColourChanged = false;
+        cSettings(wxWindow* window);
+        ~cSettings();
 
     private:
         // -------------------------------------------------------------------
@@ -150,13 +72,88 @@ class Settings : public wxDialog
         wxString GetImportDirPath();
 
         // inline wxFont GetFontType() { return m_Font; };
-        inline bool CanAutoImport() { return bAutoImport; };
-        // inline bool ShouldFollowSymLinks() { return bFollowSymLinks; };
-        // inline bool ShouldShowFileExtension() { return bShowExtension; };
-        inline bool IsWaveformColourChanged() { return bWaveformColourChanged; }
-        // inline wxColour GetWaveformColour() { return m_WaveformColourPickerCtrl->GetColour(); }
+        inline bool CanAutoImport() { return m_bAutoImport; };
+        inline bool IsWaveformColourChanged() { return m_bWaveformColourChanged; }
 
         // -------------------------------------------------------------------
         // Setters
         void SetShowExtension(bool value);
+
+    private:
+        // -------------------------------------------------------------------
+        wxWindow* m_pWindow = nullptr;
+
+    private:
+        // -------------------------------------------------------------------
+        // Top panel for wxDialog
+        wxPanel* m_pPanel = nullptr;
+
+        // -------------------------------------------------------------------
+        // Notebook page panels
+        wxPanel* m_pDisplaySettingPanel = nullptr;
+        wxPanel* m_pCollectionSettingPanel = nullptr;
+        wxPanel* m_pConfigurationSettingPanel = nullptr;
+
+        // -------------------------------------------------------------------
+        // Top panel sizers
+        wxBoxSizer* m_pMainSizer = nullptr;
+        wxBoxSizer* m_pNotebookSizer = nullptr;
+        wxBoxSizer* m_pButtonSizer = nullptr;
+
+        // -------------------------------------------------------------------
+        // Notebook
+        wxNotebook* m_pNotebook = nullptr;
+
+        // -------------------------------------------------------------------
+        // Display page
+        wxBoxSizer* m_pDisplayTopSizer = nullptr;
+        wxBoxSizer* m_pDisplayFontSizer = nullptr;
+        wxStaticText* m_pRowHeightText = nullptr;
+        wxStaticText* m_pFontTypeText = nullptr;
+        wxChoice* m_pRowHeight = nullptr;
+        wxChoice* m_pFontType = nullptr;
+        wxButton* m_pFontBrowseButton = nullptr;
+        wxSpinCtrl* m_pFontSize = nullptr;
+        wxBoxSizer* m_pWaveformColourSizer = nullptr;
+        wxStaticText* m_pWaveformColourLabel = nullptr;
+        wxColourPickerCtrl* m_pWaveformColourPickerCtrl = nullptr;
+
+        // -------------------------------------------------------------------
+        // Collection page
+        wxBoxSizer* m_pCollectionMainSizer = nullptr;
+        wxBoxSizer* m_pCollectionImportDirSizer = nullptr;
+        wxBoxSizer* m_pCollectionImportOptionsSizer = nullptr;
+        wxBoxSizer* m_pCollectionShowExtensionSizer = nullptr;
+        wxCheckBox* m_pAutoImportCheck = nullptr;
+        wxCheckBox* m_pFollowSymLinksCheck = nullptr;
+        wxCheckBox* m_pRecursiveImportCheck = nullptr;
+        wxCheckBox* m_pShowFileExtensionCheck = nullptr;
+        wxTextCtrl* m_pImportDirLocation = nullptr;
+        wxButton* m_pBrowseAutoImportDirButton = nullptr;
+
+        // -------------------------------------------------------------------
+        // General configuration page
+        wxFlexGridSizer* m_pGeneralMainSizer = nullptr;
+        wxStaticText* m_pConfigLabel = nullptr;
+        wxStaticText* m_pDatabaseLabel = nullptr;
+        wxTextCtrl* m_pConfigText = nullptr;
+        wxTextCtrl* m_pDatabaseText = nullptr;
+        wxButton* m_pConfigBrowse = nullptr;
+        wxButton* m_pDatabaseBrowse = nullptr;
+
+        // -------------------------------------------------------------------
+        // Common buttons for wxDialog
+        wxButton* m_pOkButton = nullptr;
+        wxButton* m_pCancelButton = nullptr;
+
+    private:
+        // -------------------------------------------------------------------
+        wxFont m_Font;
+
+    private:
+        // -------------------------------------------------------------------
+        bool m_bAutoImport = false;
+        // bool bFollowSymLinks = false;
+        // bool bShowExtension = true;
+        bool m_bWaveformColourChanged = false;
 };

@@ -1,29 +1,44 @@
+/* SampleHive
+ * Copyright (C) 2021  Apoorv Singh
+ * A simple, modern audio sample browser/manager for GNU/Linux.
+ *
+ * This file is a part of SampleHive
+ *
+ * SampleHive is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * SampleHive is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "GUI/ListCtrl.hpp"
-// #include "GUI/Hives.hpp"
-// #include "GUI/Trash.hpp"
 #include "GUI/Dialogs/TagEditor.hpp"
 #include "Database/Database.hpp"
-#include "GUI/Hives.hpp"
 #include "Utility/ControlIDs.hpp"
-#include "Utility/SH_Event.hpp"
-#include "Utility/Signal.hpp"
+#include "Utility/HiveData.hpp"
 #include "Utility/Serialize.hpp"
+#include "Utility/Event.hpp"
+#include "Utility/Signal.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
+#include "Utility/Utils.hpp"
 
 #include <wx/dir.h>
 #include <wx/menu.h>
-#include "wx/log.h"
 #include <wx/progdlg.h>
 #include <wx/msgdlg.h>
 
-// cListCtrl::cListCtrl(wxWindow* window)
-cListCtrl::cListCtrl(wxWindow* window, wxDataViewItem favHive, wxDataViewTreeCtrl& hives,
-                     wxTreeItemId trashRoot, wxTreeCtrl& trash)
-    : wxDataViewListCtrl(window, BC_Library, wxDefaultPosition, wxDefaultSize,
+cListCtrl::cListCtrl(wxWindow* window)
+    : wxDataViewListCtrl(window, SampleHive::ID::BC_Library, wxDefaultPosition, wxDefaultSize,
                          wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES | wxDV_ROW_LINES),
-      // m_pWindow(window)
-      m_pWindow(window), m_Hives(hives), m_FavoritesHive(favHive), m_TrashRoot(trashRoot), m_Trash(trash)
+      m_pWindow(window)
 {
     // Adding columns to wxDataViewListCtrl.
     AppendBitmapColumn(wxBitmap(ICON_STAR_FILLED_16px),
@@ -95,20 +110,16 @@ cListCtrl::cListCtrl(wxWindow* window, wxDataViewItem favHive, wxDataViewTreeCtr
     // Enable dragging a file from cListCtrl
     this->EnableDragSource(wxDF_FILENAME);
 
-    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &cListCtrl::OnClickLibrary, this, BC_Library);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &cListCtrl::OnClickLibrary, this, SampleHive::ID::BC_Library);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &cListCtrl::OnDragFromLibrary, this);
     this->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(cListCtrl::OnDragAndDropToLibrary), NULL, this);
-    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &cListCtrl::OnShowLibraryContextMenu, this, BC_Library);
-    Bind(wxEVT_DATAVIEW_COLUMN_HEADER_RIGHT_CLICK,
-         &cListCtrl::OnShowLibraryColumnHeaderContextMenu, this, BC_Library);
-
-    LoadDatabase();
+    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &cListCtrl::OnShowLibraryContextMenu, this, SampleHive::ID::BC_Library);
+    Bind(wxEVT_DATAVIEW_COLUMN_HEADER_RIGHT_CLICK, &cListCtrl::OnShowLibraryColumnHeaderContextMenu, this, SampleHive::ID::BC_Library);
 }
 
 void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
 {
-    //  cHivesPanel hives(m_pWindow);
-    Database db;
+    cDatabase db;
 
     int selected_row = this->ItemToRow(event.GetItem());
     int current_row = this->ItemToRow(this->GetCurrentItem());
@@ -123,19 +134,13 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
     }
 
     // Update the waveform bitmap
-    SampleHive::Signal::SendWaveformUpdateStatus(*this);
-    // m_TopWaveformPanel->ResetDC();
+    SampleHive::cSignal::SendWaveformUpdateStatus(*this);
 
-    // TODO
-    // SampleHive::Signal::SendSetLoopABButton(*this);
-    // m_LoopABButton->SetValue(false);
+    // Update LoopAB button value
+    SampleHive::cSignal::SendLoopABButtonValueChange(*this);
 
-    SampleHive::Signal::SendTimerStopStatus(*this);
-    // if (m_Timer->IsRunning())
-    // {
-    //     m_Timer->Stop();
-    //     SH_LOG_DEBUG("TIMER STOPPED");
-    // }
+    // Stop the timer
+    SampleHive::cSignal::SendTimerStopStatus(*this);
 
     wxString selection = this->GetTextValue(selected_row, 1);
 
@@ -148,40 +153,30 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
     if (!CurrentColumn)
         return;
 
-    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
-    std::string filename = GetFilenamePathAndExtension(selection).Filename;
-    std::string extension = GetFilenamePathAndExtension(selection).Extension;
+    wxString sample_path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Path;
+    std::string filename = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Filename;
+    std::string extension = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Extension;
 
     if (CurrentColumn != FavoriteColumn)
     {
-        SampleHive::Signal::SendCallFunctionPlay(selection, *this);
-
-        // TODO
         // ClearLoopPoints();
+        SampleHive::cSignal::SendClearLoopPointsStatus(*this);
 
-        // if (bAutoplay)
-        // {
-        //     if (bLoopPointsSet && m_LoopABButton->GetValue())
-        //         PlaySample(sample_path.ToStdString(), selection.ToStdString(),
-        //                    true, m_LoopA.ToDouble(), wxFromStart);
-        //     else
-        //         PlaySample(sample_path.ToStdString(), selection.ToStdString());
-        // }
-        // else
-        //     m_MediaCtrl->Stop();
+        // Play the sample
+        SampleHive::cSignal::SendCallFunctionPlay(selection, true, *this);
     }
     else
     {
         wxString msg;
 
         // Get hive name and location
-        std::string hive_name = m_Hives.GetItemText(m_FavoritesHive).ToStdString();
-        wxDataViewItem hive_selection = m_Hives.GetSelection();
+        std::string hive_name = SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString();
+        wxDataViewItem hive_selection = SampleHive::cHiveData::Get().GetHiveItemSelection();
 
         SH_LOG_DEBUG("HIVE NAME: {}", hive_name);
 
-        if (hive_selection.IsOk() && m_Hives.IsContainer(hive_selection))
-            hive_name = m_Hives.GetItemText(hive_selection).ToStdString();
+        if (hive_selection.IsOk() && SampleHive::cHiveData::Get().IsHiveItemContainer(hive_selection))
+            hive_name = SampleHive::cHiveData::Get().GetHiveItemText(false, hive_selection);
 
         wxString name = this->GetTextValue(selected_row, 1);
 
@@ -192,20 +187,18 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
 
         if (db.GetFavoriteColumnValueByFilename(filename) == 0)
         {
-            SH_LOG_DEBUG("TRUE COND....");
-
             this->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 1);
             db.UpdateHiveName(filename, hive_name);
 
-            for (int i = 0; i < m_Hives.GetChildCount(root); i++)
+            for (int i = 0; i < SampleHive::cHiveData::Get().GetHiveChildCount(root); i++)
             {
-                container = m_Hives.GetNthChild(root, i);
+                container = SampleHive::cHiveData::Get().GetHiveNthChild(root, i);
 
-                if (m_Hives.GetItemText(container).ToStdString() == hive_name)
+                if (SampleHive::cHiveData::Get().GetHiveItemText(false, container) == hive_name)
                 {
-                    m_Hives.AppendItem(container, name);
+                    SampleHive::cHiveData::Get().HiveAppendItem(container, name);
                     break;
                 }
             }
@@ -217,19 +210,19 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
             this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 0);
-            db.UpdateHiveName(filename, m_Hives.GetItemText(m_FavoritesHive).ToStdString());
+            db.UpdateHiveName(filename, SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString());
 
-            for (int i = 0; i < m_Hives.GetChildCount(root); i++)
+            for (int i = 0; i < SampleHive::cHiveData::Get().GetHiveChildCount(root); i++)
             {
-                container = m_Hives.GetNthChild(root, i);
+                container = SampleHive::cHiveData::Get().GetHiveNthChild(root, i);
 
-                for (int j = 0; j < m_Hives.GetChildCount(container); j++)
+                for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(container); j++)
                 {
-                    child = m_Hives.GetNthChild(container, j);
+                    child = SampleHive::cHiveData::Get().GetHiveNthChild(container, j);
 
-                    if (m_Hives.GetItemText(child) == name)
+                    if (SampleHive::cHiveData::Get().GetHiveItemText(false, child) == name)
                     {
-                        m_Hives.DeleteItem(child);
+                        SampleHive::cHiveData::Get().HiveDeleteItem(child);
                         break;
                     }
                 }
@@ -239,8 +232,7 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
         }
 
         if (!msg.IsEmpty())
-            SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-        //     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+            SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
     }
 }
 
@@ -288,7 +280,7 @@ void cListCtrl::OnDragAndDropToLibrary(wxDropFilesEvent& event)
 
         progressDialog->Destroy();
 
-        AddSamples(filepath_array);
+        SampleHive::cUtils::Get().AddSamples(filepath_array, m_pWindow);
 
         SH_LOG_DEBUG("Done Inserting Samples");
     }
@@ -303,7 +295,7 @@ void cListCtrl::OnDragFromLibrary(wxDataViewEvent& event)
 
     wxString selection = this->GetTextValue(selected_row, 1);
 
-    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
+    wxString sample_path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Path;
 
     wxFileDataObject* fileData = new wxFileDataObject();
 
@@ -315,10 +307,9 @@ void cListCtrl::OnDragFromLibrary(wxDataViewEvent& event)
 
 void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
 {
-    TagEditor* tagEditor;
-    Serializer serializer;
-    Database db;
-    //  cHivesPanel hives(m_pWindow);
+    cTagEditor* tagEditor;
+    cDatabase db;
+    SampleHive::cSerializer serializer;
 
     wxString msg;
 
@@ -332,9 +323,9 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
     wxString selection = this->GetTextValue(selected_row, 1);
 
-    wxString sample_path = GetFilenamePathAndExtension(selection).Path;
-    std::string filename = GetFilenamePathAndExtension(selection).Filename;
-    std::string extension = GetFilenamePathAndExtension(selection).Extension;
+    wxString sample_path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Path;
+    std::string filename = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Filename;
+    std::string extension = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Extension;
 
     wxMenu menu;
 
@@ -342,41 +333,41 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
     bool favorite_add = false;
 
     if (db.GetFavoriteColumnValueByFilename(filename) == 1)
-        menu.Append(MN_FavoriteSample, _("Remove from hive"), _("Remove the selected sample(s) from hive"));
+        menu.Append(SampleHive::ID::MN_FavoriteSample, _("Remove from hive"), _("Remove the selected sample(s) from hive"));
     else
     {
-        menu.Append(MN_FavoriteSample, _("Add to hive"), _("Add selected sample(s) to hive"));
+        menu.Append(SampleHive::ID::MN_FavoriteSample, _("Add to hive"), _("Add selected sample(s) to hive"));
         favorite_add = true;
     }
 
-    menu.Append(MN_DeleteSample, _("Delete"), _("Delete the selected sample(s) from database"));
-    menu.Append(MN_TrashSample, _("Trash"), _("Send the selected sample(s) to trash"));
+    menu.Append(SampleHive::ID::MN_DeleteSample, _("Delete"), _("Delete the selected sample(s) from database"));
+    menu.Append(SampleHive::ID::MN_TrashSample, _("Trash"), _("Send the selected sample(s) to trash"));
 
     if (this->GetSelectedItemsCount() <= 1)
     {
-        menu.Append(MN_EditTagSample, _("Edit tags"),
+        menu.Append(SampleHive::ID::MN_EditTagSample, _("Edit tags"),
                     _("Edit the tags for the selected sample"))->Enable(true);
-        menu.Append(MN_OpenFile, _("Open in file manager"),
+        menu.Append(SampleHive::ID::MN_OpenFile, _("Open in file manager"),
                     _("Open the selected sample in system's file manager"))->Enable(true);
     }
     else
     {
-        menu.Append(MN_EditTagSample, _("Edit tags"),
+        menu.Append(SampleHive::ID::MN_EditTagSample, _("Edit tags"),
                     _("Edit the tags for the selected sample"))->Enable(false);
-        menu.Append(MN_OpenFile, _("Open in file manager"),
+        menu.Append(SampleHive::ID::MN_OpenFile, _("Open in file manager"),
                     _("Open the selected sample in system's file manager"))->Enable(false);
     }
 
     switch (this->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
-        case MN_FavoriteSample:
+        case SampleHive::ID::MN_FavoriteSample:
         {
-            std::string hive_name = m_Hives.GetItemText(m_FavoritesHive).ToStdString();
+            std::string hive_name = SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString();
 
-            wxDataViewItem hive_selection = m_Hives.GetSelection();
+            wxDataViewItem hive_selection = SampleHive::cHiveData::Get().GetHiveItemSelection();
 
-            if (hive_selection.IsOk() && m_Hives.IsContainer(hive_selection))
-                hive_name = m_Hives.GetItemText(hive_selection).ToStdString();
+            if (hive_selection.IsOk() && SampleHive::cHiveData::Get().IsHiveItemContainer(hive_selection))
+                hive_name = SampleHive::cHiveData::Get().GetHiveItemText(false, hive_selection);
 
             wxDataViewItem root = wxDataViewItem(wxNullPtr);
             wxDataViewItem container;
@@ -417,13 +408,13 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     db.UpdateFavoriteColumn(filename, 1);
                     db.UpdateHiveName(filename, hive_name);
 
-                    for (int i = 0; i < m_Hives.GetChildCount(root); i++)
+                    for (int i = 0; i < SampleHive::cHiveData::Get().GetHiveChildCount(root); i++)
                     {
-                        container = m_Hives.GetNthChild(root, i);
+                        container = SampleHive::cHiveData::Get().GetHiveNthChild(root, i);
 
-                        if (m_Hives.GetItemText(container).ToStdString() == hive_name)
+                        if (SampleHive::cHiveData::Get().GetHiveItemText(false, container) == hive_name)
                         {
-                            m_Hives.AppendItem(container, name);
+                            SampleHive::cHiveData::Get().HiveAppendItem(container, name);
 
                             msg = wxString::Format(_("Added %s to %s"), name, hive_name);
                             break;
@@ -436,20 +427,19 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 0);
-                    db.UpdateHiveName(filename,
-                                      m_Hives.GetItemText(m_FavoritesHive).ToStdString());
+                    db.UpdateHiveName(filename, SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString());
 
-                    for (int i = 0; i < m_Hives.GetChildCount(root); i++)
+                    for (int i = 0; i < SampleHive::cHiveData::Get().GetHiveChildCount(root); i++)
                     {
-                        container = m_Hives.GetNthChild(root, i);
+                        container = SampleHive::cHiveData::Get().GetHiveNthChild(root, i);
 
-                        for (int j = 0; j < m_Hives.GetChildCount(container); j++)
+                        for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(container); j++)
                         {
-                            child = m_Hives.GetNthChild(container, j);
+                            child = SampleHive::cHiveData::Get().GetHiveNthChild(container, j);
 
-                            if (m_Hives.GetItemText(child) == name)
+                            if (SampleHive::cHiveData::Get().GetHiveItemText(false, child) == name)
                             {
-                                m_Hives.DeleteItem(child);
+                                SampleHive::cHiveData::Get().HiveDeleteItem(child);
 
                                 msg = wxString::Format(_("Removed %s from %s"), name, hive_name);
                                 break;
@@ -458,32 +448,25 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                     }
                 }
             }
+
             break;
         }
-        case MN_DeleteSample:
+        case SampleHive::ID::MN_DeleteSample:
         {
             wxDataViewItemArray items;
             int rows = this->GetSelections(items);
 
-            wxMessageDialog singleMsgDialog(this, wxString::Format(_("Are you sure you want to delete "
-                                                                     "%s from database? "
-                                                                     "Warning this change is "
-                                                                     "permanent, and cannot be undone."),
+            wxMessageDialog singleMsgDialog(this, wxString::Format(_("Are you sure you want to delete %s from database? "
+                                                                     "Warning this change is permanent, and cannot be undone."),
                                                                    sample_path.AfterLast('/')),
                                             wxMessageBoxCaptionStr,
-                                            wxYES_NO | wxNO_DEFAULT |
-                                            wxICON_QUESTION | wxSTAY_ON_TOP |
-                                            wxCENTER);
+                                            wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP | wxCENTER);
 
             wxMessageDialog multipleMsgDialog(this, wxString::Format(_("Are you sure you want to delete "
-                                                                       "%d selected samples from database? "
-                                                                       "Warning this change is "
-                                                                       "permanent, and cannot be "
-                                                                       "undone."), rows),
+                                                                       "%d selected samples from database? Warning this change is "
+                                                                       "permanent, and cannot be undone."), rows),
                                               wxMessageBoxCaptionStr,
-                                              wxYES_NO | wxNO_DEFAULT |
-                                              wxICON_QUESTION | wxSTAY_ON_TOP |
-                                              wxCENTER);
+                                              wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP | wxCENTER);
 
             wxDataViewItem root = wxDataViewItem(wxNullPtr);
             wxDataViewItem container;
@@ -498,21 +481,21 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                         db.RemoveSampleFromDatabase(filename);
                         this->DeleteItem(selected_row);
 
-                        for (int j = 0; j < m_Hives.GetChildCount(root); j++)
+                        for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(root); j++)
                         {
-                            container = m_Hives.GetNthChild(root, j);
+                            container = SampleHive::cHiveData::Get().GetHiveNthChild(root, j);
 
-                            for (int k = 0; k < m_Hives.GetChildCount(container); k++)
+                            for (int k = 0; k < SampleHive::cHiveData::Get().GetHiveChildCount(container); k++)
                             {
-                                child = m_Hives.GetNthChild(container, k);
+                                child = SampleHive::cHiveData::Get().GetHiveNthChild(container, k);
 
                                 wxString child_text = serializer.DeserializeShowFileExtension() ?
-                                    m_Hives.GetItemText(child).BeforeLast('.') :
-                                    m_Hives.GetItemText(child);
+                                    SampleHive::cHiveData::Get().GetHiveItemText(false, child).BeforeLast('.') :
+                                    SampleHive::cHiveData::Get().GetHiveItemText(false, child);
 
                                 if (child_text == filename)
                                 {
-                                    m_Hives.DeleteItem(child);
+                                    SampleHive::cHiveData::Get().HiveDeleteItem(child);
 
                                     break;
                                 }
@@ -548,21 +531,21 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                             db.RemoveSampleFromDatabase(multi_selection);
                             this->DeleteItem(row);
 
-                            for (int j = 0; j < m_Hives.GetChildCount(root); j++)
+                            for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(root); j++)
                             {
-                                container = m_Hives.GetNthChild(root, j);
+                                container = SampleHive::cHiveData::Get().GetHiveNthChild(root, j);
 
-                                for (int k = 0; k < m_Hives.GetChildCount(container); k++)
+                                for (int k = 0; k < SampleHive::cHiveData::Get().GetHiveChildCount(container); k++)
                                 {
-                                    child = m_Hives.GetNthChild(container, k);
+                                    child = SampleHive::cHiveData::Get().GetHiveNthChild(container, k);
 
                                     wxString child_text = serializer.DeserializeShowFileExtension() ?
-                                        m_Hives.GetItemText(child).BeforeLast('.') :
-                                        m_Hives.GetItemText(child);
+                                        SampleHive::cHiveData::Get().GetHiveItemText(false, child).BeforeLast('.') :
+                                        SampleHive::cHiveData::Get().GetHiveItemText(false, child);
 
                                     if (child_text == multi_selection)
                                     {
-                                        m_Hives.DeleteItem(child);
+                                        SampleHive::cHiveData::Get().HiveDeleteItem(child);
                                         break;
                                     }
                                 }
@@ -582,7 +565,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
             }
         }
         break;
-        case MN_TrashSample:
+        case SampleHive::ID::MN_TrashSample:
         {
             wxDataViewItem root = wxDataViewItem(wxNullPtr);
             wxDataViewItem container, child;
@@ -618,43 +601,42 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                         db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
-                        for (int j = 0; j < m_Hives.GetChildCount(root); j++)
+                        for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(root); j++)
                         {
-                            container = m_Hives.GetNthChild(root, j);
+                            container = SampleHive::cHiveData::Get().GetHiveNthChild(root, j);
 
-                            for (int k = 0; k < m_Hives.GetChildCount(container); k++)
+                            for (int k = 0; k < SampleHive::cHiveData::Get().GetHiveChildCount(container); k++)
                             {
-                                child = m_Hives.GetNthChild(container, k);
+                                child = SampleHive::cHiveData::Get().GetHiveNthChild(container, k);
 
                                 wxString child_text = serializer.DeserializeShowFileExtension() ?
-                                    m_Hives.GetItemText(child).BeforeLast('.') :
-                                    m_Hives.GetItemText(child);
+                                    SampleHive::cHiveData::Get().GetHiveItemText(false, child).BeforeLast('.') :
+                                    SampleHive::cHiveData::Get().GetHiveItemText(false, child);
 
                                 if (child_text == files[i])
                                 {
-                                    m_Hives.DeleteItem(child);
+                                    SampleHive::cHiveData::Get().HiveDeleteItem(child);
                                     break;
                                 }
                             }
                         }
                     }
 
-                    m_Trash.AppendItem(m_TrashRoot, text_value);
+                    SampleHive::cHiveData::Get().TrashAppendItem(SampleHive::cHiveData::Get().GetTrashRoot(), text_value);
 
                     this->DeleteItem(item_row);
 
                     db.UpdateTrashColumn(files[i].ToStdString(), 1);
-                    db.UpdateHiveName(files[i].ToStdString(),
-                                      m_Hives.GetItemText(m_FavoritesHive).ToStdString());
+                    db.UpdateHiveName(files[i].ToStdString(), SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString());
 
                     msg = wxString::Format(_("%s sent to trash"), text_value);
                 }
             }
         }
         break;
-        case MN_EditTagSample:
+        case SampleHive::ID::MN_EditTagSample:
         {
-            tagEditor = new TagEditor(this, static_cast<std::string>(sample_path));
+            tagEditor = new cTagEditor(this, static_cast<std::string>(sample_path));
 
             switch (tagEditor->ShowModal())
             {
@@ -672,7 +654,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
             }
         }
         break;
-        case MN_OpenFile:
+        case SampleHive::ID::MN_OpenFile:
             wxExecute(wxString::Format("xdg-open '%s'", sample_path.BeforeLast('/')));
             break;
         case wxID_NONE:
@@ -684,8 +666,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
     }
 
     if (!msg.IsEmpty())
-        SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-    //     m_InfoBar->ShowMessage(msg);
+        SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
 }
 
 void cListCtrl::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
@@ -702,230 +683,56 @@ void cListCtrl::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
     wxDataViewColumn* BitrateColumn = this->GetColumn(7);
     wxDataViewColumn* PathColumn = this->GetColumn(8);
 
-    menu.AppendCheckItem(MN_ColumnFavorite, _("Favorites"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnFavorite, _("Favorites"),
                          _("Toggle favorites column"))->Check(FavoriteColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnFilename, _("Filename"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnFilename, _("Filename"),
                          _("Toggle filename column"))->Check(FilenameColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnSamplePack, _("Sample Pack"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnSamplePack, _("Sample Pack"),
                          _("Toggle sample pack column"))->Check(SamplePackColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnType, _("Type"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnType, _("Type"),
                          _("Toggle type column"))->Check(TypeColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnChannels, _("Channels"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnChannels, _("Channels"),
                          _("Toggle channels column"))->Check(ChannelsColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnLength, _("Length"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnLength, _("Length"),
                          _("Toggle length column"))->Check(LengthColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnSampleRate, _("Sample Rate"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnSampleRate, _("Sample Rate"),
                          _("Toggle sample rate column"))->Check(SampleRateColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnBitrate, _("Bitrate"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnBitrate, _("Bitrate"),
                          _("Toggle bitrate column"))->Check(BitrateColumn->IsShown());
-    menu.AppendCheckItem(MN_ColumnPath, _("Path"),
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnPath, _("Path"),
                          _("Toggle path column"))->Check(PathColumn->IsShown());
 
     switch (this->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
     {
-        case MN_ColumnFavorite:
-            FavoriteColumn->SetHidden(!menu.IsChecked(MN_ColumnFavorite));
+        case SampleHive::ID::MN_ColumnFavorite:
+            FavoriteColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnFavorite));
             break;
-        case MN_ColumnFilename:
-            FilenameColumn->SetHidden(!menu.IsChecked(MN_ColumnFilename));
+        case SampleHive::ID::MN_ColumnFilename:
+            FilenameColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnFilename));
             break;
-        case MN_ColumnSamplePack:
-            SamplePackColumn->SetHidden(!menu.IsChecked(MN_ColumnSamplePack));
+        case SampleHive::ID::MN_ColumnSamplePack:
+            SamplePackColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnSamplePack));
             break;
-        case MN_ColumnType:
-            TypeColumn->SetHidden(!menu.IsChecked(MN_ColumnType));
+        case SampleHive::ID::MN_ColumnType:
+            TypeColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnType));
             break;
-        case MN_ColumnChannels:
-            ChannelsColumn->SetHidden(!menu.IsChecked(MN_ColumnChannels));
+        case SampleHive::ID::MN_ColumnChannels:
+            ChannelsColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnChannels));
             break;
-        case MN_ColumnLength:
-            LengthColumn->SetHidden(!menu.IsChecked(MN_ColumnLength));
+        case SampleHive::ID::MN_ColumnLength:
+            LengthColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnLength));
             break;
-        case MN_ColumnSampleRate:
-            SampleRateColumn->SetHidden(!menu.IsChecked(MN_ColumnSampleRate));
+        case SampleHive::ID::MN_ColumnSampleRate:
+            SampleRateColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnSampleRate));
             break;
-        case MN_ColumnBitrate:
-            BitrateColumn->SetHidden(!menu.IsChecked(MN_ColumnBitrate));
+        case SampleHive::ID::MN_ColumnBitrate:
+            BitrateColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnBitrate));
             break;
-        case MN_ColumnPath:
-            PathColumn->SetHidden(!menu.IsChecked(MN_ColumnPath));
+        case SampleHive::ID::MN_ColumnPath:
+            PathColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnPath));
             break;
         default:
             break;
-    }
-}
-
-void cListCtrl::AddSamples(wxArrayString& files)
-{
-    Serializer serializer;
-    Database db;
-
-    wxBusyCursor busy_cursor;
-    wxWindowDisabler window_disabler;
-
-    wxProgressDialog* progressDialog = new wxProgressDialog(_("Adding files.."),
-                                                            _("Adding files, please wait..."),
-                                                            static_cast<int>(files.size()), this,
-                                                            wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_CAN_ABORT |
-                                                            wxPD_AUTO_HIDE);
-    progressDialog->CenterOnParent(wxBOTH);
-
-    std::vector<Sample> sample_array;
-
-    std::string path;
-    std::string artist;
-    std::string filename_with_extension;
-    std::string filename_without_extension;
-    std::string extension;
-    std::string filename;
-
-    //Check All Files At Once
-    wxArrayString sorted_files;
-
-    sorted_files = db.CheckDuplicates(files);
-    files = sorted_files;
-
-    if(files.size() < 1)
-    {
-        progressDialog->Destroy();
-        return;
-    }
-
-    progressDialog->SetRange(files.size());
-
-    for(unsigned int i = 0; i < files.size(); i++)
-    {
-        progressDialog->Update(i, wxString::Format(_("Getting Data For %s"), files[i].AfterLast('/')));
-
-        if(progressDialog->WasCancelled())
-        {
-            progressDialog->Destroy();
-            return;
-        }
-
-        path = files[i].ToStdString();
-        filename_with_extension = files[i].AfterLast('/').ToStdString();
-        filename_without_extension = files[i].AfterLast('/').BeforeLast('.').ToStdString();
-        extension = files[i].AfterLast('.').ToStdString();
-
-        filename = serializer.DeserializeShowFileExtension() ?
-            filename_with_extension : filename_without_extension;
-
-        Sample sample;
-
-        sample.SetPath(path);
-        sample.SetFilename(filename_without_extension);
-        sample.SetFileExtension(extension);
-
-        Tags tags(path);
-
-        artist = tags.GetAudioInfo().artist.ToStdString();
-
-        sample.SetSamplePack(artist);
-        sample.SetChannels(tags.GetAudioInfo().channels);
-        sample.SetLength(tags.GetAudioInfo().length);
-        sample.SetSampleRate(tags.GetAudioInfo().sample_rate);
-        sample.SetBitrate(tags.GetAudioInfo().bitrate);
-
-        wxLongLong llLength = sample.GetLength();
-        int total_min = static_cast<int>((llLength / 60000).GetValue());
-        int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
-
-        wxVector<wxVariant> data;
-
-        wxVariant icon = wxVariant(wxBitmap(ICON_STAR_EMPTY_16px));
-
-        if (tags.IsFileValid())
-        {
-            data.clear();
-            data.push_back(icon);
-            data.push_back(filename);
-            data.push_back(sample.GetSamplePack());
-            data.push_back("");
-            data.push_back(wxString::Format("%d", sample.GetChannels()));
-            data.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
-            data.push_back(wxString::Format("%d", sample.GetSampleRate()));
-            data.push_back(wxString::Format("%d", sample.GetBitrate()));
-            data.push_back(path);
-
-            SH_LOG_INFO("Adding file: {}, Extension: {}", sample.GetFilename(), sample.GetFileExtension());
-
-            this->AppendItem(data);
-
-            sample_array.push_back(sample);
-        }
-        else
-        {
-            wxString msg = wxString::Format(_("Error! Cannot open %s, Invalid file type."),
-                                            filename_with_extension);
-
-            SampleHive::Signal::SendInfoBarMessage(msg, wxICON_ERROR, *this);
-            // m_InfoBar->ShowMessage(msg, wxICON_ERROR);
-        }
-    }
-
-    progressDialog->Pulse(_("Updating Database.."), NULL);
-
-    db.InsertIntoSamples(sample_array);
-
-    progressDialog->Destroy();
-}
-
-cListCtrl::FileInfo cListCtrl::GetFilenamePathAndExtension(const wxString& selected,
-                                                           bool checkExtension, bool doGetFilename) const
-{
-    Serializer serializer;
-    Database db;
-
-    wxString path;
-    std::string extension, filename;
-
-    wxString filename_with_extension = db.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
-    wxString filename_without_extension = db.GetSamplePathByFilename(selected.ToStdString());
-
-    if (checkExtension)
-    {
-        extension = serializer.DeserializeShowFileExtension() ?
-            db.GetSampleFileExtension(selected.ToStdString()) :
-            db.GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
-    }
-
-    path = selected.Contains(wxString::Format(".%s", extension)) ?
-        filename_with_extension : filename_without_extension;
-
-    if (doGetFilename)
-        filename = path.AfterLast('/').BeforeLast('.').ToStdString();
-
-    return { path, extension, filename };
-}
-
-void cListCtrl::LoadDatabase()
-{
-    Serializer serializer;
-    Database db;
-    //  cHivesPanel hives(m_pWindow);
-    // cTrashPanel trash(m_pWindow);
-
-    try
-    {
-        const auto dataset = db.LoadSamplesDatabase(m_Hives, m_FavoritesHive,
-                                                    m_Trash, m_TrashRoot,
-                                                    serializer.DeserializeShowFileExtension(),
-                                                    ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
-
-        if (dataset.empty())
-            SH_LOG_INFO("Error! Database is empty.");
-        else
-        {
-            for (auto data : dataset)
-                this->AppendItem(data);
-        }
-
-        db.LoadHivesDatabase(m_Hives);
-    }
-    catch(...)
-    {
-        std::cerr << "Error loading data." << std::endl;
     }
 }
 

@@ -1,25 +1,47 @@
+/* SampleHive
+ * Copyright (C) 2021  Apoorv Singh
+ * A simple, modern audio sample browser/manager for GNU/Linux.
+ *
+ * This file is a part of SampleHive
+ *
+ * SampleHive is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * SampleHive is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "GUI/Trash.hpp"
-#include "GUI/Hives.hpp"
-#include "GUI/ListCtrl.hpp"
 #include "Database/Database.hpp"
 #include "Utility/ControlIDs.hpp"
+#include "Utility/HiveData.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 #include "Utility/Signal.hpp"
 #include "Utility/Serialize.hpp"
+#include "Utility/Utils.hpp"
+
+#include <exception>
 
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
-cTrashPanel::cTrashPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
+cTrashPanel::cTrashPanel(wxWindow* window)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL),
-      m_pWindow(window), m_ListCtrl(listCtrl)
+      m_pWindow(window)
 {
     m_pMainSizer = new wxBoxSizer(wxVERTICAL);
     m_pTrashSizer = new wxBoxSizer(wxVERTICAL);
     m_pButtonSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_pTrash = new wxTreeCtrl(this, BC_Trash, wxDefaultPosition, wxDefaultSize,
+    m_pTrash = new wxTreeCtrl(this, SampleHive::ID::BC_Trash, wxDefaultPosition, wxDefaultSize,
                               wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_MULTIPLE);
 
     // Setting m_Trash to accept files to be dragged and dropped on it
@@ -27,7 +49,7 @@ cTrashPanel::cTrashPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
 
     m_pTrashSizer->Add(m_pTrash, wxSizerFlags(1).Expand());
 
-    m_pRestoreTrashedItemButton = new wxButton(this, BC_RestoreTrashedItem, _("Restore sample"),
+    m_pRestoreTrashedItemButton = new wxButton(this, SampleHive::ID::BC_RestoreTrashedItem, _("Restore sample"),
                                                wxDefaultPosition, wxDefaultSize, 0);
     m_pRestoreTrashedItemButton->SetToolTip(_("Restore selected sample"));
 
@@ -37,8 +59,8 @@ cTrashPanel::cTrashPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
     m_TrashRoot = m_pTrash->AddRoot("Trash");
 
     m_pTrash->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(cTrashPanel::OnDragAndDropToTrash), NULL, this);
-    Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &cTrashPanel::OnShowTrashContextMenu, this, BC_Trash);
-    Bind(wxEVT_BUTTON, &cTrashPanel::OnClickRestoreTrashItem, this, BC_RestoreTrashedItem);
+    Bind(wxEVT_TREE_ITEM_RIGHT_CLICK, &cTrashPanel::OnShowTrashContextMenu, this, SampleHive::ID::BC_Trash);
+    Bind(wxEVT_BUTTON, &cTrashPanel::OnClickRestoreTrashItem, this, SampleHive::ID::BC_RestoreTrashedItem);
 
     m_pMainSizer->Add(m_pTrashSizer, wxSizerFlags(1).Expand());
     m_pMainSizer->Add(m_pButtonSizer, wxSizerFlags(0).Expand());
@@ -52,10 +74,8 @@ cTrashPanel::cTrashPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
 
 void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    cHivesPanel hives(m_pWindow, m_ListCtrl);
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -63,8 +83,7 @@ void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
         wxArrayString files;
 
         wxDataViewItemArray items;
-        int rows = m_ListCtrl.GetSelections(items);
-        // int rows = 2;
+        int rows = SampleHive::cHiveData::Get().GetListCtrlSelections(items);
 
         wxString msg;
 
@@ -73,13 +92,13 @@ void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
         for (int i = 0; i < rows; i++)
         {
-            int item_row = m_ListCtrl.ItemToRow(items[i]);
+            int item_row = SampleHive::cHiveData::Get().GetListCtrlRowFromItem(items, i);
 
-            wxString text_value = m_ListCtrl.GetTextValue(item_row, 1);
+            wxString text_value = SampleHive::cHiveData::Get().GetListCtrlTextValue(item_row, 1);
 
             std::string multi_selection = serializer.DeserializeShowFileExtension() ?
-                m_ListCtrl.GetTextValue(item_row, 1).BeforeLast('.').ToStdString() :
-                m_ListCtrl.GetTextValue(item_row, 1).ToStdString() ;
+                SampleHive::cHiveData::Get().GetListCtrlTextValue(item_row, 1).BeforeLast('.').ToStdString() :
+                SampleHive::cHiveData::Get().GetListCtrlTextValue(item_row, 1).ToStdString() ;
 
             file_data.AddFile(multi_selection);
 
@@ -87,25 +106,25 @@ void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
             {
-                m_ListCtrl.SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
+                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
 
                 db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
-                for (int j = 0; j < hives.GetHivesObject()->GetChildCount(root); j++)
+                for (int j = 0; j < SampleHive::cHiveData::Get().GetHiveChildCount(root); j++)
                 {
-                    container = hives.GetHivesObject()->GetNthChild(root, j);
+                    container = SampleHive::cHiveData::Get().GetHiveNthChild(root, j);
 
-                    for (int k = 0; k < hives.GetHivesObject()->GetChildCount(container); k++)
+                    for (int k = 0; k < SampleHive::cHiveData::Get().GetHiveChildCount(container); k++)
                     {
-                        child = hives.GetHivesObject()->GetNthChild(container, k);
+                        child = SampleHive::cHiveData::Get().GetHiveNthChild(container, k);
 
                         wxString child_text = serializer.DeserializeShowFileExtension() ?
-                            hives.GetHivesObject()->GetItemText(child).BeforeLast('.') :
-                            hives.GetHivesObject()->GetItemText(child);
+                            SampleHive::cHiveData::Get().GetHiveItemText(child).BeforeLast('.') :
+                            SampleHive::cHiveData::Get().GetHiveItemText(child);
 
                         if (child_text == files[i])
                         {
-                            hives.GetHivesObject()->DeleteItem(child);
+                            SampleHive::cHiveData::Get().HiveDeleteItem(child);
                             break;
                         }
                     }
@@ -114,39 +133,37 @@ void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             db.UpdateTrashColumn(files[i].ToStdString(), 1);
             db.UpdateHiveName(files[i].ToStdString(),
-                              hives.GetHivesObject()->GetItemText(hives.GetFavoritesHive()).ToStdString());
+                              SampleHive::cHiveData::Get().GetHiveItemText(SampleHive::cHiveData::Get().GetFavoritesHive()).ToStdString());
 
             m_pTrash->AppendItem(m_TrashRoot, text_value);
 
-            m_ListCtrl.DeleteItem(item_row);
+            SampleHive::cHiveData::Get().ListCtrlDeleteItem(item_row);
 
             msg = wxString::Format(_("%s sent to trash"), text_value);
         }
 
         if (!msg.IsEmpty())
-            SampleHive::Signal::SendInfoBarMessage(msg, wxICON_ERROR, *this);
-        //     m_InfoBar->ShowMessage(msg, wxICON_ERROR);
+            SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_ERROR, *this);
     }
 }
 
 void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     wxTreeItemId selected_trashed_item = event.GetItem();
 
     wxMenu menu;
 
-    menu.Append(MN_DeleteTrash, _("Delete from database"), _("Delete the selected sample(s) from database"));
-    menu.Append(MN_RestoreTrashedItem, _("Restore sample"), _("Restore the selected sample(s) back to library"));
+    menu.Append(SampleHive::ID::MN_DeleteTrash, _("Delete from database"), _("Delete the selected sample(s) from database"));
+    menu.Append(SampleHive::ID::MN_RestoreTrashedItem, _("Restore sample"), _("Restore the selected sample(s) back to library"));
 
     if (selected_trashed_item.IsOk())
     {
         switch (m_pTrash->GetPopupMenuSelectionFromUser(menu, event.GetPoint()))
         {
-            case MN_DeleteTrash:
+            case SampleHive::ID::MN_DeleteTrash:
             {
                 wxString trashed_item_name = serializer.DeserializeShowFileExtension() ?
                     m_pTrash->GetItemText(selected_trashed_item).BeforeLast('.') :
@@ -159,7 +176,7 @@ void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
                 SH_LOG_INFO("{} deleted from trash and databse", trashed_item_name);
             }
             break;
-            case MN_RestoreTrashedItem:
+            case SampleHive::ID::MN_RestoreTrashedItem:
             {
                 wxArrayTreeItemIds selected_item_ids;
                 m_pTrash->GetSelections(selected_item_ids);
@@ -174,7 +191,7 @@ void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
                 {
                     selected_item_text = m_pTrash->GetItemText(selected_item_ids[i]);
 
-                    // filename = GetFilenamePathAndExtension(selected_item_text).Filename;
+                    filename = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected_item_text).Filename;
 
                     file_data.AddFile(filename);
 
@@ -198,13 +215,13 @@ void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
                         {
                             for (auto data : dataset)
                             {
-                                m_ListCtrl.AppendItem(data);
+                                SampleHive::cHiveData::Get().ListCtrlAppendItem(data);
                             }
                         }
                     }
-                    catch (...)
+                    catch (std::exception& e)
                     {
-                        std::cerr << "Error loading data." << std::endl;
+                        SH_LOG_ERROR("Error loading data. {}", e.what());
                     }
 
                     m_pTrash->Delete(selected_item_ids[i]);
@@ -221,9 +238,8 @@ void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
 
 void cTrashPanel::OnClickRestoreTrashItem(wxCommandEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     wxArrayTreeItemIds selected_item_ids;
     m_pTrash->GetSelections(selected_item_ids);
@@ -242,8 +258,7 @@ void cTrashPanel::OnClickRestoreTrashItem(wxCommandEvent& event)
 
     if (selected_item_ids.IsEmpty())
     {
-        wxMessageBox(_("No item selected, try selected a item first."), wxMessageBoxCaptionStr,
-                     wxOK | wxCENTRE, this);
+        wxMessageBox(_("No item selected, try selected a item first."), wxMessageBoxCaptionStr, wxOK | wxCENTRE, this);
         return;
     }
 
@@ -251,7 +266,7 @@ void cTrashPanel::OnClickRestoreTrashItem(wxCommandEvent& event)
     {
         selected_item_text = m_pTrash->GetItemText(selected_item_ids[i]);
 
-        // filename = GetFilenamePathAndExtension(selected_item_text).Filename;
+        filename = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected_item_text).Filename;
 
         file_data.AddFile(filename);
 
@@ -273,13 +288,13 @@ void cTrashPanel::OnClickRestoreTrashItem(wxCommandEvent& event)
             {
                 for (auto data : dataset)
                 {
-                    m_ListCtrl.AppendItem(data);
+                    SampleHive::cHiveData::Get().ListCtrlAppendItem(data);
                 }
             }
         }
-        catch (...)
+        catch (std::exception& e)
         {
-            std::cerr << "Error loading data." << std::endl;
+            SH_LOG_ERROR("Error loading data. {}", e.what());
         }
 
         m_pTrash->Delete(selected_item_ids[i]);

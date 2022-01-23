@@ -22,24 +22,20 @@
 
 #include "Database/Database.hpp"
 
-#include <wx/dataview.h>
 #include <wx/bitmap.h>
 #include <wx/colour.h>
 #include <wx/dc.h>
 #include <wx/event.h>
-#include <wx/infobar.h>
 #include <wx/mediactrl.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/statusbr.h>
-#include <wx/timer.h>
 #include <wx/window.h>
 
 class cWaveformViewer : public wxPanel
 {
     public:
-        cWaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
-                        wxMediaCtrl& mediaCtrl, Database& database);
+        cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl, cDatabase& database);
         ~cWaveformViewer();
 
     private:
@@ -49,8 +45,7 @@ class cWaveformViewer : public wxPanel
         wxBoxSizer* m_Sizer;
 
         // -------------------------------------------------------------------
-        Database& m_Database;
-        wxDataViewListCtrl& m_Library;
+        cDatabase& m_Database;
         wxMediaCtrl& m_MediaCtrl;
 
     private:
@@ -88,11 +83,6 @@ class cWaveformViewer : public wxPanel
 
         // -------------------------------------------------------------------
         std::pair<double, double> CalculateLoopPoints();
-
-        // -------------------------------------------------------------------
-        // Send custom events
-        // void SendLoopPoints();
-        // void SendPushStatusBarStatus(const wxString& msg, int section);
 
     public:
         // -------------------------------------------------------------------

@@ -19,12 +19,13 @@
  */
 
 #include "GUI/WaveformViewer.hpp"
-#include "Utility/Serialize.hpp"
-#include "Utility/Signal.hpp"
-#include "Utility/Tags.hpp"
-#include "Utility/SH_Event.hpp"
+#include "Utility/HiveData.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
+#include "Utility/Serialize.hpp"
+#include "Utility/Event.hpp"
+#include "Utility/Signal.hpp"
+#include "Utility/Tags.hpp"
 
 #include <vector>
 
@@ -38,11 +39,9 @@
 
 #include <sndfile.hh>
 
-cWaveformViewer::cWaveformViewer(wxWindow* window, wxDataViewListCtrl& library,
-                               wxMediaCtrl& mediaCtrl, Database& database)
-    : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-              wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_Window(window), m_Database(database), m_Library(library), m_MediaCtrl(mediaCtrl)
+cWaveformViewer::cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl, cDatabase& database)
+    : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
+      m_Window(window), m_Database(database), m_MediaCtrl(mediaCtrl)
 {
     this->SetDoubleBuffered(true);
 
@@ -110,7 +109,7 @@ void cWaveformViewer::OnPaint(wxPaintEvent& event)
 
         bAreaSelected = true;
         // SendLoopPoints();
-        SampleHive::Signal::SendLoopPoints(CalculateLoopPoints(), *this);
+        SampleHive::cSignal::SendLoopPoints(CalculateLoopPoints(), *this);
     }
     else
         bAreaSelected = false;
@@ -118,15 +117,15 @@ void cWaveformViewer::OnPaint(wxPaintEvent& event)
 
 void cWaveformViewer::RenderPlayhead(wxDC& dc)
 {
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return;
 
-    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
-    Tags tags(path);
+    SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
     SH_LOG_DEBUG("Sample length: {}", length);
@@ -150,23 +149,21 @@ void cWaveformViewer::RenderPlayhead(wxDC& dc)
 
     // Draw the line
     dc.SetPen(wxPen(m_PlayheadColour, 2, wxPENSTYLE_SOLID));
-    dc.DrawLine(line_pos, this->GetSize().GetHeight() - (this->GetSize().GetHeight() - 1),
-                line_pos, this->GetSize().GetHeight() - 1);
+    dc.DrawLine(line_pos, this->GetSize().GetHeight() - (this->GetSize().GetHeight() - 1), line_pos, this->GetSize().GetHeight() - 1);
 }
 
 void cWaveformViewer::UpdateWaveformBitmap()
 {
-    Serializer serializer;
+    SampleHive::cSerializer serializer;
 
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return;
 
-    wxString selection = m_Library.GetTextValue(selected_row, 1);
+    wxString selection = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
 
-    wxString filepath_with_extension =
-        m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
+    wxString filepath_with_extension = m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
     wxString filepath_without_extension = m_Database.GetSamplePathByFilename(selection.ToStdString());
 
     std::string extension = serializer.DeserializeShowFileExtension() ?
@@ -218,8 +215,8 @@ void cWaveformViewer::UpdateWaveformBitmap()
             sum += mono * mono; // Square
         }
 
-        sum /= chunk_size;      // Mean
-        sum = pow(sum, 0.5);    // Root
+        sum /= chunk_size;   // Mean
+        sum = pow(sum, 0.5); // Root
 
         // We might bleed a bit on the end and get some near infs, dunno
         // what is causing astronomically big numbers from sample[]
@@ -283,9 +280,12 @@ void cWaveformViewer::OnControlKeyUp(wxKeyEvent &event)
             if (bSelectRange)
             {
                 SetCursor(wxCURSOR_ARROW);
+
                 bSelectRange = false;
                 bDrawSelectedArea = false;
+
                 ReleaseMouse();
+
                 return;
             }
             break;
@@ -298,15 +298,15 @@ void cWaveformViewer::OnControlKeyUp(wxKeyEvent &event)
 
 void cWaveformViewer::OnMouseMotion(wxMouseEvent& event)
 {
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return;
 
-    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
-    Tags tags(path);
+    SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
 
@@ -338,15 +338,15 @@ void cWaveformViewer::OnMouseMotion(wxMouseEvent& event)
 
 void cWaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 {
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return;
 
-    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
-    Tags tags(path);
+    SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
 
@@ -387,15 +387,15 @@ void cWaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
 
 void cWaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
 {
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return;
 
-    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
-    Tags tags(path);
+    SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
 
@@ -436,9 +436,8 @@ void cWaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         SetCursor(wxCURSOR_ARROW);
 
         m_MediaCtrl.Seek(seek_to, wxFromStart);
-        // SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1);
-        SampleHive::Signal::SendInfoBarMessage(wxString::Format(_("Now playing: %s"), selected), 1, *this);
-        m_MediaCtrl.Play();
+        SampleHive::cSignal::SendPushStatusBarStatus(wxString::Format(_("Now playing: %s"), selected), 1, *this);
+        SampleHive::cSignal::SendCallFunctionPlay(selected, false, *this);
     }
 }
 
@@ -453,15 +452,15 @@ void cWaveformViewer::ResetDC()
 
 std::pair<double, double> cWaveformViewer::CalculateLoopPoints()
 {
-    int selected_row = m_Library.GetSelectedRow();
+    int selected_row = SampleHive::cHiveData::Get().GetListCtrlSelectedRow();
 
     if (selected_row < 0)
         return { 0.0, 0.0 };
 
-    wxString selected = m_Library.GetTextValue(selected_row, 1);
+    wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
     std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
 
-    Tags tags(path);
+    SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
 
@@ -474,13 +473,3 @@ std::pair<double, double> cWaveformViewer::CalculateLoopPoints()
 
     return { loopA, loopB };
 }
-
-// void cWaveformViewer::SendPushStatusBarStatus(const wxString& msg, int section)
-// {
-//     SampleHive::SH_StatusBarStatusEvent event(SampleHive::SH_EVT_STATUSBAR_STATUS_PUSH, this->GetId());
-//     event.SetEventObject(this);
-
-//     event.SetPushMessageAndSection({ msg, section });
-
-//     HandleWindowEvent(event);
-// }

@@ -163,9 +163,10 @@ src = [
   'src/Utility/Sample.cpp',
   'src/Utility/Serialize.cpp',
   'src/Utility/Tags.cpp',
-  'src/Utility/SH_Event.cpp',
+  'src/Utility/Event.cpp',
   'src/Utility/Signal.cpp',
   'src/Utility/Log.cpp',
+  'src/Utility/Utils.cpp',
 
 ]
 

@@ -25,18 +25,18 @@
 #include <wx/app.h>
 #include <wx/cmdline.h>
 
-class App : public wxApp
+class cApp : public wxApp
 {
     public:
-        App();
-        ~App();
-
-    private:
-        MainFrame* m_Frame = nullptr;
+        cApp();
+        ~cApp();
 
     private:
         virtual bool OnInit();
         virtual void OnEventLoopEnter(wxEventLoopBase* event);
         virtual void OnInitCmdLine(wxCmdLineParser& parser);
         virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+
+    private:
+        cMainFrame* m_Frame = nullptr;
 };

@@ -24,42 +24,46 @@
 
 #include <wx/string.h>
 
-struct AudioInfo
-{
-    wxString title;
-    wxString artist;
-    wxString album;
-    wxString genre;
-    wxString comment;
+namespace SampleHive {
 
-    int channels;
-    int length;
-    int sample_rate;
-    int bitrate;
-};
+    class cTags
+    {
+        struct AudioInfo
+        {
+            wxString title;
+            wxString artist;
+            wxString album;
+            wxString genre;
+            wxString comment;
 
-class Tags
-{
-    public:
-        Tags(const std::string& filepath);
-        ~Tags();
+            int channels;
+            int length;
+            int sample_rate;
+            int bitrate;
+        };
 
-    private:
-        // -------------------------------------------------------------------
-        const std::string& m_Filepath;
+        public:
+            cTags(const std::string& filepath);
+            ~cTags();
 
-        bool bValid = false;
+        public:
+            // -------------------------------------------------------------------
+            cTags::AudioInfo GetAudioInfo();
+            void SetTitle(std::string artist);
+            void SetArtist(std::string artist);
+            void SetAlbum(std::string album);
+            void SetGenre(std::string genre);
+            void SetComment(std::string comment);
 
-    public:
-        // -------------------------------------------------------------------
-        AudioInfo GetAudioInfo();
-        void SetTitle(std::string artist);
-        void SetArtist(std::string artist);
-        void SetAlbum(std::string album);
-        void SetGenre(std::string genre);
-        void SetComment(std::string comment);
+        public:
+            // -------------------------------------------------------------------
+            inline bool IsFileValid() { return m_bValid; }
 
-    public:
-        // -------------------------------------------------------------------
-        inline bool IsFileValid() { return bValid; }
-};
+        private:
+            // -------------------------------------------------------------------
+            const std::string& m_Filepath;
+
+            bool m_bValid = false;
+    };
+
+}

@@ -1,9 +1,28 @@
+/* SampleHive
+ * Copyright (C) 2021  Apoorv Singh
+ * A simple, modern audio sample browser/manager for GNU/Linux.
+ *
+ * This file is a part of SampleHive
+ *
+ * SampleHive is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * SampleHive is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <wx/bmpbuttn.h>
 #include <wx/button.h>
 #include <wx/checkbox.h>
-#include <wx/dataview.h>
 #include <wx/event.h>
 #include <wx/mediactrl.h>
 #include <wx/settings.h>
@@ -12,7 +31,6 @@
 #include <wx/stattext.h>
 #include <wx/tglbtn.h>
 #include <wx/panel.h>
-#include <wx/timer.h>
 #include <wx/version.h>
 #include <wx/window.h>
 
@@ -20,7 +38,7 @@ class cTransportControls : public wxPanel
 {
     public:
         // -------------------------------------------------------------------
-        cTransportControls(wxWindow* window, wxDataViewListCtrl& library, wxMediaCtrl& mediaCtrl, wxTimer& timer);
+        cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl);
         ~cTransportControls();
 
     public:
@@ -65,11 +83,11 @@ class cTransportControls : public wxPanel
         // Load control values from config file
         void LoadConfigFile();
 
+        void OnAutoImportDir(const wxString& pathToDirectory);
+
     private:
         // -------------------------------------------------------------------
-        wxDataViewListCtrl& m_Library;
         wxMediaCtrl& m_MediaCtrl;
-        wxTimer& m_Timer;
 
     private:
         // -------------------------------------------------------------------

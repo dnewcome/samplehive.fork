@@ -1,11 +1,31 @@
+/* SampleHive
+ * Copyright (C) 2021  Apoorv Singh
+ * A simple, modern audio sample browser/manager for GNU/Linux.
+ *
+ * This file is a part of SampleHive
+ *
+ * SampleHive is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * SampleHive is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "GUI/Hives.hpp"
-#include "GUI/ListCtrl.hpp"
 #include "Database/Database.hpp"
 #include "Utility/ControlIDs.hpp"
+#include "Utility/HiveData.hpp"
+#include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 #include "Utility/Signal.hpp"
 #include "Utility/Serialize.hpp"
-#include "Utility/Log.hpp"
 
 #include <deque>
 
@@ -13,27 +33,26 @@
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
-cHivesPanel::cHivesPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
+cHivesPanel::cHivesPanel(wxWindow* window)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL),
-      m_ListCtrl(listCtrl), m_pWindow(window)
+      m_pWindow(window)
 {
     m_pMainSizer = new wxBoxSizer(wxVERTICAL);
     m_pHivesSizer = new wxBoxSizer(wxVERTICAL);
     m_pButtonSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_pAddHiveButton = new wxButton(this, BC_HiveAdd, "+", wxDefaultPosition, wxDefaultSize, 0);
+    m_pAddHiveButton = new wxButton(this, SampleHive::ID::BC_HiveAdd, "+", wxDefaultPosition, wxDefaultSize, 0);
     m_pAddHiveButton->SetToolTip(_("Create new hive"));
 
     m_pButtonSizer->Add(m_pAddHiveButton, wxSizerFlags(1).Expand());
 
-    m_pRemoveHiveButton = new wxButton(this, BC_HiveRemove, "-", wxDefaultPosition, wxDefaultSize, 0);
+    m_pRemoveHiveButton = new wxButton(this, SampleHive::ID::BC_HiveRemove, "-", wxDefaultPosition, wxDefaultSize, 0);
     m_pRemoveHiveButton->SetToolTip(_("Delete selected hive"));
 
     m_pButtonSizer->Add(m_pRemoveHiveButton, wxSizerFlags(1).Expand());
 
     // Initializing wxDataViewTreeCtrl as another page of wxNotebook
-    m_pHives = new wxDataViewTreeCtrl(this, BC_Hives, wxDefaultPosition, wxDefaultSize,
-                                      wxDV_NO_HEADER | wxDV_SINGLE);
+    m_pHives = new wxDataViewTreeCtrl(this, SampleHive::ID::BC_Hives, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_SINGLE);
 
     m_pHivesSizer->Add(m_pHives, wxSizerFlags(1).Expand());
 
@@ -44,10 +63,10 @@ cHivesPanel::cHivesPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
     m_pHives->DragAcceptFiles(true);
 
     m_pHives->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(cHivesPanel::OnDragAndDropToHives), NULL, this);
-    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &cHivesPanel::OnShowHivesContextMenu, this, BC_Hives);
-    Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &cHivesPanel::OnHiveStartEditing, this, BC_Hives);
-    Bind(wxEVT_BUTTON, &cHivesPanel::OnClickAddHive, this, BC_HiveAdd);
-    Bind(wxEVT_BUTTON, &cHivesPanel::OnClickRemoveHive, this, BC_HiveRemove);
+    Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &cHivesPanel::OnShowHivesContextMenu, this, SampleHive::ID::BC_Hives);
+    Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &cHivesPanel::OnHiveStartEditing, this, SampleHive::ID::BC_Hives);
+    Bind(wxEVT_BUTTON, &cHivesPanel::OnClickAddHive, this, SampleHive::ID::BC_HiveAdd);
+    Bind(wxEVT_BUTTON, &cHivesPanel::OnClickRemoveHive, this, SampleHive::ID::BC_HiveRemove);
 
     m_pMainSizer->Add(m_pHivesSizer, wxSizerFlags(1).Expand());
     m_pMainSizer->Add(m_pButtonSizer, wxSizerFlags(0).Expand());
@@ -61,9 +80,8 @@ cHivesPanel::cHivesPanel(wxWindow* window, wxDataViewListCtrl& listCtrl)
 
 void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     if (event.GetNumberOfFiles() > 0)
     {
@@ -71,8 +89,7 @@ void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
         wxArrayString files;
 
         wxDataViewItemArray items;
-        int rows = m_ListCtrl.GetSelections(items);
-        // int rows = 2;
+        int rows = SampleHive::cHiveData::Get().GetListCtrlSelections(items);
 
         wxDataViewItem drop_target;;
         wxDataViewColumn* column;
@@ -86,9 +103,9 @@ void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
 
         for (int i = 0; i < rows; i++)
         {
-            int row = m_ListCtrl.ItemToRow(items[i]);
+            int row = SampleHive::cHiveData::Get().GetListCtrlRowFromItem(items, i);
 
-            wxString name = m_ListCtrl.GetTextValue(row, 1);
+            wxString name = SampleHive::cHiveData::Get().GetListCtrlTextValue(row, 1);
 
             file_data.AddFile(name);
 
@@ -104,7 +121,7 @@ void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
             {
                 m_pHives->AppendItem(drop_target, files[i]);
 
-                m_ListCtrl.SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), row, 0);
+                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), row, 0);
 
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
                 db.UpdateHiveName(file_name.ToStdString(), hive_name.ToStdString());
@@ -132,17 +149,15 @@ void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
             }
 
             if (!msg.IsEmpty())
-                SampleHive::Signal::SendInfoBarMessage(msg, wxICON_ERROR, *this);
-                // m_InfoBar->ShowMessage(msg, wxICON_ERROR);
+                SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_ERROR, *this);
         }
     }
 }
 
 void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     wxDataViewItem selected_hive = event.GetItem();
 
@@ -153,27 +168,26 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
     if (m_pHives->IsContainer(selected_hive))
     {
         // Container menu items
-        menu.Append(MN_RenameHive, _("Rename hive"), _("Rename selected hive"));
-        menu.Append(MN_DeleteHive, _("Delete hive"), _("Delete selected hive"));
+        menu.Append(SampleHive::ID::MN_RenameHive, _("Rename hive"), _("Rename selected hive"));
+        menu.Append(SampleHive::ID::MN_DeleteHive, _("Delete hive"), _("Delete selected hive"));
 
         if (!m_bFiltered)
-            menu.Append(MN_FilterLibrary, _("Filter library"),
-                        _("Show only samples from current hive in library"));
+            menu.Append(SampleHive::ID::MN_FilterLibrary, _("Filter library"), _("Show only samples from current hive in library"));
         else
-            menu.Append(MN_FilterLibrary, _("Clear filter"), _("Clear the filter"));
+            menu.Append(SampleHive::ID::MN_FilterLibrary, _("Clear filter"), _("Clear the filter"));
     }
     else
     {
         // Child menu items
-        menu.Append(MN_RemoveSample, _("Remove sample"), _("Remove the selected sample(s)"));
-        menu.Append(MN_ShowInLibrary, _("Show sample in library"), _("Show the selected in library"));
+        menu.Append(SampleHive::ID::MN_RemoveSample, _("Remove sample"), _("Remove the selected sample(s)"));
+        menu.Append(SampleHive::ID::MN_ShowInLibrary, _("Show sample in library"), _("Show the selected in library"));
     }
 
     if (selected_hive.IsOk() && m_pHives->IsContainer(selected_hive))
     {
         switch (m_pHives->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
         {
-            case MN_RenameHive:
+            case SampleHive::ID::MN_RenameHive:
             {
                 std::deque<wxDataViewItem> nodes;
                 nodes.push_back(m_pHives->GetNthChild(wxDataViewItem(wxNullPtr), 0));
@@ -224,8 +238,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                         if (found_item.IsOk())
                         {
                             wxMessageBox(wxString::Format(_("Another hive by the name %s already exist. "
-                                                            "Please try with a different name."),
-                                                          hive_name),
+                                                            "Please try with a different name."), hive_name),
                                          _("Error!"), wxOK | wxCENTRE, this);
                         }
                         else
@@ -237,8 +250,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                             if (sample_count <= 0)
                             {
                                 m_pHives->SetItemText(selected_hive, hive_name);
-                                db.UpdateHive(selected_hive_name.ToStdString(),
-                                                       hive_name.ToStdString());
+                                db.UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
                             }
                             else
                             {
@@ -250,10 +262,8 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         m_pHives->GetItemText(sample_item).BeforeLast('.') :
                                         m_pHives->GetItemText(sample_item);
 
-                                    db.UpdateHiveName(sample_name.ToStdString(),
-                                                               hive_name.ToStdString());
-                                    db.UpdateHive(selected_hive_name.ToStdString(),
-                                                           hive_name.ToStdString());
+                                    db.UpdateHiveName(sample_name.ToStdString(), hive_name.ToStdString());
+                                    db.UpdateHive(selected_hive_name.ToStdString(), hive_name.ToStdString());
 
                                     m_pHives->SetItemText(selected_hive, hive_name);
                                 }
@@ -270,28 +280,22 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
 
                 if (!msg.IsEmpty())
-                    SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-                //     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+                    SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
             }
             break;
-            case MN_DeleteHive:
+            case SampleHive::ID::MN_DeleteHive:
             {
                 wxString msg;
 
-                wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(_("Are you sure you want to "
-                                                                               "delete %s from chives?"),
+                wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(_("Are you sure you want to delete %s from hives?"),
                                                                              hive_name),
                                                       wxMessageBoxCaptionStr,
-                                                      wxYES_NO | wxNO_DEFAULT |
-                                                      wxICON_QUESTION | wxSTAY_ON_TOP);
+                                                      wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP);
 
-                wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(_("Are you sure you want to "
-                                                                                "delete %s and all samples "
-                                                                                "inside %s from chives?"),
-                                                                              hive_name, hive_name),
+                wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(_("Are you sure you want to delete %s and all samples "
+                                                                                "inside %s from hives?"), hive_name, hive_name),
                                                        wxMessageBoxCaptionStr,
-                                                       wxYES_NO | wxNO_DEFAULT |
-                                                       wxICON_QUESTION | wxSTAY_ON_TOP);
+                                                       wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP);
 
                 if (hive_name == m_pHives->GetItemText(m_FavoritesHive))
                 {
@@ -307,8 +311,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
                 else if (selected_hive.IsOk() && !m_pHives->IsContainer(selected_hive))
                 {
-                    wxMessageBox(wxString::Format(_("Error! %s is not a hive, cannot delete from chives."),
-                                                  hive_name),
+                    wxMessageBox(wxString::Format(_("Error! %s is not a hive, cannot delete from hives."), hive_name),
                                  _("Error!"), wxOK | wxCENTRE, this);
                     return;
                 }
@@ -325,7 +328,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                 db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                                msg = wxString::Format(_("%s deleted from chives successfully."), hive_name);
+                                msg = wxString::Format(_("%s deleted from hives successfully."), hive_name);
                             }
                             break;
                         case wxID_NO:
@@ -344,13 +347,11 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                             {
                                 wxDataViewItem child_item;
 
-                                for (int i = 0; i < m_ListCtrl.GetItemCount(); i++)
-                                // for (int i = 0; i < 1; i++)
+                                for (int i = 0; i < SampleHive::cHiveData::Get().GetListCtrlItemCount(); i++)
                                 {
-                                    wxString matched_sample =
-                                        serializer.DeserializeShowFileExtension() ?
-                                        m_ListCtrl.GetTextValue(i, 1).BeforeLast('.') :
-                                        m_ListCtrl.GetTextValue(i, 1);
+                                    wxString matched_sample = serializer.DeserializeShowFileExtension() ?
+                                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1).BeforeLast('.') :
+                                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1);
 
                                     for (int j = 0; j < m_pHives->GetChildCount(selected_hive); j++)
                                     {
@@ -362,11 +363,11 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                                             m_pHives->GetItemText(child_item);
 
                                         if (child_name == matched_sample)
-                                        // if (child_name == "")
                                         {
                                             SH_LOG_DEBUG("Found match");
 
-                                            m_ListCtrl.SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                                            SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)),
+                                                                                           i, 0);
 
                                             db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                             db.UpdateHiveName(matched_sample.ToStdString(),
@@ -384,8 +385,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
 
                                 db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                                msg = wxString::Format(_("%s and all samples inside %s "
-                                                         "have been deleted from chives successfully."),
+                                msg = wxString::Format(_("%s and all samples inside %s have been deleted from hives successfully."),
                                                        hive_name, hive_name);
                             }
                             break;
@@ -397,20 +397,19 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                 }
 
                 if (!msg.IsEmpty())
-                    SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-                //     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+                    SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
             }
                 break;
-            case MN_FilterLibrary:
+            case SampleHive::ID::MN_FilterLibrary:
             {
                 if (!m_bFiltered)
                 {
                     try
                     {
                         const auto dataset = db.FilterDatabaseByHiveName(hive_name.ToStdString(),
-                                                                                  serializer.DeserializeShowFileExtension(),
-                                                                                  ICON_STAR_FILLED_16px,
-                                                                                  ICON_STAR_EMPTY_16px);
+                                                                         serializer.DeserializeShowFileExtension(),
+                                                                         ICON_STAR_FILLED_16px,
+                                                                         ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
                         {
@@ -420,18 +419,18 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                         }
                         else
                         {
-                            m_ListCtrl.DeleteAllItems();
+                            SampleHive::cHiveData::Get().ListCtrlDeleteAllItems();
 
                             for (auto data : dataset)
                             {
-                                m_ListCtrl.AppendItem(data);
+                                SampleHive::cHiveData::Get().ListCtrlAppendItem(data);
                             }
                         }
                     }
-                    catch (...)
+                    catch (std::exception& e)
                     {
-                        wxMessageBox(_("Error loading data, cannot filter sample view"), _("Error!"),
-                                     wxOK | wxICON_ERROR | wxCENTRE, this);
+                        wxMessageBox(wxString::Format(_("Error loading data, cannot filter sample view. Error: %s"), e.what()),
+                                     _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
                     }
 
                     m_bFiltered = true;
@@ -441,27 +440,26 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                     try
                     {
                         const auto dataset = db.FilterDatabaseBySampleName("", serializer.DeserializeShowFileExtension(),
-                                                                                    ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
+                                                                           ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
                         {
-                            wxMessageBox(_("Error! Database is empty."), _("Error!"),
-                                         wxOK | wxICON_ERROR | wxCENTRE, this);
+                            wxMessageBox(_("Error! Database is empty."), _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
                         }
                         else
                         {
-                            m_ListCtrl.DeleteAllItems();
+                            SampleHive::cHiveData::Get().ListCtrlDeleteAllItems();
 
                             for (auto data : dataset)
                             {
-                                m_ListCtrl.AppendItem(data);
+                                SampleHive::cHiveData::Get().ListCtrlAppendItem(data);
                             }
                         }
                     }
-                    catch (...)
+                    catch (std::exception& e)
                     {
-                        wxMessageBox(_("Error loading data, cannot filter sample view"), _("Error!"),
-                                     wxOK | wxICON_ERROR | wxCENTRE, this);
+                        wxMessageBox(wxString::Format(_("Error loading data, cannot filter sample view. Error: %s"), e.what()),
+                                     _("Error!"), wxOK | wxICON_ERROR | wxCENTRE, this);
                     }
 
                     m_bFiltered = false;
@@ -476,68 +474,57 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
     {
         switch (m_pHives->GetPopupMenuSelectionFromUser(menu, event.GetPosition()))
         {
-            case MN_RemoveSample:
-                for(int i = 0; i < m_ListCtrl.GetItemCount(); i++)
-                // for(int i = 0; i < 1; i++)
+            case SampleHive::ID::MN_RemoveSample:
+                for (int i = 0; i < SampleHive::cHiveData::Get().GetListCtrlItemCount(); i++)
                 {
                     wxString matched_sample = serializer.DeserializeShowFileExtension() ?
-                        m_ListCtrl.GetTextValue(i, 1).BeforeLast('.') :
-                        m_ListCtrl.GetTextValue(i, 1);
+                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1).BeforeLast('.') :
+                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1);
 
                     wxString selected_sample_name = serializer.DeserializeShowFileExtension() ?
                         m_pHives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_pHives->GetItemText(event.GetItem());
 
-                    if(selected_sample_name == matched_sample)
-                    // if(selected_sample_name == "")
+                    if (selected_sample_name == matched_sample)
                     {
                         SH_LOG_DEBUG("Found match");
 
-                        m_ListCtrl.SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                        SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
                         db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
-                        db.UpdateHiveName(matched_sample.ToStdString(),
-                                          m_pHives->GetItemText(m_FavoritesHive).ToStdString());
+                        db.UpdateHiveName(matched_sample.ToStdString(), m_pHives->GetItemText(m_FavoritesHive).ToStdString());
 
                         m_pHives->DeleteItem(selected_hive);
 
                         break;
                     }
 
-                    wxString msg = wxString::Format(_("Removed %s from %s"),
-                                                    m_pHives->GetItemText(event.GetItem()),
+                    wxString msg = wxString::Format(_("Removed %s from %s"), m_pHives->GetItemText(event.GetItem()),
                                                     db.GetHiveByFilename(matched_sample.ToStdString()));
 
-                    // m_InfoBar->ShowMessage(wxString::Format(_("Removed %s from %s"),
-                    //                                         m_Hives->GetItemText(event.GetItem()),
-                    //                                         db.GetHiveByFilename(matched_sample.ToStdString())),
-                    //                        wxICON_INFORMATION);
-
-                    SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
+                    SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
                 }
                 break;
-            case MN_ShowInLibrary:
-                for(int i = 0; i < m_ListCtrl.GetItemCount(); i++)
-                // for(int i = 0; i < 1; i++)
+            case SampleHive::ID::MN_ShowInLibrary:
+                for (int i = 0; i < SampleHive::cHiveData::Get().GetListCtrlItemCount(); i++)
                 {
                     wxString matched_sample = serializer.DeserializeShowFileExtension() ?
-                        m_ListCtrl.GetTextValue(i, 1).BeforeLast('.') :
-                        m_ListCtrl.GetTextValue(i, 1);
+                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1).BeforeLast('.') :
+                        SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1);
 
                     wxString selected_sample_name = serializer.DeserializeShowFileExtension() ?
                         m_pHives->GetItemText(event.GetItem()).BeforeLast('.') :
                         m_pHives->GetItemText(event.GetItem());
 
-                    if(selected_sample_name == matched_sample)
-                    // if(selected_sample_name == "")
+                    if (selected_sample_name == matched_sample)
                     {
                         SH_LOG_DEBUG("Found match");
 
-                        wxDataViewItem matched_item = m_ListCtrl.RowToItem(i);
+                        wxDataViewItem matched_item = SampleHive::cHiveData::Get().GetListCtrlItemFromRow(i);
 
-                        m_ListCtrl.UnselectAll();
-                        m_ListCtrl.SelectRow(i);
-                        m_ListCtrl.EnsureVisible(matched_item);
+                        SampleHive::cHiveData::Get().ListCtrlUnselectAllItems();
+                        SampleHive::cHiveData::Get().ListCtrlSelectRow(i);
+                        SampleHive::cHiveData::Get().ListCtrlEnsureVisible(matched_item);
 
                         break;
                     }
@@ -557,7 +544,7 @@ void cHivesPanel::OnHiveStartEditing(wxDataViewEvent &event)
 
 void cHivesPanel::OnClickAddHive(wxCommandEvent& event)
 {
-    Database db;
+    cDatabase db;
 
     std::deque<wxDataViewItem> nodes;
     nodes.push_back(m_pHives->GetNthChild(wxDataViewItem(wxNullPtr), 0));
@@ -580,7 +567,7 @@ void cHivesPanel::OnClickAddHive(wxCommandEvent& event)
         {
             wxString hive_name = hiveEntry.GetValue();
 
-            while(!nodes.empty())
+            while (!nodes.empty())
             {
                 current_item = nodes.front();
                 nodes.pop_front();
@@ -607,17 +594,15 @@ void cHivesPanel::OnClickAddHive(wxCommandEvent& event)
 
             if (found_item.IsOk())
             {
-                wxMessageBox(wxString::Format(_("Another hive by the name %s already exist. "
-                                                "Please try with a different name."),
-                                              hive_name),
-                             _("Error!"), wxOK | wxCENTRE, this);
+                wxMessageBox(wxString::Format(_("Another hive by the name %s already exist. Please try with a different name."),
+                                              hive_name), _("Error!"), wxOK | wxCENTRE, this);
             }
             else
             {
                 m_pHives->AppendContainer(wxDataViewItem(wxNullPtr), hive_name);
                 db.InsertIntoHives(hive_name.ToStdString());
 
-                msg = wxString::Format(_("%s added to cHivesPanel."), hive_name);
+                msg = wxString::Format(_("%s added to Hives."), hive_name);
             }
             break;
         }
@@ -628,39 +613,29 @@ void cHivesPanel::OnClickAddHive(wxCommandEvent& event)
     }
 
     if (!msg.IsEmpty())
-        SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-    //     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+        SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
 }
 
 void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
 {
-    Serializer serializer;
-    Database db;
-    // cListCtrl m_ListCtrl.m_pWindow);
+    SampleHive::cSerializer serializer;
+    cDatabase db;
 
     wxDataViewItem selected_item = m_pHives->GetSelection();
     wxString hive_name = m_pHives->GetItemText(selected_item);
 
     wxString msg;
 
-    wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(_("Are you sure you want to delete "
-                                                                   "%s from chives?"),
-                                                                 hive_name),
-                                          wxMessageBoxCaptionStr,
-                                          wxYES_NO | wxNO_DEFAULT |
-                                          wxICON_QUESTION | wxSTAY_ON_TOP);
+    wxMessageDialog deleteEmptyHiveDialog(this, wxString::Format(_("Are you sure you want to delete %s from hives?"), hive_name),
+                                          wxMessageBoxCaptionStr, wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP);
 
     wxMessageDialog deleteFilledHiveDialog(this, wxString::Format(_("Are you sure you want to delete "
-                                                                    "%s and all sample inside %s from chives?"),
-                                                                  hive_name, hive_name),
-                                           wxMessageBoxCaptionStr,
-                                           wxYES_NO | wxNO_DEFAULT |
-                                           wxICON_QUESTION | wxSTAY_ON_TOP);
+                                                                    "%s and all sample inside %s from hives?"), hive_name, hive_name),
+                                           wxMessageBoxCaptionStr, wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION | wxSTAY_ON_TOP);
 
     if (hive_name == m_pHives->GetItemText(m_FavoritesHive))
     {
-        wxMessageBox(wxString::Format(_("Error! Default hive %s cannot be deleted."), hive_name),
-                     _("Error!"), wxOK | wxCENTRE, this);
+        wxMessageBox(wxString::Format(_("Error! Default hive %s cannot be deleted."), hive_name), _("Error!"), wxOK | wxCENTRE, this);
         return;
     }
     else if (!selected_item.IsOk())
@@ -670,7 +645,7 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
     }
     else if (selected_item.IsOk() && !m_pHives->IsContainer(selected_item))
     {
-        wxMessageBox(wxString::Format(_("Error! %s is not a hive, cannot delete from chives."), hive_name),
+        wxMessageBox(wxString::Format(_("Error! %s is not a hive, cannot delete from hives."), hive_name),
                      _("Error!"), wxOK | wxCENTRE, this);
         return;
     }
@@ -686,7 +661,7 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
                     m_pHives->DeleteItem(selected_item);
 
                     db.RemoveHiveFromDatabase(hive_name.ToStdString());
-                    msg = wxString::Format(_("%s deleted from chives successfully."), hive_name);
+                    msg = wxString::Format(_("%s deleted from hives successfully."), hive_name);
                 }
                 break;
             case wxID_NO:
@@ -705,12 +680,11 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
                 {
                     wxDataViewItem child_item;
 
-                    for (int i = 0; i < m_ListCtrl.GetItemCount(); i++)
-                    // for (int i = 0; i < 1; i++)
+                    for (int i = 0; i < SampleHive::cHiveData::Get().GetListCtrlItemCount(); i++)
                     {
                         wxString matched_sample = serializer.DeserializeShowFileExtension() ?
-                            m_ListCtrl.GetTextValue(i, 1).BeforeLast('.') :
-                            m_ListCtrl.GetTextValue(i, 1);
+                            SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1).BeforeLast('.') :
+                            SampleHive::cHiveData::Get().GetListCtrlTextValue(i, 1);
 
                         for (int j = 0; j < m_pHives->GetChildCount(selected_item); j++)
                         {
@@ -721,15 +695,13 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
                                 m_pHives->GetItemText(child_item);
 
                             if (child_name == matched_sample)
-                            // if (child_name == "")
                             {
                                 SH_LOG_DEBUG("Found match");
 
-                                m_ListCtrl.SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
 
                                 db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
-                                db.UpdateHiveName(matched_sample.ToStdString(),
-                                                  m_pHives->GetItemText(m_FavoritesHive).ToStdString());
+                                db.UpdateHiveName(matched_sample.ToStdString(), m_pHives->GetItemText(m_FavoritesHive).ToStdString());
 
                                 break;
                             }
@@ -743,8 +715,7 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
 
                     db.RemoveHiveFromDatabase(hive_name.ToStdString());
 
-                    msg = wxString::Format(_("%s and all samples inside %s have been deleted "
-                                             "from chives successfully."),
+                    msg = wxString::Format(_("%s and all samples inside %s have been deleted from hives successfully."),
                                            hive_name, hive_name);
                 }
                 break;
@@ -756,8 +727,7 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
     }
 
     if (!msg.IsEmpty())
-        SampleHive::Signal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
-    //     m_InfoBar->ShowMessage(msg, wxICON_INFORMATION);
+        SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
 }
 
 cHivesPanel::~cHivesPanel()
