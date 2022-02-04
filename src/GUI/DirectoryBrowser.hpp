@@ -20,23 +20,22 @@
 
 #pragma once
 
-#include "GUI/MainFrame.hpp"
+#include <wx/control.h>
+#include <wx/dirctrl.h>
+#include <wx/window.h>
 
-#include <wx/app.h>
-#include <wx/cmdline.h>
-
-class cApp : public wxApp
+class cDirectoryBrowser : public wxGenericDirCtrl
 {
     public:
-        cApp();
-        ~cApp();
+        cDirectoryBrowser(wxWindow* window);
+        ~cDirectoryBrowser();
 
     private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+        // -------------------------------------------------------------------
+        // DirCtrl event handlers
+        void OnClickDirCtrl(wxCommandEvent& event);
+        void OnDragFromDirCtrl(wxTreeEvent& event);
 
     private:
-        cMainFrame* m_Frame = nullptr;
+        wxWindow* m_pWindow = nullptr;
 };

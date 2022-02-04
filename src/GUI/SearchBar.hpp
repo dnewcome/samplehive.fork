@@ -20,23 +20,25 @@
 
 #pragma once
 
-#include "GUI/MainFrame.hpp"
+#include <wx/dataview.h>
+#include <wx/srchctrl.h>
 
-#include <wx/app.h>
-#include <wx/cmdline.h>
-
-class cApp : public wxApp
+class cSearchBar : public wxSearchCtrl
 {
     public:
-        cApp();
-        ~cApp();
+        cSearchBar(wxWindow* window);
+        ~cSearchBar();
+
+    public:
+        wxSearchCtrl* GetSearchCtrlObject() { return this; }
 
     private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+        // -------------------------------------------------------------------
+        // SearchCtrl event handlers
+        void OnDoSearch(wxCommandEvent& event);
+        void OnCancelSearch(wxCommandEvent& event);
 
     private:
-        cMainFrame* m_Frame = nullptr;
+        // -------------------------------------------------------------------
+        wxWindow* m_pWindow = nullptr;
 };

@@ -20,23 +20,18 @@
 
 #pragma once
 
-#include "GUI/MainFrame.hpp"
+#include <wx/infobar.h>
+#include <wx/window.h>
 
-#include <wx/app.h>
-#include <wx/cmdline.h>
-
-class cApp : public wxApp
+class cInfoBar : public wxInfoBar
 {
     public:
-        cApp();
-        ~cApp();
+        cInfoBar(wxWindow* window);
+        ~cInfoBar();
+
+    public:
+        wxInfoBar* GetInfoBarObject() { return this; }
 
     private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
-
-    private:
-        cMainFrame* m_Frame = nullptr;
+        wxWindow* m_pWindow;
 };

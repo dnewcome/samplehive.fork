@@ -34,17 +34,17 @@
 
 #include <sqlite3.h>
 
-class Database
+class cDatabase
 {
     public:
-        Database();
-        ~Database();
+        cDatabase();
+        ~cDatabase();
 
     private:
         // -------------------------------------------------------------------
-        sqlite3* m_Database;
+        sqlite3* m_pDatabase = nullptr;
         int rc;
-        char* m_ErrMsg;
+        char* m_pErrMsg = nullptr;
 
     private:
         // -------------------------------------------------------------------

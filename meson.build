@@ -80,6 +80,15 @@ config_data.set_quoted('SAMPLEHIVE_DATADIR', samplehive_datadir)
 # Import CMake
 cmake = import('cmake')
 
+# Check which platform the build is for and set the appropriate GUI toolkit
+wx_toolkit = ''
+
+if host_sys == 'linux'
+  wx_toolkit = 'gtk3'
+elif host_sys == 'windows'
+  wx_toolkit = 'msw'
+endif
+
 wx_opts = cmake.subproject_options()
 wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'CMAKE_INSTALL_PREFIX': prefix,
@@ -93,7 +102,7 @@ wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'wxBUILD_SAMPLES': 'OFF',
                            'wxBUILD_DEMOS': 'OFF',
                            'wxBUILD_COMPATIBILITY': '3.0',
-                           'wxBUILD_TOOLKIT': 'gtk3',
+                           'wxBUILD_TOOLKIT': wx_toolkit,
                            'wxUSE_UNICODE': 'ON',
                            'wxUSE_AUI': 'OFF',
                            'wxUSE_XML': 'OFF',
@@ -144,7 +153,16 @@ src = [
   'src/App.cpp',
 
   'src/GUI/MainFrame.cpp',
+  'src/GUI/TransportControls.cpp',
   'src/GUI/WaveformViewer.cpp',
+  'src/GUI/Notebook.cpp',
+  'src/GUI/DirectoryBrowser.cpp',
+  'src/GUI/Hives.cpp',
+  'src/GUI/Trash.cpp',
+  'src/GUI/ListCtrl.cpp',
+  'src/GUI/SearchBar.cpp',
+  'src/GUI/InfoBar.cpp',
+  'src/GUI/Library.cpp',
 
   'src/GUI/Dialogs/Settings.cpp',
   'src/GUI/Dialogs/TagEditor.cpp',
@@ -154,8 +172,10 @@ src = [
   'src/Utility/Sample.cpp',
   'src/Utility/Serialize.cpp',
   'src/Utility/Tags.cpp',
-  'src/Utility/SH_Event.cpp',
+  'src/Utility/Event.cpp',
+  'src/Utility/Signal.cpp',
   'src/Utility/Log.cpp',
+  'src/Utility/Utils.cpp',
 
 ]
 
@@ -164,23 +184,18 @@ include_dirs = include_directories('src')
 # Dependencies
 wx = dependency('wxwidgets', version: '>=3.1.5', required: false)
 
-wx_found = false
+wx_cxx_flags = []
+wx_libs = []
 
 if not wx.found()
-  wx_found = false
-
   wx_subproject = cmake.subproject('wxwidgets', options: wx_opts)
   wx_base = wx_subproject.dependency('wxbase')
   wx_core = wx_subproject.dependency('wxcore')
   wx_media = wx_subproject.dependency('wxmedia')
   wx = [wx_core, wx_base, wx_media]
 else
-  wx_found = true
-
-  wxconfig = find_program(['wx-config-gtk3', 'wx-config'])
+  wxconfig = find_program(['wx-config', 'wx-config-gtk3'])
   wx_modules = ['media', 'std']
-  wx_cxx_flags = []
-  wx_libs = []
 
   foreach module : wx_modules
     wx_cxx_flags += run_command(wxconfig, '--cxxflags', module).stdout().strip().split()
@@ -212,50 +227,37 @@ if not yaml.found()
   yaml = yaml_subproject.dependency('yaml-cpp')
 endif
 
-snd = dependency('sndfile', version: '>=1.0.28', required: false)
-
-if not snd.found()
-  snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
-  snd = snd_subproject.dependency('sndfile')
-endif
+snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
+snd = snd_subproject.dependency('sndfile')
 
 spdlog = dependency('spdlog', version: '>=1.8.5', required: false)
 
 if not spdlog.found()
   spdlog_subproject = subproject('spdlog',
-                         default_options: [
-                           'default_library=static',
-                           'compile_library=true',])
+                                 default_options: [
+                                   'default_library=static',
+                                   'compile_library=true',])
 
   spdlog = spdlog_subproject.get_variable('spdlog_dep')
 endif
 
-# Create samplehive-config.h based on configuration
-config_h = configure_file(output: 'SampleHiveConfig.hpp',
-                          configuration: config_data,)
+# Create SampleHiveConfig.hpp based on configuration
+config = configure_file(output: 'SampleHiveConfig.hpp',
+                        configuration: config_data,)
 
 install_subdir('assets',
                install_dir: samplehive_datadir,
                exclude_directories: 'screenshots',
                strip_directory: true)
 
-if wx_found
-  executable('SampleHive',
-             sources: src,
-             cpp_args: [wx_cxx_flags],
-             link_args: [wx_libs],
-             include_directories : include_dirs,
-             dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
-             install: true,
-             install_rpath: prefix / 'lib')
-else
-  executable('SampleHive',
-             sources: src,
-             include_directories : include_dirs,
-             dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
-             install: true,
-             install_rpath: prefix / 'lib')
-endif
+executable('SampleHive',
+           sources: src,
+           cpp_args: [wx_cxx_flags],
+           link_args: [wx_libs],
+           include_directories : include_dirs,
+           dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
+           install: true,
+           install_rpath: prefix / 'lib')
 
 summary(
   {

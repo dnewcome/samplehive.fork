@@ -18,25 +18,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "GUI/Library.hpp"
+#include "Utility/Log.hpp"
 
-#include "GUI/MainFrame.hpp"
-
-#include <wx/app.h>
-#include <wx/cmdline.h>
-
-class cApp : public wxApp
+cLibrary::cLibrary(wxWindow* window)
+    : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL)
 {
-    public:
-        cApp();
-        ~cApp();
+    m_pSizer = new wxBoxSizer(wxVERTICAL);
 
-    private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+    m_pSearchBar = new cSearchBar(this);
+    m_pInfoBar = new cInfoBar(this);
+    m_pListCtrl = new cListCtrl(this);
 
-    private:
-        cMainFrame* m_Frame = nullptr;
-};
+    m_pSizer->Add(m_pSearchBar, wxSizerFlags(1).Expand());
+    m_pSizer->Add(m_pInfoBar, wxSizerFlags(0).Expand());
+    m_pSizer->Add(m_pListCtrl, wxSizerFlags(1).Expand());
+
+    // Sizer for bottom right panel
+    this->SetSizer(m_pSizer);
+    m_pSizer->Fit(this);
+    m_pSizer->SetSizeHints(this);
+    m_pSizer->Layout();
+}
+
+cLibrary::~cLibrary()
+{
+
+}

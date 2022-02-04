@@ -20,23 +20,30 @@
 
 #pragma once
 
-#include "GUI/MainFrame.hpp"
+#include "GUI/InfoBar.hpp"
+#include "GUI/ListCtrl.hpp"
+#include "GUI/SearchBar.hpp"
 
-#include <wx/app.h>
-#include <wx/cmdline.h>
+#include <wx/dataview.h>
+#include <wx/panel.h>
+#include <wx/sizer.h>
+#include <wx/treectrl.h>
+#include <wx/window.h>
 
-class cApp : public wxApp
+class cLibrary : public wxPanel
 {
     public:
-        cApp();
-        ~cApp();
+        cLibrary(wxWindow* window);
+        ~cLibrary();
+
+    public:
+        wxSearchCtrl* GetSearchCtrlObject() const { return m_pSearchBar; }
+        wxInfoBar* GetInfoBarObject() const { return m_pInfoBar; }
+        wxDataViewListCtrl* GetListCtrlObject() const { return m_pListCtrl; }
 
     private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
-
-    private:
-        cMainFrame* m_Frame = nullptr;
+        cSearchBar* m_pSearchBar = nullptr;
+        cInfoBar* m_pInfoBar = nullptr;
+        cListCtrl* m_pListCtrl = nullptr;
+        wxBoxSizer* m_pSizer = nullptr;
 };

@@ -29,20 +29,20 @@
 #include <wx/gdicmn.h>
 #include <wx/splash.h>
 
-wxIMPLEMENT_APP(App);
+wxIMPLEMENT_APP(cApp);
 
-App::App()
+cApp::cApp()
 {
     // Initialize the logger
-    SampleHive::Log::InitLogger("SampleHive");
+    SampleHive::cLog::InitLogger("SampleHive");
 }
 
-App::~App()
+cApp::~cApp()
 {
 
 }
 
-bool App::OnInit()
+bool cApp::OnInit()
 {
     if (!wxApp::OnInit())
         return false;
@@ -50,7 +50,7 @@ bool App::OnInit()
     wxLog::AddTraceMask("EventSource");
     wxLog::AddTraceMask(wxTRACE_FSWATCHER);
 
-    m_Frame = new MainFrame();
+    m_Frame = new cMainFrame();
 
     wxBitmap bitmap;
     wxSplashScreen* splash;
@@ -69,7 +69,7 @@ bool App::OnInit()
     return true;
 }
 
-void App::OnInitCmdLine(wxCmdLineParser& parser)
+void cApp::OnInitCmdLine(wxCmdLineParser& parser)
 {
     wxApp::OnInitCmdLine(parser);
 
@@ -78,7 +78,7 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
     parser.Parse(true);
 }
 
-bool App::OnCmdLineParsed(wxCmdLineParser& parser)
+bool cApp::OnCmdLineParsed(wxCmdLineParser& parser)
 {
     if (!wxApp::OnCmdLineParsed(parser))
         return false;
@@ -142,7 +142,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     return true;
 }
 
-void App::OnEventLoopEnter(wxEventLoopBase* event)
+void cApp::OnEventLoopEnter(wxEventLoopBase* event)
 {
     if (m_Frame->CreateWatcherIfNecessary())
         SH_LOG_INFO("Filesystem watcher created sucessfully");

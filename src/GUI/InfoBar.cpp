@@ -18,25 +18,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "InfoBar.hpp"
 
-#include "GUI/MainFrame.hpp"
-
-#include <wx/app.h>
-#include <wx/cmdline.h>
-
-class cApp : public wxApp
+cInfoBar::cInfoBar(wxWindow* window)
+    : wxInfoBar(window)
 {
-    public:
-        cApp();
-        ~cApp();
 
-    private:
-        virtual bool OnInit();
-        virtual void OnEventLoopEnter(wxEventLoopBase* event);
-        virtual void OnInitCmdLine(wxCmdLineParser& parser);
-        virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+}
 
-    private:
-        cMainFrame* m_Frame = nullptr;
-};
+cInfoBar::~cInfoBar()
+{
+
+}

@@ -42,67 +42,71 @@ typedef std::pair<int, int> WindowSize;
 // typedef std::pair<wxString, int> FontType;
 typedef std::pair<bool, wxString> ImportDirInfo;
 
-class Serializer
-{
-    public:
-        Serializer();
-        ~Serializer();
+namespace SampleHive {
 
-    private:
-        // -------------------------------------------------------------------
-        YAML::Emitter m_Emitter;
+    class cSerializer
+    {
+        public:
+            cSerializer();
+            ~cSerializer();
 
-    public:
-        // -------------------------------------------------------------------
-        // Window size
-        void SerializeWinSize(int w, int h);
-        WindowSize DeserializeWinSize() const;
+        public:
+            // -------------------------------------------------------------------
+            // Window size
+            void SerializeWinSize(int w, int h);
+            WindowSize DeserializeWinSize() const;
 
-        // -------------------------------------------------------------------
-        // Menu and status bar
-        void SerializeShowMenuAndStatusBar(std::string key, bool value);
-        bool DeserializeShowMenuAndStatusBar(std::string key) const;
+            // -------------------------------------------------------------------
+            // Menu and status bar
+            void SerializeShowMenuAndStatusBar(std::string key, bool value);
+            bool DeserializeShowMenuAndStatusBar(std::string key) const;
 
-        // -------------------------------------------------------------------
-        // Splitter window sash pos
-        void SerializeSplitterSashPos(std::string key, int pos);
-        int DeserializeSplitterSashPos(std::string key) const;
+            // -------------------------------------------------------------------
+            // Splitter window sash pos
+            void SerializeSplitterSashPos(std::string key, int pos);
+            int DeserializeSplitterSashPos(std::string key) const;
 
-        // -------------------------------------------------------------------
-        // Browser controls
-        void SerializeMediaOptions(std::string key, bool value);
-        bool DeserializeMediaOptions(std::string key) const;
+            // -------------------------------------------------------------------
+            // Browser controls
+            void SerializeMediaOptions(std::string key, bool value);
+            bool DeserializeMediaOptions(std::string key) const;
 
-        void SerializeMediaVolume(int volume);
-        int DeserializeMediaVolume() const;
+            void SerializeMediaVolume(int volume);
+            int DeserializeMediaVolume() const;
 
-        // -------------------------------------------------------------------
-        // Display settings
-        void SerializeFontSettings(wxFont& font);
-        wxFont DeserializeFontSettings() const;
+            // -------------------------------------------------------------------
+            // Display settings
+            void SerializeFontSettings(wxFont& font);
+            wxFont DeserializeFontSettings() const;
 
-        // -------------------------------------------------------------------
-        // Waveform colour
-        void SerializeWaveformColour(wxColour& colour);
-        wxColour DeserializeWaveformColour() const;
+            // -------------------------------------------------------------------
+            // Waveform colour
+            void SerializeWaveformColour(wxColour& colour);
+            wxColour DeserializeWaveformColour() const;
 
-        // -------------------------------------------------------------------
-        // Auto import settings
-        void SerializeAutoImport(bool autoImport, const std::string& importDir);
-        ImportDirInfo DeserializeAutoImport() const;
+            // -------------------------------------------------------------------
+            // Auto import settings
+            void SerializeAutoImport(bool autoImport, const std::string& importDir);
+            ImportDirInfo DeserializeAutoImport() const;
 
-        // -------------------------------------------------------------------
-        // Follow symbolic links
-        void SerializeFollowSymLink(bool followSymLink);
-        bool DeserializeFollowSymLink() const;
+            // -------------------------------------------------------------------
+            // Follow symbolic links
+            void SerializeFollowSymLink(bool followSymLink);
+            bool DeserializeFollowSymLink() const;
 
-        // -------------------------------------------------------------------
-        // Recursive import
-        void SerializeRecursiveImport(bool recursiveImport);
-        bool DeserializeRecursiveImport() const;
+            // -------------------------------------------------------------------
+            // Recursive import
+            void SerializeRecursiveImport(bool recursiveImport);
+            bool DeserializeRecursiveImport() const;
 
-        // -------------------------------------------------------------------
-        // Show file extension
-        void SerializeShowFileExtension(bool showExtension);
-        bool DeserializeShowFileExtension() const;
-};
+            // -------------------------------------------------------------------
+            // Show file extension
+            void SerializeShowFileExtension(bool showExtension);
+            bool DeserializeShowFileExtension() const;
+
+        private:
+            // -------------------------------------------------------------------
+            YAML::Emitter m_Emitter;
+    };
+
+}

@@ -36,58 +36,11 @@
 #include <wx/toplevel.h>
 #include <wx/window.h>
 
-class TagEditor : public wxDialog
+class cTagEditor : public wxDialog
 {
     public:
-        TagEditor(wxWindow* window, const std::string& filename);
-        ~TagEditor();
-
-    private:
-        // -------------------------------------------------------------------
-        wxWindow* m_Window;
-
-        // -------------------------------------------------------------------
-        const std::string m_Filename;
-
-    private:
-        // -------------------------------------------------------------------
-        // Top panel for wxDialog
-        wxPanel* m_Panel;
-
-        // -------------------------------------------------------------------
-        // Top panel sizers
-        wxBoxSizer* m_MainSizer;
-        wxFlexGridSizer* m_EditTagSizer;
-        wxFlexGridSizer* m_SampleTypeSizer;
-        wxBoxSizer* m_ButtonSizer;
-        wxStaticBoxSizer* m_StaticEditTagSizer;
-        wxStaticBoxSizer* m_StaticSampleTypeSizer;
-
-        // -------------------------------------------------------------------
-        // Dialog controls
-        wxCheckBox* m_TitleCheck;
-        wxCheckBox* m_ArtistCheck;
-        wxCheckBox* m_AlbumCheck;
-        wxCheckBox* m_GenreCheck;
-        wxCheckBox* m_CommentCheck;
-        wxCheckBox* m_SampleTypeCheck;
-        wxTextCtrl* m_TitleText;
-        wxTextCtrl* m_ArtistText;
-        wxTextCtrl* m_AlbumText;
-        wxTextCtrl* m_GenreText;
-        wxTextCtrl* m_CommentText;
-        wxChoice* m_SampleTypeChoice;
-        wxButton* m_SampleTypeButton;
-
-        // -------------------------------------------------------------------
-        // Common buttons for wxDialog
-        wxButton* m_OkButton;
-        wxButton* m_ApplyButton;
-        wxButton* m_CancelButton;
-
-    private:
-        // -------------------------------------------------------------------
-        Tags tags;
+        cTagEditor(wxWindow* window, const std::string& filename);
+        ~cTagEditor();
 
     private:
         // -------------------------------------------------------------------
@@ -105,6 +58,50 @@ class TagEditor : public wxDialog
         // -------------------------------------------------------------------
         void OnClickApply(wxCommandEvent& event);
 
+    private:
         // -------------------------------------------------------------------
-        void SendInfoBarMessage(const wxString& msg, int mode);
+        wxWindow* m_pWindow = nullptr;
+
+        // -------------------------------------------------------------------
+        const std::string& m_Filename;
+
+    private:
+        // -------------------------------------------------------------------
+        // Top panel for wxDialog
+        wxPanel* m_pPanel = nullptr;
+
+        // -------------------------------------------------------------------
+        // Top panel sizers
+        wxBoxSizer* m_pMainSizer = nullptr;
+        wxFlexGridSizer* m_pEditTagSizer = nullptr;
+        wxFlexGridSizer* m_pSampleTypeSizer = nullptr;
+        wxBoxSizer* m_pButtonSizer = nullptr;
+        wxStaticBoxSizer* m_pStaticEditTagSizer = nullptr;
+        wxStaticBoxSizer* m_pStaticSampleTypeSizer = nullptr;
+
+        // -------------------------------------------------------------------
+        // Dialog controls
+        wxCheckBox* m_pTitleCheck = nullptr;
+        wxCheckBox* m_pArtistCheck = nullptr;
+        wxCheckBox* m_pAlbumCheck = nullptr;
+        wxCheckBox* m_pGenreCheck = nullptr;
+        wxCheckBox* m_pCommentCheck = nullptr;
+        wxCheckBox* m_pSampleTypeCheck = nullptr;
+        wxTextCtrl* m_pTitleText = nullptr;
+        wxTextCtrl* m_pArtistText = nullptr;
+        wxTextCtrl* m_pAlbumText = nullptr;
+        wxTextCtrl* m_pGenreText = nullptr;
+        wxTextCtrl* m_pCommentText = nullptr;
+        wxChoice* m_pSampleTypeChoice = nullptr;
+        wxButton* m_pSampleTypeButton = nullptr;
+
+        // -------------------------------------------------------------------
+        // Common buttons for wxDialog
+        wxButton* m_pOkButton = nullptr;
+        wxButton* m_pApplyButton = nullptr;
+        wxButton* m_pCancelButton = nullptr;
+
+    private:
+        // -------------------------------------------------------------------
+        SampleHive::cTags tags;
 };
