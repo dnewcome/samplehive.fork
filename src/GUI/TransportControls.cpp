@@ -30,8 +30,6 @@
 #include "Utility/Paths.hpp"
 #include "Utility/Utils.hpp"
 
-#include <wx/bmpbndl.h>
-
 cTransportControls::cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER),
       m_MediaCtrl(mediaCtrl)
@@ -41,11 +39,11 @@ cTransportControls::cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl)
     // Looping region controls
     if (m_Theme.IsDark())
         m_pLoopABButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_LoopABButton,
-                                                   wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_AB_LIGHT_16px)),
+                                                   static_cast<wxString>(ICON_AB_LIGHT_16px),
                                                    wxDefaultPosition, wxDefaultSize, 0);
     else
         m_pLoopABButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_LoopABButton,
-                                                   wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_AB_DARK_16px)),
+                                                   static_cast<wxString>(ICON_AB_DARK_16px),
                                                    wxDefaultPosition, wxDefaultSize, 0);
 
     m_pLoopABButton->SetToolTip(_("Loop selected region"));
@@ -69,31 +67,31 @@ cTransportControls::cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl)
     if (m_Theme.IsDark())
     {
         m_pPlayButton = new wxBitmapButton(this, SampleHive::ID::BC_Play,
-                                           wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_PLAY_LIGHT_16px)),
+                                           static_cast<wxString>(ICON_PLAY_LIGHT_16px),
                                            wxDefaultPosition, wxDefaultSize, 0);
         m_pLoopButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_Loop,
-                                                 wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_LOOP_LIGHT_16px)),
+                                                 static_cast<wxString>(ICON_LOOP_LIGHT_16px),
                                                  wxDefaultPosition, wxDefaultSize, 0);
         m_pStopButton = new wxBitmapButton(this, SampleHive::ID::BC_Stop,
-                                           wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_STOP_LIGHT_16px)),
+                                           static_cast<wxString>(ICON_STOP_LIGHT_16px),
                                            wxDefaultPosition, wxDefaultSize, 0);
         m_pMuteButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_Mute,
-                                                 wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_MUTE_LIGHT_16px)),
+                                                 static_cast<wxString>(ICON_MUTE_LIGHT_16px),
                                                  wxDefaultPosition, wxDefaultSize, 0);
     }
     else
     {
         m_pPlayButton = new wxBitmapButton(this, SampleHive::ID::BC_Play,
-                                           wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_PLAY_DARK_16px)),
+                                           static_cast<wxString>(ICON_PLAY_DARK_16px),
                                            wxDefaultPosition, wxDefaultSize, 0);
         m_pLoopButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_Loop,
-                                                 wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_LOOP_DARK_16px)),
+                                                 static_cast<wxString>(ICON_LOOP_DARK_16px),
                                                  wxDefaultPosition, wxDefaultSize, 0);
         m_pStopButton = new wxBitmapButton(this, SampleHive::ID::BC_Stop,
-                                           wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_STOP_DARK_16px)),
+                                           static_cast<wxString>(ICON_STOP_DARK_16px),
                                            wxDefaultPosition, wxDefaultSize, 0);
         m_pMuteButton = new wxBitmapToggleButton(this, SampleHive::ID::BC_Mute,
-                                                 wxBitmapBundle::FromBitmap(static_cast<wxString>(ICON_MUTE_DARK_16px)),
+                                                 static_cast<wxString>(ICON_MUTE_DARK_16px),
                                                  wxDefaultPosition, wxDefaultSize, 0);
     }
 

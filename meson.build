@@ -87,13 +87,14 @@ if host_sys == 'linux'
   wx_toolkit = 'gtk3'
 elif host_sys == 'windows'
   wx_toolkit = 'msw'
+elif host_sys == 'darwin'
+  wx_toolkit = 'osx_cocoa'
 endif
 
 wx_opts = cmake.subproject_options()
 wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'CMAKE_INSTALL_PREFIX': prefix,
                            'CMAKE_BUILD_TYPE': 'Release',
-                           'CMAKE_CXX_COMPILER': 'g++',
                            'wxBUILD_SHARED': 'ON',
                            'wxBUILD_MONOLITHIC': 'OFF',
                            'wxBUILD_BENCHMARKS': 'OFF',
@@ -122,14 +123,12 @@ wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
 taglib_opts = cmake.subproject_options()
 taglib_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                                'CMAKE_INSTALL_PREFIX': prefix,
-                               'CMAKE_BUILD_TYPE': 'Release',
-                               'CMAKE_CXX_COMPILER': 'g++'})
+                               'CMAKE_BUILD_TYPE': 'Release'})
 
 yaml_opts = cmake.subproject_options()
 yaml_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                              'CMAKE_INSTALL_PREFIX': prefix,
                              'CMAKE_BUILD_TYPE': 'Release',
-                             'CMAKE_CXX_COMPILER': 'g++',
                              'YAML_BUILD_SHARED_LIBS': 'ON',
                              'YAML_CPP_BUILD_TESTS': 'OFF',
                              'YAML_CPP_BUILD_CONTRIB': 'ON',
@@ -139,7 +138,6 @@ snd_opts = cmake.subproject_options()
 snd_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                             'CMAKE_INSTALL_PREFIX': prefix,
                             'CMAKE_BUILD_TYPE': 'Release',
-                            'CMAKE_CXX_COMPILER': 'g++',
                             'BUILD_SHARED_LIBS': 'ON',
                             'BUILD_PROGRAMS': 'OFF',
                             'BUILD_EXAMPLES': 'OFF',
@@ -189,10 +187,10 @@ wx_libs = []
 
 if not wx.found()
   wx_subproject = cmake.subproject('wxwidgets', options: wx_opts)
-  wx_base = wx_subproject.dependency('wxbase')
-  wx_core = wx_subproject.dependency('wxcore')
   wx_media = wx_subproject.dependency('wxmedia')
-  wx = [wx_core, wx_base, wx_media]
+  wx_core = wx_subproject.dependency('wxcore')
+  wx_base = wx_subproject.dependency('wxbase')
+  wx = [wx_media, wx_core, wx_base]
 else
   wxconfig = find_program(['wx-config', 'wx-config-gtk3'])
   wx_modules = ['media', 'std']
