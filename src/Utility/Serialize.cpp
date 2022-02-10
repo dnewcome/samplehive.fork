@@ -87,6 +87,10 @@ namespace SampleHive {
             m_Emitter << YAML::BeginMap;
             m_Emitter << YAML::Key << "Colour" << YAML::Value << colour.GetAsString().ToStdString();
             m_Emitter << YAML::EndMap;
+            m_Emitter << YAML::Key << "Splash";
+            m_Emitter << YAML::BeginMap;
+            m_Emitter << YAML::Key << "ShowSplashOnStartup" << YAML::Value << true;
+            m_Emitter << YAML::EndMap;
             m_Emitter << YAML::EndMap << YAML::Newline;
 
             m_Emitter << YAML::Newline << YAML::Key << "Collection";
@@ -100,10 +104,10 @@ namespace SampleHive {
 
             m_Emitter << YAML::EndMap;
 
-            std::ofstream ofstrm(CONFIG_FILEPATH);
+            std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
             ofstrm << m_Emitter.c_str();
 
-            SH_LOG_INFO("Generated {} successfully!", CONFIG_FILEPATH);
+            SH_LOG_INFO("Generated {} successfully!", static_cast<std::string>(CONFIG_FILEPATH));
         }
     }
 
@@ -527,6 +531,63 @@ namespace SampleHive {
         }
 
         return static_cast<wxString>(colour);
+    }
+
+    void cSerializer::SerializeShowSplash(bool value)
+    {
+        YAML::Emitter out;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            auto display = config["Display"];
+
+            if (auto splash = display["Splash"])
+            {
+                splash["ShowSplashOnStartup"] = value;
+
+                out << config;
+
+                std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+                ofstrm << out.c_str();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot store show splash value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+    }
+
+    bool cSerializer::DeserializeShowSplash() const
+    {
+        bool show = false;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            auto display = config["Display"];
+
+            if (auto splash = display["Splash"])
+            {
+                show = splash["ShowSplashOnStartup"].as<bool>();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot fetch show splash value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+
+        return show;
     }
 
     void cSerializer::SerializeAutoImport(bool autoImport, const std::string& importDir)

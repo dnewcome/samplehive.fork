@@ -85,6 +85,11 @@ namespace SampleHive {
             wxColour DeserializeWaveformColour() const;
 
             // -------------------------------------------------------------------
+            // Splash screen
+            void SerializeShowSplash(bool value);
+            bool DeserializeShowSplash() const;
+
+            // -------------------------------------------------------------------
             // Auto import settings
             void SerializeAutoImport(bool autoImport, const std::string& importDir);
             ImportDirInfo DeserializeAutoImport() const;

@@ -50,7 +50,7 @@ cMainFrame::cMainFrame()
     int status_width[4] = { 300, -6, -1, -2 };
     m_pStatusBar->SetStatusWidths(4, status_width);
 
-    m_pHiveBitmap = new wxStaticBitmap(m_pStatusBar, wxID_ANY, wxBitmap(ICON_HIVE_24px));
+    m_pHiveBitmap = new wxStaticBitmap(m_pStatusBar, wxID_ANY, wxBitmap(ICON_HIVE_24px, wxBITMAP_TYPE_PNG));
 
     // Initialize menubar and menus
     m_pMenuBar = new wxMenuBar();
@@ -252,8 +252,6 @@ void cMainFrame::UpdateElapsedTime(wxTimerEvent& event)
 
     m_pTransportControls->SetSamplePositionText(wxString::Format(wxT("%s/%s"), position.c_str(), duration.c_str()));
 
-    this->Refresh();
-    m_pTransportControls->Refresh();
     m_pWaveformViewer->Refresh();
 
     if (m_bLoopPointsSet && m_pTransportControls->IsLoopABOn())
@@ -648,7 +646,8 @@ void cMainFrame::OnSelectResetAppData(wxCommandEvent& event)
     wxMessageDialog clearDataDialog(this, wxString::Format(_("Warning! This will delete configuration file "
                                                              "\"%s\" and database file \"%s\" permanently, "
                                                              "are you sure you want to delete these files?"),
-                                                           CONFIG_FILEPATH, DATABASE_FILEPATH),
+                                                           static_cast<std::string>(CONFIG_FILEPATH),
+                                                           static_cast<std::string>(DATABASE_FILEPATH)),
                                     _("Clear app data?"), wxYES_NO | wxNO_DEFAULT | wxCENTRE, wxDefaultPosition);
 
     bool remove = false;
@@ -660,31 +659,31 @@ void cMainFrame::OnSelectResetAppData(wxCommandEvent& event)
 
             if (remove)
             {
-                if (!wxFileExists(CONFIG_FILEPATH))
+                if (!wxFileExists(static_cast<std::string>(CONFIG_FILEPATH)))
                 {
-                    SH_LOG_ERROR("Error! File {} doesn't exist.", CONFIG_FILEPATH);
+                    SH_LOG_ERROR("Error! File {} doesn't exist.", static_cast<std::string>(CONFIG_FILEPATH));
                     return;
                 }
 
-                bool config_is_deleted = wxRemoveFile(CONFIG_FILEPATH);
+                bool config_is_deleted = wxRemoveFile(static_cast<std::string>(CONFIG_FILEPATH));
 
                 if (config_is_deleted)
-                    SH_LOG_INFO("Deleted {}", CONFIG_FILEPATH);
+                    SH_LOG_INFO("Deleted {}", static_cast<std::string>(CONFIG_FILEPATH));
                 else
-                    SH_LOG_ERROR("Could not delete {}", CONFIG_FILEPATH);
+                    SH_LOG_ERROR("Could not delete {}", static_cast<std::string>(CONFIG_FILEPATH));
 
-                if (!wxFileExists(DATABASE_FILEPATH))
+                if (!wxFileExists(static_cast<std::string>(DATABASE_FILEPATH)))
                 {
-                    SH_LOG_ERROR("Error! File {} doesn't exist.", DATABASE_FILEPATH);
+                    SH_LOG_ERROR("Error! File {} doesn't exist.", static_cast<std::string>(DATABASE_FILEPATH));
                     return;
                 }
 
-                bool db_is_deleted = wxRemoveFile(DATABASE_FILEPATH);
+                bool db_is_deleted = wxRemoveFile(static_cast<std::string>(DATABASE_FILEPATH));
 
                 if (db_is_deleted)
-                    SH_LOG_INFO("Deleted {}", DATABASE_FILEPATH);
+                    SH_LOG_INFO("Deleted {}", static_cast<std::string>(DATABASE_FILEPATH));
                 else
-                    SH_LOG_ERROR("Could not delete {}", DATABASE_FILEPATH);
+                    SH_LOG_ERROR("Could not delete {}", static_cast<std::string>(DATABASE_FILEPATH));
 
                 if (config_is_deleted && db_is_deleted)
                 {
@@ -707,7 +706,7 @@ void cMainFrame::OnSelectAbout(wxCommandEvent& event)
     wxAboutDialogInfo aboutInfo;
 
     aboutInfo.SetName(PROJECT_NAME);
-    aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px));
+    aboutInfo.SetIcon(wxIcon(ICON_HIVE_64px, wxBITMAP_TYPE_PNG));
     aboutInfo.AddArtist(PROJECT_AUTHOR);
     aboutInfo.SetVersion(PROJECT_VERSION, _("Version 0.9.0_alpha.1"));
     aboutInfo.SetDescription(_(PROJECT_DESCRIPTION));

@@ -58,6 +58,7 @@ class cSettings : public wxDialog
         void OnChangeFontSize(wxSpinEvent& event);
         void OnSelectFont(wxCommandEvent& event);
         void OnChangeWaveformColour(wxColourPickerEvent& event);
+        void OnCheckShowSplash(wxCommandEvent& event);
 
         // -------------------------------------------------------------------
         void SetCustomFont();
@@ -117,6 +118,7 @@ class cSettings : public wxDialog
         wxBoxSizer* m_pWaveformColourSizer = nullptr;
         wxStaticText* m_pWaveformColourLabel = nullptr;
         wxColourPickerCtrl* m_pWaveformColourPickerCtrl = nullptr;
+        wxCheckBox* m_pShowSplashCheck = nullptr;
 
         // -------------------------------------------------------------------
         // Collection page

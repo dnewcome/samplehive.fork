@@ -175,7 +175,7 @@ void cWaveformViewer::UpdateWaveformBitmap()
     wxString path = selection.Contains(wxString::Format(".%s", extension)) ?
         filepath_with_extension : filepath_without_extension;
 
-    SndfileHandle snd_file(path);
+    SndfileHandle snd_file(path.ToStdString().c_str());
 
     int channels = snd_file.channels();
     double sample_rate = snd_file.samplerate();

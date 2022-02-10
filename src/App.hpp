@@ -24,6 +24,7 @@
 
 #include <wx/app.h>
 #include <wx/cmdline.h>
+#include <wx/splash.h>
 
 class cApp : public wxApp
 {
@@ -38,5 +39,6 @@ class cApp : public wxApp
         virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 
     private:
-        cMainFrame* m_Frame = nullptr;
+        wxSplashScreen* m_pSplash = nullptr;
+        cMainFrame* m_pFrame = nullptr;
 };

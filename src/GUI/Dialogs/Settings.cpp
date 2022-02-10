@@ -65,6 +65,9 @@ cSettings::cSettings(wxWindow *window)
                                                          serializer.DeserializeWaveformColour(),
                                                          wxDefaultPosition, wxDefaultSize,
                                                          wxCLRP_DEFAULT_STYLE);
+    m_pShowSplashCheck = new wxCheckBox(m_pDisplaySettingPanel, SampleHive::ID::SD_ShowSplash, "Show splash on startup",
+                                        wxDefaultPosition, wxDefaultSize, 0);
+    m_pShowSplashCheck->SetValue(serializer.DeserializeShowSplash());
 
     m_pCollectionSettingPanel = new wxPanel(m_pNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -104,13 +107,13 @@ cSettings::cSettings(wxWindow *window)
 
     m_pConfigLabel = new wxStaticText(m_pConfigurationSettingPanel, wxID_ANY,
                                       "Default configuration file location", wxDefaultPosition, wxDefaultSize);
-    m_pConfigText = new wxTextCtrl(m_pConfigurationSettingPanel, wxID_ANY, CONFIG_FILEPATH,
+    m_pConfigText = new wxTextCtrl(m_pConfigurationSettingPanel, wxID_ANY, static_cast<std::string>(CONFIG_FILEPATH),
                                    wxDefaultPosition, wxDefaultSize);
     m_pConfigBrowse = new wxButton(m_pConfigurationSettingPanel, SampleHive::ID::SD_BrowseConfigDir, "Browse",
                                    wxDefaultPosition, wxDefaultSize, 0);
     m_pDatabaseLabel = new wxStaticText(m_pConfigurationSettingPanel, wxID_ANY, "Default database location",
                                         wxDefaultPosition, wxDefaultSize);
-    m_pDatabaseText = new wxTextCtrl(m_pConfigurationSettingPanel, wxID_ANY, DATABASE_FILEPATH,
+    m_pDatabaseText = new wxTextCtrl(m_pConfigurationSettingPanel, wxID_ANY, static_cast<std::string>(DATABASE_FILEPATH),
                                      wxDefaultPosition, wxDefaultSize);
     m_pDatabaseBrowse = new wxButton(m_pConfigurationSettingPanel, SampleHive::ID::SD_BrowseDatabaseDir, "Browse",
                                      wxDefaultPosition, wxDefaultSize, 0);
@@ -135,6 +138,7 @@ cSettings::cSettings(wxWindow *window)
     Bind(wxEVT_BUTTON, &cSettings::OnClickConfigBrowse, this, SampleHive::ID::SD_BrowseConfigDir);
     Bind(wxEVT_BUTTON, &cSettings::OnClickDatabaseBrowse, this, SampleHive::ID::SD_BrowseDatabaseDir);
     Bind(wxEVT_COLOURPICKER_CHANGED, &cSettings::OnChangeWaveformColour, this, SampleHive::ID::SD_WaveformColourPickerCtrl);
+    Bind(wxEVT_CHECKBOX, &cSettings::OnCheckShowSplash, this, SampleHive::ID::SD_ShowSplash);
 
     // Adding controls to sizers
     m_pNotebookSizer->Add(m_pNotebook, 1, wxALL | wxEXPAND, 2);
@@ -156,6 +160,7 @@ cSettings::cSettings(wxWindow *window)
 
     m_pDisplayTopSizer->Add(m_pDisplayFontSizer, 0, wxALL | wxEXPAND, 2);
     m_pDisplayTopSizer->Add(m_pWaveformColourSizer, 0, wxALL | wxEXPAND, 2);
+    m_pDisplayTopSizer->Add(m_pShowSplashCheck, 0, wxALL | wxEXPAND, 2);
 
     m_pCollectionImportDirSizer->Add(m_pAutoImportCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_pCollectionImportDirSizer->Add(m_pImportDirLocation, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
@@ -499,6 +504,13 @@ void cSettings::OnChangeWaveformColour(wxColourPickerEvent& event)
 
         serializer.SerializeWaveformColour(colour);
     }
+}
+
+void cSettings::OnCheckShowSplash(wxCommandEvent& event)
+{
+    SampleHive::cSerializer serializer;
+
+    serializer.SerializeShowSplash(m_pShowSplashCheck->GetValue());
 }
 
 cSettings::~cSettings()

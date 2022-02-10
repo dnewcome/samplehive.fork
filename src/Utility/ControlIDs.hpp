@@ -65,6 +65,7 @@ namespace SampleHive { namespace ID {
         SD_FontSize,
         SD_FontBrowseButton,
         SD_WaveformColourPickerCtrl,
+        SD_ShowSplash,
 
         // -------------------------------------------------------------------
         // App Menu items
