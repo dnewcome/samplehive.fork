@@ -25,10 +25,11 @@
 #include <deque>
 #include <exception>
 #include <sstream>
-
 #include <stdexcept>
+
 #include <wx/dataview.h>
 #include <wx/dvrenderers.h>
+#include <wx/gdicmn.h>
 #include <wx/msgdlg.h>
 #include <wx/string.h>
 #include <wx/stringimpl.h>
@@ -534,8 +535,8 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
     wxVector<wxVector<wxVariant>> vecSet;
 
     wxVariant icon_filled, icon_empty;
-    icon_filled = wxVariant(wxBitmap(icon_star_filled));
-    icon_empty = wxVariant(wxBitmap(icon_star_empty));
+    icon_filled = wxVariant(wxBitmap(icon_star_filled, wxBITMAP_TYPE_PNG));
+    icon_empty = wxVariant(wxBitmap(icon_star_empty, wxBITMAP_TYPE_PNG));
 
     try
     {
@@ -674,8 +675,8 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
     wxVector<wxVector<wxVariant>> sampleVec;
 
     wxVariant icon_filled, icon_empty;
-    icon_filled = wxVariant(wxBitmap(icon_star_filled));
-    icon_empty = wxVariant(wxBitmap(icon_star_empty));
+    icon_filled = wxVariant(wxBitmap(icon_star_filled, wxBITMAP_TYPE_PNG));
+    icon_empty = wxVariant(wxBitmap(icon_star_empty, wxBITMAP_TYPE_PNG));
 
     try
     {
@@ -749,8 +750,8 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
     wxVector<wxVector<wxVariant>> sampleVec;
 
     wxVariant icon_filled, icon_empty;
-    icon_filled = wxVariant(wxBitmap(icon_star_filled));
-    icon_empty = wxVariant(wxBitmap(icon_star_empty));
+    icon_filled = wxVariant(wxBitmap(icon_star_filled, wxBITMAP_TYPE_PNG));
+    icon_empty = wxVariant(wxBitmap(icon_star_empty, wxBITMAP_TYPE_PNG));
 
     try
     {
@@ -931,8 +932,8 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
                                                                   const std::string &icon_star_empty)
 {
     wxVariant icon_filled, icon_empty;
-    icon_filled = wxVariant(wxBitmap(icon_star_filled));
-    icon_empty = wxVariant(wxBitmap(icon_star_empty));
+    icon_filled = wxVariant(wxBitmap(icon_star_filled, wxBITMAP_TYPE_PNG));
+    icon_empty = wxVariant(wxBitmap(icon_star_empty, wxBITMAP_TYPE_PNG));
 
     try
     {

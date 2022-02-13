@@ -29,6 +29,7 @@
 
 #include <deque>
 
+#include <wx/gdicmn.h>
 #include <wx/textdlg.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
@@ -121,7 +122,7 @@ void cHivesPanel::OnDragAndDropToHives(wxDropFilesEvent& event)
             {
                 m_pHives->AppendItem(drop_target, files[i]);
 
-                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), row, 0);
+                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_FILLED_16px, wxBITMAP_TYPE_PNG)), row, 0);
 
                 db.UpdateFavoriteColumn(file_name.ToStdString(), 1);
                 db.UpdateHiveName(file_name.ToStdString(), hive_name.ToStdString());
@@ -366,7 +367,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                                         {
                                             SH_LOG_DEBUG("Found match");
 
-                                            SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)),
+                                            SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)),
                                                                                            i, 0);
 
                                             db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
@@ -408,8 +409,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         const auto dataset = db.FilterDatabaseByHiveName(hive_name.ToStdString(),
                                                                          serializer.DeserializeShowFileExtension(),
-                                                                         ICON_STAR_FILLED_16px,
-                                                                         ICON_STAR_EMPTY_16px);
+                                                                         ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
                         if (dataset.empty())
                         {
@@ -489,7 +489,7 @@ void cHivesPanel::OnShowHivesContextMenu(wxDataViewEvent& event)
                     {
                         SH_LOG_DEBUG("Found match");
 
-                        SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                        SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), i, 0);
 
                         db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                         db.UpdateHiveName(matched_sample.ToStdString(), m_pHives->GetItemText(m_FavoritesHive).ToStdString());
@@ -698,7 +698,7 @@ void cHivesPanel::OnClickRemoveHive(wxCommandEvent& event)
                             {
                                 SH_LOG_DEBUG("Found match");
 
-                                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), i, 0);
+                                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), i, 0);
 
                                 db.UpdateFavoriteColumn(matched_sample.ToStdString(), 0);
                                 db.UpdateHiveName(matched_sample.ToStdString(), m_pHives->GetItemText(m_FavoritesHive).ToStdString());

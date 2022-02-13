@@ -86,5 +86,5 @@ class cWaveformViewer : public wxPanel
 
     public:
         // -------------------------------------------------------------------
-        void ResetDC();
+        void ResetBitmapDC();
 };

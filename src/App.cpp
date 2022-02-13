@@ -64,7 +64,7 @@ bool cApp::OnInit()
     {
         m_pSplash = new wxSplashScreen(bitmap,
                                        wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_TIMEOUT,
-                                       10000, NULL, -1, wxDefaultPosition, wxDefaultSize,
+                                       2000, NULL, -1, wxDefaultPosition, wxDefaultSize,
                                        wxBORDER_SIMPLE | wxSTAY_ON_TOP);
     }
 

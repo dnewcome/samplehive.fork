@@ -28,6 +28,7 @@
 #include "Utility/Utils.hpp"
 
 #include <wx/dir.h>
+#include <wx/gdicmn.h>
 #include <wx/progdlg.h>
 
 namespace SampleHive {
@@ -138,7 +139,7 @@ namespace SampleHive {
 
             wxVector<wxVariant> data;
 
-            wxVariant icon = wxVariant(wxBitmap(ICON_STAR_EMPTY_16px));
+            wxVariant icon = wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG));
 
             if (tags.IsFileValid())
             {

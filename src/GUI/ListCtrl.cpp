@@ -31,6 +31,7 @@
 #include "Utility/Utils.hpp"
 
 #include <wx/dir.h>
+#include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/progdlg.h>
 #include <wx/msgdlg.h>
@@ -41,7 +42,7 @@ cListCtrl::cListCtrl(wxWindow* window)
       m_pWindow(window)
 {
     // Adding columns to wxDataViewListCtrl.
-    AppendBitmapColumn(wxBitmap(ICON_STAR_FILLED_16px),
+    AppendBitmapColumn(wxBitmap(ICON_STAR_FILLED_16px, wxBITMAP_TYPE_PNG),
                        0,
                        wxDATAVIEW_CELL_ACTIVATABLE,
                        30,
@@ -187,7 +188,7 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
 
         if (db.GetFavoriteColumnValueByFilename(filename) == 0)
         {
-            this->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
+            this->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px, wxBITMAP_TYPE_PNG)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 1);
             db.UpdateHiveName(filename, hive_name);
@@ -207,7 +208,7 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
         }
         else
         {
-            this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
+            this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), selected_row, 0);
 
             db.UpdateFavoriteColumn(filename, 0);
             db.UpdateHiveName(filename, SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString());
@@ -403,7 +404,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 // Add To Favorites
                 if (favorite_add && db_status == 0)
                 {
-                    this->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px)), selected_row, 0);
+                    this->SetValue(wxVariant(wxBitmap(ICON_STAR_FILLED_16px, wxBITMAP_TYPE_PNG)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 1);
                     db.UpdateHiveName(filename, hive_name);
@@ -424,7 +425,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
                 else
                 {
                     //Remove From Favorites
-                    this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), selected_row, 0);
+                    this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), selected_row, 0);
 
                     db.UpdateFavoriteColumn(filename, 0);
                     db.UpdateHiveName(filename, SampleHive::cHiveData::Get().GetHiveItemText(true).ToStdString());
@@ -597,7 +598,7 @@ void cListCtrl::OnShowLibraryContextMenu(wxDataViewEvent& event)
 
                     if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
                     {
-                        this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
+                        this->SetValue(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), item_row, 0);
 
                         db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 

@@ -451,7 +451,7 @@ void cWaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
     }
 }
 
-void cWaveformViewer::ResetDC()
+void cWaveformViewer::ResetBitmapDC()
 {
     bBitmapDirty = true;
     bSelectRange = false;

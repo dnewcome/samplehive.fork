@@ -266,11 +266,11 @@ void cMainFrame::LoadDatabase()
     try
     {
         const auto dataset = m_pDatabase->LoadSamplesDatabase(*m_pNotebook->GetHivesPanel()->GetHivesObject(),
-                                                             m_pNotebook->GetHivesPanel()->GetFavoritesHive(),
-                                                             *m_pNotebook->GetTrashPanel()->GetTrashObject(),
-                                                             m_pNotebook->GetTrashPanel()->GetTrashRoot(),
-                                                             serializer.DeserializeShowFileExtension(),
-                                                             ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
+                                                              m_pNotebook->GetHivesPanel()->GetFavoritesHive(),
+                                                              *m_pNotebook->GetTrashPanel()->GetTrashObject(),
+                                                              m_pNotebook->GetTrashPanel()->GetTrashRoot(),
+                                                              serializer.DeserializeShowFileExtension(),
+                                                              ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px);
 
         if (dataset.empty())
             SH_LOG_INFO("Error! Database is empty.");
@@ -355,7 +355,7 @@ void cMainFrame::LoadConfigFile()
     this->SetSize(width, height);
     this->SetMinSize(wxSize(min_width, min_height));
     this->CenterOnScreen(wxBOTH);
-    this->SetIcon(wxIcon(ICON_HIVE_256px, wxICON_DEFAULT_TYPE, -1, -1));
+    this->SetIcon(wxIcon(ICON_HIVE_256px, wxBITMAP_TYPE_PNG));
     this->SetTitle(PROJECT_NAME);
     this->SetStatusText(wxString::Format("%s %s", PROJECT_NAME, PROJECT_VERSION), 3);
     this->SetStatusText(_("Stopped"), 1);
@@ -631,7 +631,7 @@ void cMainFrame::OnSelectPreferences(wxCommandEvent& event)
             }
             if (settings->IsWaveformColourChanged())
             {
-                m_pWaveformViewer->ResetDC();
+                m_pWaveformViewer->ResetBitmapDC();
             }
             break;
         case wxID_CANCEL:
@@ -869,7 +869,7 @@ void cMainFrame::OnRecieveCallFunctionPlay(SampleHive::cCallFunctionEvent& event
 
 void cMainFrame::OnRecieveWaveformUpdateStatus(SampleHive::cWaveformUpdateEvent& event)
 {
-    m_pWaveformViewer->ResetDC();
+    m_pWaveformViewer->ResetBitmapDC();
 }
 
 void cMainFrame::OnRecieveClearLoopPointsStatus(SampleHive::cLoopPointsEvent& event)

@@ -30,6 +30,7 @@
 
 #include <exception>
 
+#include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
@@ -106,7 +107,7 @@ void cTrashPanel::OnDragAndDropToTrash(wxDropFilesEvent& event)
 
             if (db.GetFavoriteColumnValueByFilename(files[i].ToStdString()))
             {
-                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px)), item_row, 0);
+                SampleHive::cHiveData::Get().ListCtrlSetVariant(wxVariant(wxBitmap(ICON_STAR_EMPTY_16px, wxBITMAP_TYPE_PNG)), item_row, 0);
 
                 db.UpdateFavoriteColumn(files[i].ToStdString(), 0);
 
@@ -206,8 +207,7 @@ void cTrashPanel::OnShowTrashContextMenu(wxTreeEvent& event)
                         if (db.RestoreFromTrashByFilename(files[i].ToStdString(),
                                                           dataset,
                                                           serializer.DeserializeShowFileExtension(),
-                                                          ICON_STAR_FILLED_16px,
-                                                          ICON_STAR_EMPTY_16px).empty())
+                                                          ICON_STAR_FILLED_16px, ICON_STAR_EMPTY_16px).empty())
                         {
                             SH_LOG_INFO("Error! Database is empty.");
                         }

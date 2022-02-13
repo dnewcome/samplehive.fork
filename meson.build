@@ -135,10 +135,19 @@ yaml_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                              'YAML_CPP_BUILD_TOOLS': 'ON'})
 
 snd_opts = cmake.subproject_options()
+
+snd_shared = ''
+
+if host_sys == 'windows'
+  snd_shared = 'OFF'
+else
+  snd_shared = 'ON'
+endif
+
 snd_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                             'CMAKE_INSTALL_PREFIX': prefix,
                             'CMAKE_BUILD_TYPE': 'Release',
-                            'BUILD_SHARED_LIBS': 'ON',
+                            'BUILD_SHARED_LIBS': snd_shared,
                             'BUILD_PROGRAMS': 'OFF',
                             'BUILD_EXAMPLES': 'OFF',
                             'BUILD_TESTING': 'OFF',
@@ -192,12 +201,12 @@ if not wx.found()
   wx_base = wx_subproject.dependency('wxbase')
   wx = [wx_media, wx_core, wx_base]
 else
-  wxconfig = find_program(['wx-config', 'wx-config-gtk3'])
+  wxconfig = find_program(['wx-config', 'wx-config-gtk3', 'wx-config-3.1'])
   wx_modules = ['media', 'std']
 
   foreach module : wx_modules
-    wx_cxx_flags += run_command(wxconfig, '--cxxflags', module).stdout().strip().split()
-    wx_libs += run_command(wxconfig, '--libs', module).stdout().strip().split()
+    wx_cxx_flags += run_command(wxconfig, '--cxxflags', module, capture: true, check: false).stdout().strip().split()
+    wx_libs += run_command(wxconfig, '--libs', module, capture: true, check: false).stdout().strip().split()
   endforeach
 endif
 
