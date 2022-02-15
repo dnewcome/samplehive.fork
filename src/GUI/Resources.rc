@@ -1,0 +1,6 @@
+#define wxUSE_RC_MANIFEST 1
+#define wxUSE_DPI_AWARE_MANIFEST 2
+
+#include <wx/msw/wx.rc>
+
+ApplicationIcon ICON "../../assets/icons/icon-hive_32x32.ico"

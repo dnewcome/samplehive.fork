@@ -120,6 +120,10 @@ wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'wxUSE_LIBSDL': 'OFF',
                            'wxUSE_MEDIACTRL': 'ON'})
 
+if host_sys == 'windows'
+  wx_opts.set_override_option('b_lto', 'false')
+endif
+
 taglib_opts = cmake.subproject_options()
 taglib_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                                'CMAKE_INSTALL_PREFIX': prefix,
@@ -200,6 +204,14 @@ if not wx.found()
   wx_core = wx_subproject.dependency('wxcore')
   wx_base = wx_subproject.dependency('wxbase')
   wx = [wx_media, wx_core, wx_base]
+
+  if host_sys == 'windows'
+    win = import('windows')
+    wx_inc = wx_subproject.include_directories('wxbase')
+    rc_file = win.compile_resources('src/GUI/Resources.rc', include_directories: wx_inc)
+
+    src += rc_file
+  endif
 else
   wxconfig = find_program(['wx-config', 'wx-config-gtk3', 'wx-config-3.1'])
   wx_modules = ['media', 'std']

@@ -27,6 +27,7 @@
 
 #include <wx/colour.h>
 #include <wx/filename.h>
+#include <wx/settings.h>
 
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/node/parse.h>
@@ -37,7 +38,7 @@ namespace SampleHive {
     {
         std::ifstream ifstrm(static_cast<std::string>(CONFIG_FILEPATH));
 
-        wxFont font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
+        wxFont font = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
         std::string system_font_face = font.GetFaceName().ToStdString();
         int system_font_size = font.GetPointSize();
 

@@ -27,6 +27,7 @@
 #include <wx/defs.h>
 #include <wx/gdicmn.h>
 #include <wx/stringimpl.h>
+#include <wx/settings.h>
 
 cSettings::cSettings(wxWindow *window)
     : wxDialog(window, wxID_ANY, "cSettings", wxDefaultPosition,
@@ -364,7 +365,7 @@ void cSettings::OnChangeFontSize(wxSpinEvent& event)
     int font_size = m_pFontSize->GetValue();
 
     if (m_pFontType->GetStringSelection() == "System default")
-        m_Font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
+        m_Font = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
 
     m_Font.SetPointSize(font_size);
 
@@ -381,7 +382,7 @@ void cSettings::LoadDefaultConfig()
 {
     SampleHive::cSerializer serializer;
 
-    wxFont sys_font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
+    wxFont sys_font = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
     wxString system_font = sys_font.GetFaceName();
     int system_font_size = sys_font.GetPointSize();
 
@@ -450,7 +451,7 @@ void cSettings::SetCustomFont()
 {
     SampleHive::cSerializer serializer;
 
-    wxFont sys_font = wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT);
+    wxFont sys_font = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
     std::string system_font = sys_font.GetFaceName().ToStdString();
     int system_font_size = sys_font.GetPointSize();
 
