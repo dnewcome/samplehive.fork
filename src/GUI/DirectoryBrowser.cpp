@@ -18,14 +18,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Database/Database.hpp"
 #include "GUI/DirectoryBrowser.hpp"
 #include "Utility/ControlIDs.hpp"
+#include "Utility/HiveData.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
+#include "Utility/Sample.hpp"
+#include "Utility/Serialize.hpp"
 #include "Utility/Utils.hpp"
 
 #include <wx/dataobj.h>
+#include <wx/dir.h>
 #include <wx/dnd.h>
+#include <wx/treebase.h>
 
 cDirectoryBrowser::cDirectoryBrowser(wxWindow* window)
     : wxGenericDirCtrl(window, SampleHive::ID::BC_DirCtrl, wxDirDialogDefaultFolderStr, wxDefaultPosition,
@@ -38,6 +44,7 @@ cDirectoryBrowser::cDirectoryBrowser(wxWindow* window)
 
     Bind(wxEVT_DIRCTRL_FILEACTIVATED, &cDirectoryBrowser::OnClickDirCtrl, this, SampleHive::ID::BC_DirCtrl);
     Bind(wxEVT_TREE_BEGIN_DRAG, &cDirectoryBrowser::OnDragFromDirCtrl, this, this->GetTreeCtrl()->GetId());
+    Bind(wxEVT_TREE_ITEM_ACTIVATED, &cDirectoryBrowser::OnDirCtrlExpanded, this, this->GetTreeCtrl()->GetId());
 }
 
 void cDirectoryBrowser::OnClickDirCtrl(wxCommandEvent& event)
@@ -74,6 +81,51 @@ void cDirectoryBrowser::OnDragFromDirCtrl(wxTreeEvent& event)
     drop_source.SetData(file_data);
 
     LogDragResult(drop_source.DoDragDrop());
+}
+
+void cDirectoryBrowser::OnDirCtrlExpanded(wxTreeEvent& event)
+{
+    cDatabase db;
+    SampleHive::cSerializer serializer;
+
+    if (serializer.DeserializeDemoMode())
+    {
+        wxBusyCursor busy_cursor;
+        wxWindowDisabler window_disabler;
+
+        wxString filepath;
+        wxArrayString filepath_array;
+
+        const wxString pathToDirectory = this->GetPath(event.GetItem());
+
+        size_t number_of_files = wxDir::GetAllFiles(pathToDirectory, &filepath_array, wxEmptyString, wxDIR_FILES);
+
+        for (size_t i = 0; i < number_of_files; i++)
+        {
+            filepath = filepath_array[i];
+
+            if (wxFileExists(filepath))
+            {
+                filepath_array.push_back(filepath);
+            }
+            else if (wxDirExists(filepath))
+            {
+                wxDir::GetAllFiles(filepath, &filepath_array);
+            }
+        }
+
+        // Delete all Files
+        if (SampleHive::cHiveData::Get().GetListCtrlItemCount() >= 1)
+        {
+            db.DeleteAllSamples();
+            SampleHive::cHiveData::Get().ListCtrlDeleteAllItems();
+        }
+
+        SampleHive::cUtils::Get().AddSamples(filepath_array, this);
+
+    }
+    else
+        event.Veto();
 }
 
 cDirectoryBrowser::~cDirectoryBrowser()

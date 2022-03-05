@@ -21,6 +21,7 @@
 #include "Database/Database.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
+#include "Utility/Serialize.hpp"
 
 #include <deque>
 #include <exception>
@@ -81,7 +82,12 @@ class Sqlite3Statement
 
 cDatabase::cDatabase()
 {
-    OpenDatabase();
+    SampleHive::cSerializer serializer;
+
+    if (!serializer.DeserializeDemoMode())
+        OpenDatabase();
+    else
+        OpenTemporaryDatabase();
 }
 
 cDatabase::~cDatabase()
@@ -111,9 +117,21 @@ void cDatabase::CreateTableSamples()
         throw_on_sqlite3_error(sqlite3_exec(m_pDatabase, samples, NULL, 0, &m_pErrMsg));
         SH_LOG_INFO("SAMPLES table created successfully.");
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         show_modal_dialog_and_log("Error! Cannot create SAMPLES table", "Error", e.what());
+    }
+
+    const auto indices = "CREATE INDEX IF NOT EXISTS idx_filename_path ON SAMPLES(FILENAME, PATH);";
+
+    try
+    {
+        throw_on_sqlite3_error(sqlite3_exec(m_pDatabase, indices, NULL, 0, &m_pErrMsg));
+        SH_LOG_INFO("FILENAME PATH index created successfully.");
+    }
+    catch (const std::exception& e)
+    {
+        show_modal_dialog_and_log("Error! Cannot create INDEX Filename Path", "Error", e.what());
     }
 }
 
@@ -466,6 +484,24 @@ void cDatabase::RemoveHiveFromDatabase(const std::string &hiveName)
     catch (const std::exception &e)
     {
         show_modal_dialog_and_log("Error! Cannot delete hive from table", "Error", e.what());
+    }
+}
+
+void cDatabase::DeleteAllSamples()
+{
+    try
+    {
+        const auto sql = "DELETE FROM SAMPLES;";
+
+        Sqlite3Statement statement(m_pDatabase, sql);
+
+        throw_on_sqlite3_error(sqlite3_exec(m_pDatabase, sql, NULL, 0, &m_pErrMsg));
+
+        SH_LOG_INFO("All Samples deleted.");
+    }
+    catch (const std::exception &e)
+    {
+        show_modal_dialog_and_log("Error! Could not delete samples.", "Error!", e.what());
     }
 }
 
@@ -1001,6 +1037,12 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
 void cDatabase::OpenDatabase()
 {
     throw_on_sqlite3_error(sqlite3_open(static_cast<std::string>(DATABASE_FILEPATH).c_str(), &m_pDatabase));
+}
+
+void cDatabase::OpenTemporaryDatabase()
+{
+    SH_LOG_WARN("Creating temporary in memory database, all samples will be deleted on application exit.");
+    throw_on_sqlite3_error(sqlite3_open("tempdb.db", &m_pDatabase));
 }
 
 void cDatabase::CloseDatabase()

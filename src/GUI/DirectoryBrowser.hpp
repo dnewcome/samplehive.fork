@@ -35,6 +35,7 @@ class cDirectoryBrowser : public wxGenericDirCtrl
         // DirCtrl event handlers
         void OnClickDirCtrl(wxCommandEvent& event);
         void OnDragFromDirCtrl(wxTreeEvent& event);
+        void OnDirCtrlExpanded(wxTreeEvent& event);
 
     private:
         wxWindow* m_pWindow = nullptr;

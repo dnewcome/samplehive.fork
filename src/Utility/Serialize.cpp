@@ -69,6 +69,11 @@ namespace SampleHive {
             m_Emitter << YAML::Key << "ShowStatusBar" << YAML::Value << true;
             m_Emitter << YAML::EndMap << YAML::Newline;
 
+            m_Emitter << YAML::Newline << YAML::Key << "General";
+            m_Emitter << YAML::BeginMap;
+            m_Emitter << YAML::Key << "DemoMode" << YAML::Value << false;
+            m_Emitter << YAML::EndMap << YAML::Newline;
+
             m_Emitter << YAML::Newline << YAML::Key << "Media";
             m_Emitter << YAML::BeginMap;
             m_Emitter << YAML::Key << "Autoplay" << YAML::Value << false;
@@ -804,6 +809,59 @@ namespace SampleHive {
         }
 
         return show_extension;
+    }
+
+    void cSerializer::SerializeDemoMode(bool showDemoMode)
+    {
+        YAML::Emitter out;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            if (auto general = config["General"])
+            {
+                general["DemoMode"] = showDemoMode;
+
+                out << config;
+
+                std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+                ofstrm << out.c_str();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot store show demo mode value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+    }
+
+    bool cSerializer::DeserializeDemoMode() const
+    {
+        bool show_demo_mode = false;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            if (auto general = config["General"])
+            {
+                show_demo_mode = general["DemoMode"].as<bool>();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot fetch show demo mode value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+
+        return show_demo_mode;
     }
 
 }

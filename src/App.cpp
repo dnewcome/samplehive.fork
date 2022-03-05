@@ -40,7 +40,18 @@ cApp::cApp()
 
 cApp::~cApp()
 {
+    SampleHive::cSerializer serializer;
 
+    if (serializer.DeserializeDemoMode())
+    {
+        if (wxFileExists("tempdb.db"))
+            if (wxRemoveFile("tempdb.db"))
+                SH_LOG_WARN("Deleted temporary database file..");
+            else
+                SH_LOG_ERROR("Could not delete file..");
+        else
+            SH_LOG_DEBUG("File doesn't exists");
+    }
 }
 
 bool cApp::OnInit()

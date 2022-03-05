@@ -9,4 +9,3 @@ patch_hash = 3c38f275d5792b1286391102594329e98b17737924b344f98312ab09929b74be
 
 [provide]
 spdlog = spdlog_dep
-

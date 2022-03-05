@@ -59,6 +59,7 @@ class cMainFrame : public wxFrame
         // App menu items event handlers
         void OnSelectAddFile(wxCommandEvent& event);
         void OnSelectAddDirectory(wxCommandEvent& event);
+        void OnSelectToggleDemoMode(wxCommandEvent& event);
         void OnSelectToggleExtension(wxCommandEvent& event);
         void OnSelectToggleMenuBar(wxCommandEvent& event);
         void OnSelectToggleStatusBar(wxCommandEvent& event);
@@ -153,6 +154,7 @@ class cMainFrame : public wxFrame
         wxMenuItem* m_pToggleExtension = nullptr;
         wxMenuItem* m_pToggleMenuBar = nullptr;
         wxMenuItem* m_pToggleStatusBar = nullptr;
+        wxMenuItem* m_pDemoMode = nullptr;
 
         // -------------------------------------------------------------------
         // Splitter windows
@@ -198,4 +200,5 @@ class cMainFrame : public wxFrame
         bool m_bShowMenuBar = false;
         bool m_bShowStatusBar = false;
         bool m_bLoopPointsSet = false;
+        bool m_bDemoMode = false;
 };

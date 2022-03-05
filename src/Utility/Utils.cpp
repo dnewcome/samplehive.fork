@@ -88,8 +88,11 @@ namespace SampleHive {
         //Check All Files At Once
         wxArrayString sorted_files;
 
-        sorted_files = db.CheckDuplicates(files);
-        files = sorted_files;
+        if (!serializer.DeserializeDemoMode())
+        {
+            sorted_files = db.CheckDuplicates(files);
+            files = sorted_files;
+        }
 
         if (files.size() < 1)
         {

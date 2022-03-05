@@ -51,6 +51,8 @@ class cDatabase
         void OpenDatabase();
         void CloseDatabase();
 
+        void OpenTemporaryDatabase();
+
     public:
         // -------------------------------------------------------------------
         // Create the table
@@ -88,6 +90,8 @@ class cDatabase
         // Remove from database
         void RemoveSampleFromDatabase(const std::string& filename);
         void RemoveHiveFromDatabase(const std::string& hiveName);
+
+        void DeleteAllSamples();
 
         // -------------------------------------------------------------------
         wxVector<wxVector<wxVariant>> 

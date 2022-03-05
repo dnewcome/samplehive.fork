@@ -76,6 +76,7 @@ cMainFrame::cMainFrame()
     m_pEditMenu->Append(wxID_PREFERENCES, _("Preferences\tCtrl+P"), _("Open preferences dialog"));
 
     // View menu items
+    m_pDemoMode = new wxMenuItem(m_pViewMenu, wxID_ANY, _("Demo mode"), _("Toggle demo mode On/Off"), wxITEM_CHECK);
     m_pToggleExtension = new wxMenuItem(m_pViewMenu, SampleHive::ID::MN_ToggleExtension,
                                         _("Toggle Extension\tCtrl+E"), _("Show/Hide Extension"), wxITEM_CHECK);
     m_pToggleMenuBar = new wxMenuItem(m_pViewMenu, SampleHive::ID::MN_ToggleMenuBar,
@@ -83,6 +84,7 @@ cMainFrame::cMainFrame()
     m_pToggleStatusBar = new wxMenuItem(m_pViewMenu, SampleHive::ID::MN_ToggleStatusBar,
                                         _("Toggle Status Bar\tCtrl+B"), _("Show/Hide Status Bar"), wxITEM_CHECK);
 
+    m_pViewMenu->Append(m_pDemoMode)->Check(false);
     m_pViewMenu->Append(m_pToggleExtension)->Check(true);
     m_pViewMenu->Append(m_pToggleMenuBar)->Check(m_pMenuBar->IsShown());
     m_pViewMenu->Append(m_pToggleStatusBar)->Check(m_pStatusBar->IsShown());
@@ -153,6 +155,7 @@ cMainFrame::cMainFrame()
     // Binding events.
     Bind(wxEVT_MENU, &cMainFrame::OnSelectAddFile, this, SampleHive::ID::MN_AddFile);
     Bind(wxEVT_MENU, &cMainFrame::OnSelectAddDirectory, this, SampleHive::ID::MN_AddDirectory);
+    Bind(wxEVT_MENU, &cMainFrame::OnSelectToggleDemoMode, this, m_pDemoMode->GetId());
     Bind(wxEVT_MENU, &cMainFrame::OnSelectToggleExtension, this, SampleHive::ID::MN_ToggleExtension);
     Bind(wxEVT_MENU, &cMainFrame::OnSelectToggleMenuBar, this, SampleHive::ID::MN_ToggleMenuBar);
     Bind(wxEVT_MENU, &cMainFrame::OnSelectToggleStatusBar, this, SampleHive::ID::MN_ToggleStatusBar);
@@ -199,8 +202,9 @@ cMainFrame::cMainFrame()
     m_pTopPanelMainSizer->SetSizeHints(m_pTopPanel);
     m_pTopPanelMainSizer->Layout();
 
-    // Restore the data previously added to Library
-    LoadDatabase();
+    // Restore the data previously added to Library only if demo mode is disabled
+    if (!m_bDemoMode)
+        LoadDatabase();
 
     // Set some properites after the frame has been created
     CallAfter(&cMainFrame::SetAfterFrameCreate);
@@ -343,12 +347,13 @@ void cMainFrame::LoadConfigFile()
 
     m_bShowMenuBar = serializer.DeserializeShowMenuAndStatusBar("menubar");
     m_bShowStatusBar = serializer.DeserializeShowMenuAndStatusBar("statusbar");
+    m_bDemoMode = serializer.DeserializeDemoMode();
 
     m_pToggleMenuBar->Check(m_bShowMenuBar);
     m_pMenuBar->Show(m_bShowMenuBar);
     m_pToggleStatusBar->Check(m_bShowStatusBar);
     m_pStatusBar->Show(m_bShowStatusBar);
-
+    m_pDemoMode->Check(m_bDemoMode);
     m_pToggleExtension->Check(serializer.DeserializeShowFileExtension());
 
     this->SetFont(serializer.DeserializeFontSettings());
@@ -543,6 +548,28 @@ void cMainFrame::OnSelectAddDirectory(wxCommandEvent& event)
         break;
         default:
             break;
+    }
+}
+
+void cMainFrame::OnSelectToggleDemoMode(wxCommandEvent& event)
+{
+    SampleHive::cSerializer serializer;
+
+    if (m_pDemoMode->IsChecked())
+    {
+        serializer.SerializeDemoMode(true);
+        m_pLibrary->GetInfoBarObject()->ShowMessage(_("Demo mode toggled on, "
+                                                      "please restart the app for changes take effect"), wxICON_INFORMATION);
+
+        m_bDemoMode = true;
+    }
+    else
+    {
+        serializer.SerializeDemoMode(false);
+        m_pLibrary->GetInfoBarObject()->ShowMessage(_("Demo mode toggled off, "
+                                                      "please restart the app for changes take effect"), wxICON_INFORMATION);
+
+        m_bDemoMode = false;
     }
 }
 
@@ -919,7 +946,9 @@ void cMainFrame::InitDatabase()
     {
         m_pDatabase = std::make_unique<cDatabase>();
         m_pDatabase->CreateTableSamples();
-        m_pDatabase->CreateTableHives();
+
+        if (!m_bDemoMode)
+            m_pDatabase->CreateTableHives();
     }
     catch (std::exception& e)
     {

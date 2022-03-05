@@ -109,6 +109,10 @@ namespace SampleHive {
             void SerializeShowFileExtension(bool showExtension);
             bool DeserializeShowFileExtension() const;
 
+            // Demo mode
+            void SerializeDemoMode(bool showDemoMode);
+            bool DeserializeDemoMode() const;
+
         private:
             // -------------------------------------------------------------------
             YAML::Emitter m_Emitter;

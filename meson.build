@@ -120,10 +120,6 @@ wx_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                            'wxUSE_LIBSDL': 'OFF',
                            'wxUSE_MEDIACTRL': 'ON'})
 
-if host_sys == 'windows'
-  wx_opts.set_override_option('b_lto', 'false')
-endif
-
 taglib_opts = cmake.subproject_options()
 taglib_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                                'CMAKE_INSTALL_PREFIX': prefix,
@@ -157,6 +153,14 @@ snd_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                             'BUILD_TESTING': 'OFF',
                             'ENABLE_EXTERNAL_LIBS': 'ON',
                             'ENABLE_MPEG': 'ON'})
+
+# Disable link time optimization if host is Windows
+if host_sys == 'windows'
+  wx_opts.set_override_option('b_lto', 'false')
+  taglib_opts.set_override_option('b_lto', 'false')
+  yaml_opts.set_override_option('b_lto', 'false')
+  snd_opts.set_override_option('b_lto', 'false')
+endif
 
 # Source files to be compiled
 src = [
