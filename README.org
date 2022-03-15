@@ -26,6 +26,7 @@
   - [[#are-there-any-keybindings-for-samplehive][Are there any keybindings for SampleHive?]]
   - [[#can-i-configure-samplehive][Can I configure SampleHive?]]
   - [[#how-do-i-contribute-to-the-samplehive][How do I contribute to the SampleHive?]]
+  - [[#want-to-buy-me-a-coffee][Want to BuyMeACoffee?]]
 
 ** What is SampleHive?
 :PROPERTIES:
@@ -120,3 +121,10 @@ SampleHive comes with a =config.yaml= file, that is placed under =~/.config/Samp
 :CUSTOM_ID: how-do-i-contribute-to-samplehive
 :END:
 Want to help by contributing to =SampleHive=, please check out [[https://gitlab.com/samplehive/sample-hive/-/blob/testing/CONTRIBUTING.org][CONTRIBUTING.org]] for more details.
+** Want to BuyMeACoffee?
+:PROPERTIES:
+:CUSTOM_ID: want-to-buy-me-a-coffee
+:END:
+#+begin_html
+<a href="https://www.buymeacoffee.com/apoorv569"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=apoorv569&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
+#+end_html
