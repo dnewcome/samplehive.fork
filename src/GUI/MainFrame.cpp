@@ -214,13 +214,13 @@ void cMainFrame::OnMediaFinished(wxMediaEvent& event)
 {
     if (m_pTransportControls->CanLoop())
     {
-        if (!m_pMediaCtrl->Play())
-        {
-            wxMessageDialog msgDialog(NULL, _("Error! Cannot loop media."), _("Error"), wxOK | wxICON_ERROR);
-            msgDialog.ShowModal();
-        }
-        else
-            m_pMediaCtrl->Play();
+        // FIXME: Temporary fix for the sample not playing from beginning when looping. Might need to change this.
+        if (m_pMediaCtrl->Stop()) // TODO: <--
+            if (!m_pMediaCtrl->Play())
+            {
+                wxMessageDialog msgDialog(NULL, _("Error! Cannot loop media."), _("Error"), wxOK | wxICON_ERROR);
+                msgDialog.ShowModal();
+            }
     }
     else
     {
