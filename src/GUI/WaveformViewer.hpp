@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "Database/Database.hpp"
-
 #include <wx/bitmap.h>
 #include <wx/colour.h>
 #include <wx/dc.h>
@@ -35,7 +33,7 @@
 class cWaveformViewer : public wxPanel
 {
     public:
-        cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl, cDatabase& database);
+        cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl);
         ~cWaveformViewer();
 
     private:
@@ -45,7 +43,6 @@ class cWaveformViewer : public wxPanel
         wxBoxSizer* m_Sizer;
 
         // -------------------------------------------------------------------
-        cDatabase& m_Database;
         wxMediaCtrl& m_MediaCtrl;
 
     private:

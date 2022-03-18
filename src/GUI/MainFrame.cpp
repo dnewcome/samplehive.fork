@@ -150,7 +150,7 @@ cMainFrame::cMainFrame()
     m_pTimer = new wxTimer(this);
 
     m_pTransportControls = new cTransportControls(m_pTopPanel, *m_pMediaCtrl);
-    m_pWaveformViewer = new cWaveformViewer(m_pTopPanel, *m_pMediaCtrl, *m_pDatabase);
+    m_pWaveformViewer = new cWaveformViewer(m_pTopPanel, *m_pMediaCtrl);
 
     // Binding events.
     Bind(wxEVT_MENU, &cMainFrame::OnSelectAddFile, this, SampleHive::ID::MN_AddFile);
@@ -227,7 +227,7 @@ void cMainFrame::OnMediaFinished(wxMediaEvent& event)
         if (m_pTimer->IsRunning())
         {
             m_pTimer->Stop();
-            SH_LOG_DEBUG("TIMER STOPPED");
+            SH_LOG_DEBUG("Stopping timer.");
         }
 
         m_pTransportControls->SetSamplePositionText("--:--/--:--");
@@ -238,8 +238,6 @@ void cMainFrame::OnMediaFinished(wxMediaEvent& event)
 
 void cMainFrame::UpdateElapsedTime(wxTimerEvent& event)
 {
-    SH_LOG_DEBUG("TIMER IS RUNNING..");
-
     wxString duration, position;
     wxLongLong llLength, llTell;
 
@@ -869,9 +867,7 @@ void cMainFrame::OnRecieveCallFunctionPlay(SampleHive::cCallFunctionEvent& event
     wxString selection = event.GetSlection();
     bool checkAutoplay = event.GetAutoplayValue();
 
-    wxString sample_path = serializer.DeserializeShowFileExtension() ?
-        m_pDatabase->GetSamplePathByFilename(selection.BeforeLast('.').ToStdString()) :
-        m_pDatabase->GetSamplePathByFilename(selection.ToStdString());
+    wxString sample_path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Path;
 
     if (checkAutoplay)
     {
@@ -931,7 +927,7 @@ void cMainFrame::PlaySample(const std::string& filepath, const std::string& samp
 
         if (!m_pTimer->IsRunning())
         {
-            SH_LOG_INFO("Starting timer..");
+            SH_LOG_DEBUG("Starting timer.");
             m_pTimer->Start(20, wxTIMER_CONTINUOUS);
         }
     }

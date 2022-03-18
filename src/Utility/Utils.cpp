@@ -34,26 +34,15 @@
 namespace SampleHive {
 
     SampleHive::cUtils::FileInfo SampleHive::cUtils::GetFilenamePathAndExtension(const wxString& selected,
-                                                                                 bool checkExtension, bool doGetFilename) const
+                                                                                 bool checkExtension, bool doGetFilename)
     {
-        SampleHive::cSerializer serializer;
-        cDatabase db;
-
         wxString path;
         std::string extension, filename;
 
-        wxString filename_with_extension = db.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
-        wxString filename_without_extension = db.GetSamplePathByFilename(selected.ToStdString());
+        path = GetSamplePath(selected);
 
         if (checkExtension)
-        {
-            extension = serializer.DeserializeShowFileExtension() ?
-                db.GetSampleFileExtension(selected.ToStdString()) :
-                db.GetSampleFileExtension(selected.BeforeLast('.').ToStdString());
-        }
-
-        path = selected.Contains(wxString::Format(".%s", extension)) ?
-            filename_with_extension : filename_without_extension;
+            extension = path.AfterLast('/').AfterLast('.').ToStdString();
 
         if (doGetFilename)
             filename = path.AfterLast('/').BeforeLast('.').ToStdString();
@@ -220,6 +209,27 @@ namespace SampleHive {
         AddSamples(filepath_array, parent);
 
         SH_LOG_DEBUG("Done Importing Samples");
+    }
+
+    std::string cUtils::GetSamplePath(const wxString& name)
+    {
+        SampleHive::cSerializer serializer;
+        cDatabase db;
+
+        wxString sample_path;
+
+        if (m_PathCache.find(name.ToStdString()) != m_PathCache.end())
+            return m_PathCache[name.ToStdString()];
+        else
+        {
+            sample_path = serializer.DeserializeShowFileExtension() ?
+                db.GetSamplePathByFilename(name.BeforeLast('.').ToStdString()) :
+                db.GetSamplePathByFilename(name.ToStdString());
+
+            m_PathCache[name.ToStdString()] = sample_path;
+        }
+
+        return sample_path.ToStdString();
     }
 
 }

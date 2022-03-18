@@ -22,6 +22,8 @@
 #include "wx/string.h"
 #include "wx/window.h"
 
+#include <unordered_map>
+
 namespace SampleHive {
 
     class cUtils
@@ -30,10 +32,12 @@ namespace SampleHive {
             cUtils() = default;
 
         public:
+            // -------------------------------------------------------------------
             cUtils(const cUtils&) = delete;
             cUtils& operator=(const cUtils) = delete;
 
         public:
+            // -------------------------------------------------------------------
             static cUtils& Get()
             {
                 static cUtils s_cUtils;
@@ -41,6 +45,7 @@ namespace SampleHive {
             }
 
         public:
+            // -------------------------------------------------------------------
             struct FileInfo
             {
                 wxString Path;
@@ -51,9 +56,17 @@ namespace SampleHive {
             // -------------------------------------------------------------------
             cUtils::FileInfo GetFilenamePathAndExtension(const wxString& selected,
                                                          bool checkExtension = true,
-                                                         bool doGetFilename = true) const;
+                                                         bool doGetFilename = true);
             void AddSamples(wxArrayString& files, wxWindow* parent);
             void OnAutoImportDir(const wxString& pathToDirectory, wxWindow* parent);
+
+        private:
+            // -------------------------------------------------------------------
+            std::string GetSamplePath(const wxString& name);
+
+        private:
+            // -------------------------------------------------------------------
+            std::unordered_map<std::string, std::string> m_PathCache;
     };
 
 }

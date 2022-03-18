@@ -22,6 +22,7 @@
 #include "Utility/HiveData.hpp"
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
+#include "Utility/Utils.hpp"
 #include "Utility/Serialize.hpp"
 #include "Utility/Event.hpp"
 #include "Utility/Signal.hpp"
@@ -41,9 +42,9 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
-cWaveformViewer::cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl, cDatabase& database)
+cWaveformViewer::cWaveformViewer(wxWindow* window, wxMediaCtrl& mediaCtrl)
     : wxPanel(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxNO_BORDER | wxFULL_REPAINT_ON_RESIZE),
-      m_Window(window), m_Database(database), m_MediaCtrl(mediaCtrl)
+      m_Window(window), m_MediaCtrl(mediaCtrl)
 {
     this->SetDoubleBuffered(true);
 
@@ -125,20 +126,16 @@ void cWaveformViewer::RenderPlayhead(wxDC& dc)
         return;
 
     wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
-    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected).Path.ToStdString();
 
     SampleHive::cTags tags(path);
 
     int length = tags.GetAudioInfo().length;
-    SH_LOG_DEBUG("Sample length: {}", length);
 
     double position = m_MediaCtrl.Tell();
-    SH_LOG_DEBUG("Current Sample Position: {}", position);
 
     int panel_width = this->GetSize().GetWidth();
     double line_pos = panel_width * (position / length);
-
-    SH_LOG_DEBUG("Drawing playhead at: {}", line_pos);
 
     m_PlayheadColour = wxColor(255, 0, 0, 255);
 
@@ -165,15 +162,7 @@ void cWaveformViewer::UpdateWaveformBitmap()
 
     wxString selection = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
 
-    wxString filepath_with_extension = m_Database.GetSamplePathByFilename(selection.BeforeLast('.').ToStdString());
-    wxString filepath_without_extension = m_Database.GetSamplePathByFilename(selection.ToStdString());
-
-    std::string extension = serializer.DeserializeShowFileExtension() ?
-        m_Database.GetSampleFileExtension(selection.ToStdString()) :
-        m_Database.GetSampleFileExtension(selection.BeforeLast('.').ToStdString());
-
-    wxString path = selection.Contains(wxString::Format(".%s", extension)) ?
-        filepath_with_extension : filepath_without_extension;
+    wxString path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selection).Path;
 
     SndfileHandle snd_file(path.ToStdString().c_str());
 
@@ -314,7 +303,7 @@ void cWaveformViewer::OnMouseMotion(wxMouseEvent& event)
         return;
 
     wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
-    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected).Path.ToStdString();
 
     SampleHive::cTags tags(path);
 
@@ -354,7 +343,7 @@ void cWaveformViewer::OnMouseLeftButtonDown(wxMouseEvent& event)
         return;
 
     wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
-    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected).Path.ToStdString();
 
     SampleHive::cTags tags(path);
 
@@ -403,7 +392,7 @@ void cWaveformViewer::OnMouseLeftButtonUp(wxMouseEvent& event)
         return;
 
     wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
-    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected).Path.ToStdString();
 
     SampleHive::cTags tags(path);
 
@@ -468,7 +457,7 @@ std::pair<double, double> cWaveformViewer::CalculateLoopPoints()
         return { 0.0, 0.0 };
 
     wxString selected = SampleHive::cHiveData::Get().GetListCtrlTextValue(selected_row, 1);
-    std::string path = m_Database.GetSamplePathByFilename(selected.BeforeLast('.').ToStdString());
+    std::string path = SampleHive::cUtils::Get().GetFilenamePathAndExtension(selected).Path.ToStdString();
 
     SampleHive::cTags tags(path);
 
