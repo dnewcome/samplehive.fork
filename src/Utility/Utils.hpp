@@ -59,6 +59,7 @@ namespace SampleHive {
                                                          bool doGetFilename = true);
             void AddSamples(wxArrayString& files, wxWindow* parent);
             void OnAutoImportDir(const wxString& pathToDirectory, wxWindow* parent);
+            wxString CalculateAndGetISOStandardTime(wxLongLong length);
 
         private:
             // -------------------------------------------------------------------

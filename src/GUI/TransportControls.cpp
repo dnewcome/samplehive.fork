@@ -62,7 +62,7 @@ cTransportControls::cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl)
     m_pVolumeSlider->SetMaxSize(wxSize(120, -1));
 
     // Sample position static text
-    m_pSamplePosition = new wxStaticText(this, SampleHive::ID::BC_SamplePosition, "--:--/--:--",
+    m_pSamplePosition = new wxStaticText(this, SampleHive::ID::BC_SamplePosition, "--:--.---/--:--.---",
                                          wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
 
     // Transport control buttons
@@ -112,7 +112,7 @@ cTransportControls::cTransportControls(wxWindow* window, wxMediaCtrl& mediaCtrl)
     m_pMainSizer->Add(m_pSettingsButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_pMainSizer->Add(0,0,1, wxALL | wxEXPAND, 0);
     m_pMainSizer->Add(m_pSamplePosition, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
-    m_pMainSizer->Add(30,0,0, wxALL | wxEXPAND, 0);
+    m_pMainSizer->Add(60,0,0, wxALL | wxEXPAND, 0);
     m_pMainSizer->Add(m_pMuteButton, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_pMainSizer->Add(m_pVolumeSlider, 1, wxALL | wxALIGN_CENTER_VERTICAL, 2);
     m_pMainSizer->Add(m_pAutoPlayCheck, 0, wxALL | wxALIGN_CENTER_VERTICAL, 2);
@@ -193,7 +193,7 @@ void cTransportControls::OnClickStop(wxCommandEvent& event)
     // Send custom event to MainFrame to stop the timer
     SampleHive::cSignal::SendTimerStopStatus(*this);
 
-    m_pSamplePosition->SetLabel("--:--/--:--");
+    m_pSamplePosition->SetLabel("--:--.---/--:--.---");
 
     // Send custom event to MainFrame to set the statusbar status
     SampleHive::cSignal::SendSetStatusBarStatus(_("Stopped"), 1, *this);

@@ -22,6 +22,7 @@
 #include "Utility/Log.hpp"
 #include "Utility/Paths.hpp"
 #include "Utility/Serialize.hpp"
+#include "Utility/Utils.hpp"
 
 #include <deque>
 #include <exception>
@@ -610,9 +611,7 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
             int trashed = sqlite3_column_int(statement.stmt, 10);
             wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 11)));
 
-            wxLongLong llLength = length;
-            int total_min = static_cast<int>((llLength / 60000).GetValue());
-            int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
 
             wxVector<wxVariant> vec;
             vec.reserve(12);
@@ -685,7 +684,7 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
+                vec.push_back(len);
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);
@@ -738,9 +737,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
             int bitrate = sqlite3_column_int(statement.stmt, 7);
             wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 8))));
 
-            wxLongLong llLength = length;
-            int total_min = static_cast<int>((llLength / 60000).GetValue());
-            int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
 
             wxVector<wxVariant> vec;
 
@@ -761,7 +758,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
             vec.push_back(sample_pack);
             vec.push_back(sample_type);
             vec.push_back(wxString::Format("%d", channels));
-            vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
+            vec.push_back(len);
             vec.push_back(wxString::Format("%d", sample_rate));
             vec.push_back(wxString::Format("%d", bitrate));
             vec.push_back(path);
@@ -813,9 +810,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
             int bitrate = sqlite3_column_int(statement.stmt, 7);
             wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 8))));
 
-            wxLongLong llLength = length;
-            int total_min = static_cast<int>((llLength / 60000).GetValue());
-            int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
 
             wxVector<wxVariant> vec;
 
@@ -832,7 +827,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
             vec.push_back(sample_pack);
             vec.push_back(sample_type);
             vec.push_back(wxString::Format("%d", channels));
-            vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
+            vec.push_back(len);
             vec.push_back(wxString::Format("%d", sample_rate));
             vec.push_back(wxString::Format("%d", bitrate));
             vec.push_back(path);
@@ -996,9 +991,7 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
             int trashed = sqlite3_column_int(statement.stmt, 10);
             wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 11)));
 
-            wxLongLong llLength = length;
-            int total_min = static_cast<int>((llLength / 60000).GetValue());
-            int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
 
             wxVector<wxVariant> vec;
 
@@ -1017,7 +1010,7 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
+                vec.push_back(len);
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);

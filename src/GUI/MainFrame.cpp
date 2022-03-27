@@ -230,7 +230,7 @@ void cMainFrame::OnMediaFinished(wxMediaEvent& event)
             SH_LOG_DEBUG("Stopping timer.");
         }
 
-        m_pTransportControls->SetSamplePositionText("--:--/--:--");
+        m_pTransportControls->SetSamplePositionText("--:--.---/--:--.---");
         PopStatusText(1);
         this->SetStatusText(_("Stopped"), 1);
     }
@@ -239,18 +239,9 @@ void cMainFrame::OnMediaFinished(wxMediaEvent& event)
 void cMainFrame::UpdateElapsedTime(wxTimerEvent& event)
 {
     wxString duration, position;
-    wxLongLong llLength, llTell;
 
-    llLength = m_pMediaCtrl->Length();
-    int total_min = static_cast<int>((llLength / 60000).GetValue());
-    int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
-
-    llTell = m_pMediaCtrl->Tell();
-    int current_min = static_cast<int>((llTell / 60000).GetValue());
-    int current_sec = static_cast<int>(((llTell % 60000) / 1000).GetValue());
-
-    duration.Printf(wxT("%2i:%02i"), total_min, total_sec);
-    position.Printf(wxT("%2i:%02i"), current_min, current_sec);
+    duration = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(m_pMediaCtrl->Length());
+    position = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(m_pMediaCtrl->Tell());
 
     m_pTransportControls->SetSamplePositionText(wxString::Format(wxT("%s/%s"), position.c_str(), duration.c_str()));
 

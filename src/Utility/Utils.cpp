@@ -30,6 +30,7 @@
 #include <wx/dir.h>
 #include <wx/gdicmn.h>
 #include <wx/progdlg.h>
+#include <wx/string.h>
 
 namespace SampleHive {
 
@@ -125,9 +126,7 @@ namespace SampleHive {
             sample.SetSampleRate(tags.GetAudioInfo().sample_rate);
             sample.SetBitrate(tags.GetAudioInfo().bitrate);
 
-            wxLongLong llLength = sample.GetLength();
-            int total_min = static_cast<int>((llLength / 60000).GetValue());
-            int total_sec = static_cast<int>(((llLength % 60000) / 1000).GetValue());
+            wxString length = CalculateAndGetISOStandardTime(sample.GetLength());
 
             wxVector<wxVariant> data;
 
@@ -141,7 +140,7 @@ namespace SampleHive {
                 data.push_back(sample.GetSamplePack());
                 data.push_back("");
                 data.push_back(wxString::Format("%d", sample.GetChannels()));
-                data.push_back(wxString::Format("%2i:%02i", total_min, total_sec));
+                data.push_back(length);
                 data.push_back(wxString::Format("%d", sample.GetSampleRate()));
                 data.push_back(wxString::Format("%d", sample.GetBitrate()));
                 data.push_back(path);
@@ -230,6 +229,24 @@ namespace SampleHive {
         }
 
         return sample_path.ToStdString();
+    }
+
+    wxString cUtils::CalculateAndGetISOStandardTime(wxLongLong length)
+    {
+        const int min_digits = 2;
+        const size_t max_digits = 2;
+        wxString iso_length;
+
+        int min = static_cast<int>((length / 60000).GetValue());
+        int sec = static_cast<int>(((length % 60000) / 1000).GetValue());
+        int ms = static_cast<int>((length % 1000).GetValue());
+
+        iso_length = wxString::Format("%s:%s.%s",
+                                      wxString::Format("%0*i", min_digits, min).Left(max_digits),
+                                      wxString::Format("%0*i", min_digits, sec).Left(max_digits),
+                                      wxString::Format("%0*i", min_digits + 1, ms).Left(max_digits + 1));
+
+        return iso_length;
     }
 
 }
