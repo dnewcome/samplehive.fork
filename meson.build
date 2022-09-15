@@ -210,7 +210,7 @@ if host_sys == 'windows'
 endif
 
 # Dependencies
-wx = dependency('wxwidgets', version: '>=3.1.5', required: false)
+wx = dependency('wxwidgets', version: '>=3.2.1', required: false)
 
 wx_cxx_flags = []
 wx_libs = []
@@ -266,7 +266,7 @@ endif
 snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
 snd = snd_subproject.dependency('sndfile')
 
-spdlog = dependency('spdlog', version: '>=1.8.5', required: false)
+spdlog = dependency('spdlog', version: '>=1.10.0', required: false)
 
 if not spdlog.found()
   spdlog_subproject = subproject('spdlog',
