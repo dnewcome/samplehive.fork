@@ -10,7 +10,7 @@
          (projectile-project-name . "SampleHive")
          (projectile-project-run-cmd . "~/repos/sample-hive/build/SampleHive")
          ;; (projectile-project-run-cmd . "/tmp/SampleHive/bin/SampleHive")
-         (compile-command . "cd .. && ninja -C build install")
+         (compile-command . "ninja -C ~/repos/sample-hive/build")
          (fill-column . 110)
          ;; Setup dap debugging template for the project
          (setq dap-debug-template-configurations

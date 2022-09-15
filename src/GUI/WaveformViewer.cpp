@@ -28,6 +28,7 @@
 #include "Utility/Signal.hpp"
 #include "Utility/Tags.hpp"
 
+#include <cstddef>
 #include <exception>
 #include <vector>
 
@@ -220,7 +221,7 @@ void cWaveformViewer::UpdateWaveformBitmap()
         }
 
         // Actually normalize
-        for (int i = 0; i < waveform.size(); i++)
+        for (size_t i = 0; i < waveform.size(); i++)
             waveform[i] /= normalize;
 
         // Draw code
@@ -235,7 +236,7 @@ void cWaveformViewer::UpdateWaveformBitmap()
 
         SH_LOG_DEBUG("Drawing bitmap..");
 
-        for (int i = 0; i < waveform.size() - 1; i++)
+        for (size_t i = 0; i < waveform.size() - 1; i++)
         {
             float half_display_height = static_cast<float>(display_height) / 2.0f;
 

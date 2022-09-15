@@ -77,6 +77,12 @@ config_data.set_quoted('LIBDIR', libdir)
 config_data.set_quoted('DATADIR', datadir)
 config_data.set_quoted('SAMPLEHIVE_DATADIR', samplehive_datadir)
 
+if build_type == 'debug' or build_type == 'debugoptimized'
+  config_data.set('SH_BUILD_DEBUG', 1)
+elif build_type == 'release'
+  config_data.set('SH_BUILD_RELEASE', 1)
+endif
+
 # Import CMake
 cmake = import('cmake')
 
@@ -196,6 +202,13 @@ src = [
 
 include_dirs = include_directories('src')
 
+# Static link C/C++ libs if platform is windows
+link_args = []
+
+if host_sys == 'windows'
+  link_args += ['-static-libgcc', '-static-libstdc++']
+endif
+
 # Dependencies
 wx = dependency('wxwidgets', version: '>=3.1.5', required: false)
 
@@ -276,7 +289,7 @@ install_subdir('assets',
 executable('SampleHive',
            sources: src,
            cpp_args: [wx_cxx_flags],
-           link_args: [wx_libs],
+           link_args: [wx_libs, link_args],
            include_directories : include_dirs,
            dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
            install: true,
