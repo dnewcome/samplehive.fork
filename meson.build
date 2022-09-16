@@ -266,7 +266,7 @@ endif
 snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
 snd = snd_subproject.dependency('sndfile')
 
-spdlog = dependency('spdlog', version: '>=1.10.0', required: false)
+spdlog = dependency('spdlog', version: '>=1.9.2', required: false)
 
 if not spdlog.found()
   spdlog_subproject = subproject('spdlog',

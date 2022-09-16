@@ -24,7 +24,7 @@
 
 #include <SampleHiveConfig.hpp>
 
-#ifndef SH_BUILD_DEBUG
+#ifdef SH_BUILD_DEBUG
     #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #else
     #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
