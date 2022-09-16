@@ -277,6 +277,13 @@ if not spdlog.found()
   spdlog = spdlog_subproject.get_variable('spdlog_dep')
 endif
 
+aubio = dependency('aubio', version: '>=0.4.9', required: false)
+
+if not aubio.found()
+  aubio_subproject = subproject('aubio')
+  aubio = aubio_subproject.get_variable('aubio_dep')
+endif
+
 # Create SampleHiveConfig.hpp based on configuration
 config = configure_file(output: 'SampleHiveConfig.hpp',
                         configuration: config_data,)
@@ -291,7 +298,7 @@ executable('SampleHive',
            cpp_args: [wx_cxx_flags],
            link_args: [wx_libs, link_args],
            include_directories : include_dirs,
-           dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog],
+           dependencies: [wx, taglib, sqlite3, yaml, snd, spdlog, aubio],
            install: true,
            install_rpath: prefix / 'lib')
 

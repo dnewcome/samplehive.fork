@@ -60,6 +60,9 @@ namespace SampleHive {
             void AddSamples(wxArrayString& files, wxWindow* parent);
             void OnAutoImportDir(const wxString& pathToDirectory, wxWindow* parent);
             wxString CalculateAndGetISOStandardTime(wxLongLong length);
+            wxString GetBPMString(float bpm);
+
+            float GetBPM(const std::string& path);
 
         private:
             // -------------------------------------------------------------------

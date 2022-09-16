@@ -40,13 +40,14 @@ class Sample
     public:
         Sample();
         Sample(int favorite, const std::string& filename, const std::string& fileExtension,
-               const std::string& samplePack, const std::string& type, int channels, int length,
-               int sampleRate, int bitrate, const std::string& path, int trashed);
+               const std::string& samplePack, const std::string& type, int channels, int bpm,
+               int length, int sampleRate, int bitrate, const std::string& path, int trashed);
 
     private:
         // -------------------------------------------------------------------
         int m_Favorite = 0;
         int m_Channels = 0;
+        int m_BPM = 0;
         int m_Length = 0;
         int m_SampleRate = 0;
         int m_Bitrate = 0;
@@ -62,6 +63,7 @@ class Sample
         // Getters
         int GetFavorite() const { return m_Favorite; }
         int GetChannels() const { return m_Channels; }
+        int GetBPM() const { return m_BPM; }
         int GetLength() const { return m_Length; }
         int GetSampleRate() const { return m_SampleRate; }
         int GetBitrate() const { return m_Bitrate; }
@@ -75,11 +77,12 @@ class Sample
         // -------------------------------------------------------------------
         // Setters
         void Set(int favorite, const std::string& filename, const std::string& fileExtension,
-                 const std::string& samplePack, const std::string& type, int channels, int length,
-                 int sampleRate, int bitrate, const std::string& path, int trashed);
+                 const std::string& samplePack, const std::string& type, int channels, int bpm,
+                 int length, int sampleRate, int bitrate, const std::string& path, int trashed);
 
         void SetFavorite(int favorite) { m_Favorite = favorite; }
         void SetChannels(int channels) { m_Channels = channels; }
+        void SetBPM(int bpm) { m_BPM = bpm; }
         void SetLength(int length) { m_Length = length; }
         void SetSampleRate(int sampleRate) { m_SampleRate = sampleRate; }
         void SetBitrate(int bitrate) { m_Bitrate = bitrate; }

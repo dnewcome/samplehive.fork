@@ -36,11 +36,10 @@ Sample::Sample()
 
 ///Overloaded Constructor, Creates a sample profile with supplied data. @see Set()
 Sample::Sample(int favorite, const std::string& filename, const std::string& fileExtension,
-               const std::string& samplePack, const std::string& type, int channels, int length,
-               int sampleRate, int bitrate, const std::string& path, int trashed)
+               const std::string& samplePack, const std::string& type, int channels, int bpm,
+               int length, int sampleRate, int bitrate, const std::string& path, int trashed)
 {
-    Set(favorite, filename, fileExtension, samplePack, type, 
-        channels, length, sampleRate, bitrate, path, trashed);
+    Set(favorite, filename, fileExtension, samplePack, type, channels, bpm, length, sampleRate, bitrate, path, trashed);
 }  
 
 ///Clears all sample data
@@ -48,6 +47,7 @@ void Sample::Clear()
 {
     m_Favorite = 0;
     m_Channels = 0;
+    m_BPM = 0;
     m_Length = 0;
     m_SampleRate = 0;
     m_Bitrate = 0;
@@ -60,8 +60,8 @@ void Sample::Clear()
 }
 
 void Sample::Set(int favorite, const std::string& filename, const std::string& fileExtension,
-		 const std::string& samplePack, const std::string& type, int channels, int length,
-                 int sampleRate, int bitrate, const std::string& path, int trashed)
+		 const std::string& samplePack, const std::string& type, int channels, int bpm,
+                 int length, int sampleRate, int bitrate, const std::string& path, int trashed)
 {
     m_Favorite = favorite;
     m_Filename = filename;
@@ -69,6 +69,7 @@ void Sample::Set(int favorite, const std::string& filename, const std::string& f
     m_SamplePack = samplePack;
     m_Type = type;
     m_Channels = channels;
+    m_BPM = bpm;
     m_Length = length;
     m_SampleRate = sampleRate;
     m_Bitrate = bitrate;

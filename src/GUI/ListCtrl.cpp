@@ -76,6 +76,13 @@ cListCtrl::cListCtrl(wxWindow* window)
                      wxDATAVIEW_COL_RESIZABLE |
                      wxDATAVIEW_COL_SORTABLE |
                      wxDATAVIEW_COL_REORDERABLE);
+    AppendTextColumn(_("BPM"),
+                     wxDATAVIEW_CELL_INERT,
+                     80,
+                     wxALIGN_RIGHT,
+                     wxDATAVIEW_COL_RESIZABLE |
+                     wxDATAVIEW_COL_SORTABLE |
+                     wxDATAVIEW_COL_REORDERABLE);
     AppendTextColumn(_("Length"),
                      wxDATAVIEW_CELL_INERT,
                      80,
@@ -679,10 +686,11 @@ void cListCtrl::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
     wxDataViewColumn* SamplePackColumn = this->GetColumn(2);
     wxDataViewColumn* TypeColumn = this->GetColumn(3);
     wxDataViewColumn* ChannelsColumn = this->GetColumn(4);
-    wxDataViewColumn* LengthColumn = this->GetColumn(5);
-    wxDataViewColumn* SampleRateColumn = this->GetColumn(6);
-    wxDataViewColumn* BitrateColumn = this->GetColumn(7);
-    wxDataViewColumn* PathColumn = this->GetColumn(8);
+    wxDataViewColumn* BpmColumn = this->GetColumn(5);
+    wxDataViewColumn* LengthColumn = this->GetColumn(6);
+    wxDataViewColumn* SampleRateColumn = this->GetColumn(7);
+    wxDataViewColumn* BitrateColumn = this->GetColumn(8);
+    wxDataViewColumn* PathColumn = this->GetColumn(9);
 
     menu.AppendCheckItem(SampleHive::ID::MN_ColumnFavorite, _("Favorites"),
                          _("Toggle favorites column"))->Check(FavoriteColumn->IsShown());
@@ -694,6 +702,8 @@ void cListCtrl::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
                          _("Toggle type column"))->Check(TypeColumn->IsShown());
     menu.AppendCheckItem(SampleHive::ID::MN_ColumnChannels, _("Channels"),
                          _("Toggle channels column"))->Check(ChannelsColumn->IsShown());
+    menu.AppendCheckItem(SampleHive::ID::MN_ColumnBPM, _("BPM"),
+                         _("Toggle length column"))->Check(BpmColumn->IsShown());
     menu.AppendCheckItem(SampleHive::ID::MN_ColumnLength, _("Length"),
                          _("Toggle length column"))->Check(LengthColumn->IsShown());
     menu.AppendCheckItem(SampleHive::ID::MN_ColumnSampleRate, _("Sample Rate"),
@@ -719,6 +729,9 @@ void cListCtrl::OnShowLibraryColumnHeaderContextMenu(wxDataViewEvent& event)
             break;
         case SampleHive::ID::MN_ColumnChannels:
             ChannelsColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnChannels));
+            break;
+        case SampleHive::ID::MN_ColumnBPM:
+            BpmColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnBPM));
             break;
         case SampleHive::ID::MN_ColumnLength:
             LengthColumn->SetHidden(!menu.IsChecked(SampleHive::ID::MN_ColumnLength));

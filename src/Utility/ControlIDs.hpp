@@ -90,6 +90,7 @@ namespace SampleHive { namespace ID {
         MN_ColumnSamplePack,
         MN_ColumnType,
         MN_ColumnChannels,
+        MN_ColumnBPM,
         MN_ColumnLength,
         MN_ColumnSampleRate,
         MN_ColumnBitrate,

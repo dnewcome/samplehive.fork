@@ -106,6 +106,7 @@ void cDatabase::CreateTableSamples()
                          "SAMPLEPACK     TEXT    NOT NULL,"
                          "TYPE           TEXT    NOT NULL,"
                          "CHANNELS       INT     NOT NULL,"
+                         "BPM            INT     NOT NULL,"
                          "LENGTH         INT     NOT NULL,"
                          "SAMPLERATE     INT     NOT NULL,"
                          "BITRATE        INT     NOT NULL,"
@@ -158,9 +159,9 @@ void cDatabase::InsertIntoSamples(const std::vector<Sample> &samples)
     try
     {
         const auto sql = "INSERT INTO SAMPLES (FAVORITE, FILENAME, \
-                          EXTENSION, SAMPLEPACK, TYPE, CHANNELS, LENGTH, \
+                          EXTENSION, SAMPLEPACK, TYPE, CHANNELS, BPM, LENGTH, \
                           SAMPLERATE, BITRATE, PATH, TRASHED, HIVE) \
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         Sqlite3Statement statement(m_pDatabase, sql);
 
@@ -192,12 +193,13 @@ void cDatabase::InsertIntoSamples(const std::vector<Sample> &samples)
             throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 4, sample_pack.c_str(), sample_pack.size(), SQLITE_STATIC));
             throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 5, type.c_str(), type.size(), SQLITE_STATIC));
             throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 6, sample.GetChannels()));
-            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 7, sample.GetLength()));
-            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 8, sample.GetSampleRate()));
-            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 9, sample.GetBitrate()));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 10, path.c_str(), path.size(), SQLITE_STATIC));
-            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 11, sample.GetTrashed()));
-            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 12, hive.c_str(), hive.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 7, sample.GetBPM()));
+            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 8, sample.GetLength()));
+            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 9, sample.GetSampleRate()));
+            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 10, sample.GetBitrate()));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 11, path.c_str(), path.size(), SQLITE_STATIC));
+            throw_on_sqlite3_error(sqlite3_bind_int(statement.stmt, 12, sample.GetTrashed()));
+            throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 13, hive.c_str(), hive.size(), SQLITE_STATIC));
 
             sqlite3_step(statement.stmt);
 
@@ -591,7 +593,7 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
         }
 
         Sqlite3Statement statement(m_pDatabase, "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
-                                                TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                                                TYPE, CHANNELS, BPM, LENGTH, SAMPLERATE, BITRATE, PATH, \
                                                 TRASHED, HIVE FROM SAMPLES;");
 
         int row = 0;
@@ -604,14 +606,16 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
             wxString sample_pack = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 3)));
             wxString sample_type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 4)));
             int channels = sqlite3_column_int(statement.stmt, 5);
-            int length = sqlite3_column_int(statement.stmt, 6);
-            int sample_rate = sqlite3_column_int(statement.stmt, 7);
-            int bitrate = sqlite3_column_int(statement.stmt, 8);
-            wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 9)));
-            int trashed = sqlite3_column_int(statement.stmt, 10);
-            wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 11)));
+            int bpm = sqlite3_column_int(statement.stmt, 6);
+            int length = sqlite3_column_int(statement.stmt, 7);
+            int sample_rate = sqlite3_column_int(statement.stmt, 8);
+            int bitrate = sqlite3_column_int(statement.stmt, 9);
+            wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 10)));
+            int trashed = sqlite3_column_int(statement.stmt, 11);
+            wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 12)));
 
-            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _length = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _bpm = SampleHive::cUtils::Get().GetBPMString(bpm);
 
             wxVector<wxVariant> vec;
             vec.reserve(12);
@@ -684,7 +688,8 @@ wxVector<wxVector<wxVariant>> cDatabase::LoadSamplesDatabase(wxDataViewTreeCtrl 
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(len);
+                vec.push_back(_bpm);
+                vec.push_back(_length);
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);
@@ -716,7 +721,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
     try
     {
         Sqlite3Statement statement(m_pDatabase, "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                                                CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
+                                                CHANNELS, BPM, LENGTH, SAMPLERATE, BITRATE, PATH \
                                                 FROM SAMPLES WHERE FILENAME LIKE '%' || ? || '%' ;");
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, sampleName.c_str(), sampleName.size(), SQLITE_STATIC));
@@ -732,12 +737,14 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
             wxString sample_pack = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 2))));
             wxString sample_type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 3)));
             int channels = sqlite3_column_int(statement.stmt, 4);
-            int length = sqlite3_column_int(statement.stmt, 5);
-            int sample_rate = sqlite3_column_int(statement.stmt, 6);
-            int bitrate = sqlite3_column_int(statement.stmt, 7);
-            wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 8))));
+            int bpm = sqlite3_column_int(statement.stmt, 5);
+            int length = sqlite3_column_int(statement.stmt, 6);
+            int sample_rate = sqlite3_column_int(statement.stmt, 7);
+            int bitrate = sqlite3_column_int(statement.stmt, 8);
+            wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 9))));
 
-            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _length = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _bpm = SampleHive::cUtils::Get().GetBPMString(bpm);
 
             wxVector<wxVariant> vec;
 
@@ -758,7 +765,8 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseBySampleName(const std::st
             vec.push_back(sample_pack);
             vec.push_back(sample_type);
             vec.push_back(wxString::Format("%d", channels));
-            vec.push_back(len);
+            vec.push_back(_bpm);
+            vec.push_back(_length);
             vec.push_back(wxString::Format("%d", sample_rate));
             vec.push_back(wxString::Format("%d", bitrate));
             vec.push_back(path);
@@ -789,7 +797,7 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
     try
     {
         Sqlite3Statement statement(m_pDatabase, "SELECT FAVORITE, FILENAME, SAMPLEPACK, TYPE, \
-                                                CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH \
+                                                CHANNELS, BPM, LENGTH, SAMPLERATE, BITRATE, PATH \
                                                 FROM SAMPLES WHERE HIVE = ? AND FAVORITE = 1;");
 
         throw_on_sqlite3_error(sqlite3_bind_text(statement.stmt, 1, hiveName.c_str(), hiveName.size(), SQLITE_STATIC));
@@ -805,12 +813,14 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
             wxString sample_pack = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 2))));
             wxString sample_type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 3)));
             int channels = sqlite3_column_int(statement.stmt, 4);
-            int length = sqlite3_column_int(statement.stmt, 5);
-            int sample_rate = sqlite3_column_int(statement.stmt, 6);
-            int bitrate = sqlite3_column_int(statement.stmt, 7);
-            wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 8))));
+            int bpm = sqlite3_column_int(statement.stmt, 5);
+            int length = sqlite3_column_int(statement.stmt, 6);
+            int sample_rate = sqlite3_column_int(statement.stmt, 7);
+            int bitrate = sqlite3_column_int(statement.stmt, 8);
+            wxString path = wxString(std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 9))));
 
-            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _length = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _bpm = SampleHive::cUtils::Get().GetBPMString(bpm);
 
             wxVector<wxVariant> vec;
 
@@ -827,7 +837,8 @@ wxVector<wxVector<wxVariant>>cDatabase::FilterDatabaseByHiveName(const std::stri
             vec.push_back(sample_pack);
             vec.push_back(sample_type);
             vec.push_back(wxString::Format("%d", channels));
-            vec.push_back(len);
+            vec.push_back(_bpm);
+            vec.push_back(_length);
             vec.push_back(wxString::Format("%d", sample_rate));
             vec.push_back(wxString::Format("%d", bitrate));
             vec.push_back(path);
@@ -969,7 +980,7 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
     try
     {
         const auto sql = "SELECT FAVORITE, FILENAME, EXTENSION, SAMPLEPACK, \
-                          TYPE, CHANNELS, LENGTH, SAMPLERATE, BITRATE, PATH, \
+                          TYPE, CHANNELS, BPM, LENGTH, SAMPLERATE, BITRATE, PATH, \
                           TRASHED, HIVE FROM SAMPLES WHERE FILENAME = ?;";
 
         Sqlite3Statement statement(m_pDatabase, sql);
@@ -984,14 +995,16 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
             wxString sample_pack = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 3)));
             wxString sample_type = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 4)));
             int channels = sqlite3_column_int(statement.stmt, 5);
-            int length = sqlite3_column_int(statement.stmt, 6);
-            int sample_rate = sqlite3_column_int(statement.stmt, 7);
-            int bitrate = sqlite3_column_int(statement.stmt, 8);
-            wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 9)));
-            int trashed = sqlite3_column_int(statement.stmt, 10);
-            wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 11)));
+            int bpm = sqlite3_column_int(statement.stmt, 6);
+            int length = sqlite3_column_int(statement.stmt, 7);
+            int sample_rate = sqlite3_column_int(statement.stmt, 8);
+            int bitrate = sqlite3_column_int(statement.stmt, 9);
+            wxString path = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 10)));
+            int trashed = sqlite3_column_int(statement.stmt, 11);
+            wxString hive_name = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement.stmt, 12)));
 
-            wxString len = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _length = SampleHive::cUtils::Get().CalculateAndGetISOStandardTime(length);
+            wxString _bpm = SampleHive::cUtils::Get().GetBPMString(bpm);
 
             wxVector<wxVariant> vec;
 
@@ -1010,7 +1023,8 @@ wxVector<wxVector<wxVariant>>cDatabase::RestoreFromTrashByFilename(const std::st
                 vec.push_back(sample_pack);
                 vec.push_back(sample_type);
                 vec.push_back(wxString::Format("%d", channels));
-                vec.push_back(len);
+                vec.push_back(_bpm);
+                vec.push_back(_length);
                 vec.push_back(wxString::Format("%d", sample_rate));
                 vec.push_back(wxString::Format("%d", bitrate));
                 vec.push_back(path);

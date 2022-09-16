@@ -81,6 +81,8 @@ class cWaveformViewer : public wxPanel
         // -------------------------------------------------------------------
         std::pair<double, double> CalculateLoopPoints();
 
+        float GetBPM(const std::string& path);
+
     public:
         // -------------------------------------------------------------------
         void ResetBitmapDC();

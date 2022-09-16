@@ -18,6 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
+
 #include "Database/Database.hpp"
 #include "Utility/HiveData.hpp"
 #include "Utility/Log.hpp"
@@ -31,6 +33,8 @@
 #include <wx/gdicmn.h>
 #include <wx/progdlg.h>
 #include <wx/string.h>
+
+#include <aubio/aubio.h>
 
 namespace SampleHive {
 
@@ -75,6 +79,9 @@ namespace SampleHive {
         std::string extension;
         std::string filename;
 
+        float bpm = 0.0f;
+        float key = 0.0f;
+
         //Check All Files At Once
         wxArrayString sorted_files;
 
@@ -110,6 +117,8 @@ namespace SampleHive {
             filename = serializer.DeserializeShowFileExtension() ?
                 filename_with_extension : filename_without_extension;
 
+            bpm = GetBPM(path);
+
             Sample sample;
 
             sample.SetPath(path);
@@ -122,11 +131,13 @@ namespace SampleHive {
 
             sample.SetSamplePack(artist);
             sample.SetChannels(tags.GetAudioInfo().channels);
+            sample.SetBPM(static_cast<int>(bpm));
             sample.SetLength(tags.GetAudioInfo().length);
             sample.SetSampleRate(tags.GetAudioInfo().sample_rate);
             sample.SetBitrate(tags.GetAudioInfo().bitrate);
 
             wxString length = CalculateAndGetISOStandardTime(sample.GetLength());
+            wxString bpm_str = GetBPMString(sample.GetBPM());
 
             wxVector<wxVariant> data;
 
@@ -140,6 +151,7 @@ namespace SampleHive {
                 data.push_back(sample.GetSamplePack());
                 data.push_back("");
                 data.push_back(wxString::Format("%d", sample.GetChannels()));
+                data.push_back(bpm_str);
                 data.push_back(length);
                 data.push_back(wxString::Format("%d", sample.GetSampleRate()));
                 data.push_back(wxString::Format("%d", sample.GetBitrate()));
@@ -249,4 +261,72 @@ namespace SampleHive {
         return iso_length;
     }
 
+    wxString cUtils::GetBPMString(float bpm)
+    {
+        return wxString::Format("%d", static_cast<int>(bpm));
+    }
+
+    float cUtils::GetBPM(const std::string& path)
+    {
+        uint_t buff_size = 1024, hop_size = buff_size / 2, frames = 0, samplerate = 0, read = 0;
+        aubio_tempo_t* tempo;
+        fvec_t* in, *out;
+        aubio_source_t* source = new_aubio_source(path.c_str(), samplerate, hop_size);
+
+        float bpm = 0.0f;
+
+        if (!source)
+            return 0.0f;
+        else
+        {
+            try
+            {
+                if (samplerate == 0)
+                    samplerate = aubio_source_get_samplerate(source);
+
+                tempo = new_aubio_tempo("default", buff_size, hop_size, samplerate);
+
+                if (!tempo)
+                    return 0.0f;
+
+                in = new_fvec(hop_size);
+                out = new_fvec(1);
+
+                do
+                {
+                    // put some fresh data in input vector
+                    aubio_source_do(source, in, &read);
+
+                    // execute tempo
+                    aubio_tempo_do(tempo, in, out);
+
+                    // do something with the beats
+                    // if (out->data[0] != 0)
+                    // {
+                    //     SH_LOG_DEBUG("Track: {} Beat at {}s, {}s, frame {}, {} bpm with confidence {}",
+                    //                  path, aubio_tempo_get_last_ms(tempo), aubio_tempo_get_last_s(tempo),
+                    //                  aubio_tempo_get_last(tempo), aubio_tempo_get_bpm(tempo),
+                    //                  aubio_tempo_get_confidence(tempo));
+                    // }
+
+                    frames += read;
+                    bpm = aubio_tempo_get_bpm(tempo);
+                }
+                while (read == hop_size);
+
+                // clean up memory
+                del_aubio_tempo(tempo);
+                del_fvec(in);
+                del_fvec(out);
+                del_aubio_source(source);
+                aubio_cleanup();
+            }
+            catch (std::exception& e)
+            {
+                SH_LOG_ERROR("Aubio Error! {}", e.what());
+            }
+        }
+
+        return bpm;
+    }
 }

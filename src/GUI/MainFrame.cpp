@@ -914,6 +914,13 @@ void cMainFrame::PlaySample(const std::string& filepath, const std::string& samp
         if (!m_pMediaCtrl->Play())
             SH_LOG_ERROR("Error! Cannot play sample.");
 
+        // ====================================================
+        // TODO: Remove these lines (for debugging only)
+        float bpm = SampleHive::cUtils::Get().GetBPM(filepath);
+        wxString bpm_str = SampleHive::cUtils::Get().GetBPMString(bpm);
+        SH_LOG_DEBUG("BPM: {}, BPM_STR: {}", bpm, bpm_str);
+        // ====================================================
+
         PushStatusText(wxString::Format(_("Now playing: %s"), sample), 1);
 
         if (!m_pTimer->IsRunning())
