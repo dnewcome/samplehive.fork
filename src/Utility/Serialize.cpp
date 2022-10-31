@@ -106,6 +106,7 @@ namespace SampleHive {
             m_Emitter << YAML::Key << "FollowSymLink" << YAML::Value << false;
             m_Emitter << YAML::Key << "RecursiveImport" << YAML::Value << false;
             m_Emitter << YAML::Key << "ShowFileExtension" << YAML::Value << true;
+            m_Emitter << YAML::Key << "DoubleClickToPlay" << YAML::Value << false;
             m_Emitter << YAML::EndMap << YAML::Newline;
 
             m_Emitter << YAML::EndMap;
@@ -809,6 +810,59 @@ namespace SampleHive {
         }
 
         return show_extension;
+    }
+
+    void cSerializer::SerializeDoubleClickToPlay(bool enableDoubleClick)
+    {
+        YAML::Emitter out;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            if (auto doubleClickValue = config["Collection"])
+            {
+                doubleClickValue["DoubleClickToPlay"] = enableDoubleClick;
+
+                out << config;
+
+                std::ofstream ofstrm(static_cast<std::string>(CONFIG_FILEPATH));
+                ofstrm << out.c_str();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot store show enable double click to play value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+    }
+
+    bool cSerializer::DeserializeDoubleClickToPlay() const
+    {
+        bool double_click_to_play = false;
+
+        try
+        {
+            YAML::Node config = YAML::LoadFile(static_cast<std::string>(CONFIG_FILEPATH));
+
+            if (auto doubleClickValue = config["Collection"])
+            {
+                double_click_to_play = doubleClickValue["DoubleClickToPlay"].as<bool>();
+            }
+            else
+            {
+                SH_LOG_ERROR("Error! Cannot fetch double click to play value.");
+            }
+        }
+        catch (const YAML::ParserException& ex)
+        {
+            SH_LOG_ERROR(ex.what());
+        }
+
+        return double_click_to_play;
     }
 
     void cSerializer::SerializeDemoMode(bool showDemoMode)

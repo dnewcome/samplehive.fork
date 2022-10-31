@@ -60,6 +60,7 @@ namespace SampleHive { namespace ID {
         SD_FollowSymLinks,
         SD_RecursiveImport,
         SD_ShowFileExtension,
+        SD_DoubleClickToPlay,
         SD_BrowseAutoImportDir,
         SD_FontType,
         SD_FontSize,

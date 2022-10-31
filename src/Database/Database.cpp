@@ -1048,7 +1048,6 @@ void cDatabase::OpenDatabase()
 
 void cDatabase::OpenTemporaryDatabase()
 {
-    SH_LOG_WARN("Creating temporary in memory database, all samples will be deleted on application exit.");
     throw_on_sqlite3_error(sqlite3_open("tempdb.db", &m_pDatabase));
 }
 

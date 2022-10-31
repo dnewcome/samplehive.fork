@@ -40,18 +40,6 @@ cApp::cApp()
 
 cApp::~cApp()
 {
-    SampleHive::cSerializer serializer;
-
-    if (serializer.DeserializeDemoMode())
-    {
-        if (wxFileExists("tempdb.db"))
-            if (wxRemoveFile("tempdb.db"))
-                SH_LOG_WARN("Deleted temporary database file..");
-            else
-                SH_LOG_ERROR("Could not delete file..");
-        else
-            SH_LOG_DEBUG("File doesn't exists");
-    }
 }
 
 bool cApp::OnInit()
@@ -107,13 +95,32 @@ bool cApp::OnCmdLineParsed(wxCmdLineParser& parser)
     if (parser.Found("version"))
     {
         std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << std::endl;
+        std::cout <<
+            "\nCopyright (C) 2021  Apoorv Singh"
+            "\nA simple, modern audio sample browser/manager for GNU/Linux."
+            "\n"
+            "\nThis file is a part of SampleHive"
+            "\n"
+            "\nSampleHive is free software: you can redistribute it and/or modify"
+            "\nit under the terms of the GNU General Public License as published by"
+            "\nthe Free Software Foundation, either version 3 of the License, or"
+            "\n(at your option) any later version."
+            "\n"
+            "\nSampleHive is distributed in the hope that it will be useful,"
+            "\nbut WITHOUT ANY WARRANTY; without even the implied warranty of"
+            "\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+            "\nGNU General Public License for more details."
+            "\n"
+            "\nYou should have received a copy of the GNU General Public License"
+            "\nalong with this program.  If not, see <https://www.gnu.org/licenses/>."
+                  << std::endl;
         return false;
     }
     else if (parser.Found("reset"))
     {
         char ans;
 
-        std::cout << "Are you sure you want reset app data? [y/N] ";
+        std::cout << "Are you sure you want clear all app data? [y/N] ";
         std::cin >> ans;
 
         if (ans == 'y' || ans == 'Y')

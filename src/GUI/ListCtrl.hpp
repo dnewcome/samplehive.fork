@@ -39,6 +39,7 @@ class cListCtrl : public wxDataViewListCtrl
         // -------------------------------------------------------------------
         // Library event handlers
         void OnClickLibrary(wxDataViewEvent& event);
+        void OnDoubleClickLibrary(wxDataViewEvent& event);
         void OnDragAndDropToLibrary(wxDropFilesEvent& event);
         void OnDragFromLibrary(wxDataViewEvent& event);
         void OnShowLibraryContextMenu(wxDataViewEvent& event);

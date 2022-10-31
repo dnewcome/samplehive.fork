@@ -119,6 +119,7 @@ cListCtrl::cListCtrl(wxWindow* window)
     this->EnableDragSource(wxDF_FILENAME);
 
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &cListCtrl::OnClickLibrary, this, SampleHive::ID::BC_Library);
+    Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &cListCtrl::OnDoubleClickLibrary, this, SampleHive::ID::BC_Library);
     Bind(wxEVT_DATAVIEW_ITEM_BEGIN_DRAG, &cListCtrl::OnDragFromLibrary, this);
     this->Connect(wxEVT_DROP_FILES, wxDropFilesEventHandler(cListCtrl::OnDragAndDropToLibrary), NULL, this);
     Bind(wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &cListCtrl::OnShowLibraryContextMenu, this, SampleHive::ID::BC_Library);
@@ -241,6 +242,54 @@ void cListCtrl::OnClickLibrary(wxDataViewEvent& event)
 
         if (!msg.IsEmpty())
             SampleHive::cSignal::SendInfoBarMessage(msg, wxICON_INFORMATION, *this);
+    }
+}
+
+void cListCtrl::OnDoubleClickLibrary(wxDataViewEvent& event)
+{
+    cDatabase db;
+    SampleHive::cSerializer serializer;
+
+    int selected_row = this->ItemToRow(event.GetItem());
+    int current_row = this->ItemToRow(this->GetCurrentItem());
+
+    if (selected_row < 0 || !event.GetItem().IsOk())
+        return;
+
+    if (selected_row != current_row)
+    {
+        this->SetCurrentItem(event.GetItem());
+        return;
+    }
+
+    // Update the waveform bitmap
+    SampleHive::cSignal::SendWaveformUpdateStatus(*this);
+
+    // Update LoopAB button value
+    SampleHive::cSignal::SendLoopABButtonValueChange(*this);
+
+    // Stop the timer
+    SampleHive::cSignal::SendTimerStopStatus(*this);
+
+    wxString selection = this->GetTextValue(selected_row, 1);
+
+    // Get curremt column
+    wxDataViewColumn* CurrentColumn = this->GetCurrentColumn();
+
+    // Get favorite column
+    wxDataViewColumn* FavoriteColumn = this->GetColumn(0);
+
+    if (!CurrentColumn)
+        return;
+
+    if (CurrentColumn != FavoriteColumn)
+    {
+        // ClearLoopPoints();
+        SampleHive::cSignal::SendClearLoopPointsStatus(*this);
+
+        // Play the sample
+        if (serializer.DeserializeDoubleClickToPlay())
+            SampleHive::cSignal::SendCallFunctionPlay(selection, false, *this);
     }
 }
 

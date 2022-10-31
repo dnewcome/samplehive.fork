@@ -54,6 +54,7 @@ class cSettings : public wxDialog
         void OnCheckFollowSymLinks(wxCommandEvent& event);
         void OnCheckRecursiveImport(wxCommandEvent& event);
         void OnCheckShowFileExtension(wxCommandEvent& event);
+        void OnCheckEnableDoubleClickToPlay(wxCommandEvent& event);
         void OnClickBrowseAutoImportDir(wxCommandEvent& event);
         void OnChangeFontSize(wxSpinEvent& event);
         void OnSelectFont(wxCommandEvent& event);
@@ -126,10 +127,12 @@ class cSettings : public wxDialog
         wxBoxSizer* m_pCollectionImportDirSizer = nullptr;
         wxBoxSizer* m_pCollectionImportOptionsSizer = nullptr;
         wxBoxSizer* m_pCollectionShowExtensionSizer = nullptr;
+        wxBoxSizer* m_pDoubleClickToPlaySizer = nullptr;
         wxCheckBox* m_pAutoImportCheck = nullptr;
         wxCheckBox* m_pFollowSymLinksCheck = nullptr;
         wxCheckBox* m_pRecursiveImportCheck = nullptr;
         wxCheckBox* m_pShowFileExtensionCheck = nullptr;
+        wxCheckBox* m_pDoubleClickToPlayCheck = nullptr;
         wxTextCtrl* m_pImportDirLocation = nullptr;
         wxButton* m_pBrowseAutoImportDirButton = nullptr;
 

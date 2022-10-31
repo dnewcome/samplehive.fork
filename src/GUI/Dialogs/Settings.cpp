@@ -31,7 +31,7 @@
 
 cSettings::cSettings(wxWindow *window)
     : wxDialog(window, wxID_ANY, "cSettings", wxDefaultPosition,
-               wxSize(720, 270), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
+               wxSize(720, 300), wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP),
       m_pWindow(window)
 {
     m_pPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
@@ -76,6 +76,7 @@ cSettings::cSettings(wxWindow *window)
     m_pCollectionImportDirSizer = new wxBoxSizer(wxHORIZONTAL);
     m_pCollectionImportOptionsSizer = new wxBoxSizer(wxHORIZONTAL);
     m_pCollectionShowExtensionSizer = new wxBoxSizer(wxVERTICAL);
+    m_pDoubleClickToPlaySizer = new wxBoxSizer(wxVERTICAL);
 
     wxString defaultDir = wxGetHomeDir();
 
@@ -98,6 +99,8 @@ cSettings::cSettings(wxWindow *window)
     m_pShowFileExtensionCheck = new wxCheckBox(m_pCollectionSettingPanel, SampleHive::ID::SD_ShowFileExtension,
                                                "Show file extension", wxDefaultPosition, wxDefaultSize, 0);
     m_pShowFileExtensionCheck->SetToolTip("Weather to show file extension");
+    m_pDoubleClickToPlayCheck = new wxCheckBox(m_pCollectionSettingPanel, SampleHive::ID::SD_DoubleClickToPlay,
+                                               "Enable double click to play sample", wxDefaultPosition, wxDefaultSize, 0);
 
     m_pConfigurationSettingPanel = new wxPanel(m_pNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
@@ -133,6 +136,7 @@ cSettings::cSettings(wxWindow *window)
     Bind(wxEVT_CHECKBOX, &cSettings::OnCheckFollowSymLinks, this, SampleHive::ID::SD_FollowSymLinks);
     Bind(wxEVT_CHECKBOX, &cSettings::OnCheckRecursiveImport, this, SampleHive::ID::SD_RecursiveImport);
     Bind(wxEVT_CHECKBOX, &cSettings::OnCheckShowFileExtension, this, SampleHive::ID::SD_ShowFileExtension);
+    Bind(wxEVT_CHECKBOX, &cSettings::OnCheckEnableDoubleClickToPlay, this, SampleHive::ID::SD_DoubleClickToPlay);
     Bind(wxEVT_SPINCTRL, &cSettings::OnChangeFontSize, this, SampleHive::ID::SD_FontSize);
     Bind(wxEVT_BUTTON, &cSettings::OnSelectFont, this, SampleHive::ID::SD_FontBrowseButton);
     Bind(wxEVT_BUTTON, &cSettings::OnClickBrowseAutoImportDir, this, SampleHive::ID::SD_BrowseAutoImportDir);
@@ -170,10 +174,12 @@ cSettings::cSettings(wxWindow *window)
     m_pCollectionImportOptionsSizer->Add(m_pFollowSymLinksCheck, 0, wxALL, 2);
     m_pCollectionImportOptionsSizer->Add(m_pRecursiveImportCheck, 0, wxALL, 2);
     m_pCollectionShowExtensionSizer->Add(m_pShowFileExtensionCheck, 0, wxALL, 2);
+    m_pDoubleClickToPlaySizer->Add(m_pDoubleClickToPlayCheck, 0, wxALL, 2);
 
     m_pCollectionMainSizer->Add(m_pCollectionImportDirSizer, 0, wxALL | wxEXPAND, 2);
     m_pCollectionMainSizer->Add(m_pCollectionImportOptionsSizer, 0, wxALL | wxEXPAND, 2);
     m_pCollectionMainSizer->Add(m_pCollectionShowExtensionSizer, 0, wxALL | wxEXPAND, 2);
+    m_pCollectionMainSizer->Add(m_pDoubleClickToPlaySizer, 0, wxALL | wxEXPAND, 2);
 
     m_pButtonSizer->Add(m_pOkButton, 0, wxALL | wxALIGN_BOTTOM, 2);
     m_pButtonSizer->Add(m_pCancelButton, 0, wxALL | wxALIGN_BOTTOM, 2);
@@ -299,6 +305,13 @@ void cSettings::OnCheckShowFileExtension(wxCommandEvent& event)
     serializer.SerializeShowFileExtension(m_pShowFileExtensionCheck->GetValue());
 }
 
+void cSettings::OnCheckEnableDoubleClickToPlay(wxCommandEvent& event)
+{
+    SampleHive::cSerializer serializer;
+
+    serializer.SerializeDoubleClickToPlay(m_pDoubleClickToPlayCheck->GetValue());
+}
+
 void cSettings::OnClickBrowseAutoImportDir(wxCommandEvent& event)
 {
     SampleHive::cSerializer serializer;
@@ -418,6 +431,7 @@ void cSettings::LoadDefaultConfig()
     m_pAutoImportCheck->SetValue(m_bAutoImport);
     m_pImportDirLocation->SetValue(serializer.DeserializeAutoImport().second);
     m_pShowFileExtensionCheck->SetValue(serializer.DeserializeShowFileExtension());
+    m_pDoubleClickToPlayCheck->SetValue(serializer.DeserializeDoubleClickToPlay());
     m_pFollowSymLinksCheck->SetValue(serializer.DeserializeFollowSymLink());
     m_pRecursiveImportCheck->SetValue(serializer.DeserializeRecursiveImport());
 

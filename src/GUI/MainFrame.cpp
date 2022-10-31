@@ -132,6 +132,11 @@ cMainFrame::cMainFrame()
 
     m_pLibrary = new cLibrary(m_pBottomSplitter);
 
+    if (m_bDemoMode)
+    {
+        m_pLibrary->GetInfoBarObject()->ShowMessage("WARNING: Demo mode is turned on, all samples will be deleted on application exit.", wxICON_WARNING);
+    }
+
     SampleHive::cHiveData::Get().InitHiveData(*m_pLibrary->GetListCtrlObject(),
                                               *m_pNotebook->GetHivesPanel()->GetHivesObject(),
                                               m_pNotebook->GetHivesPanel()->GetFavoritesHive(),
@@ -957,4 +962,17 @@ cMainFrame::~cMainFrame()
 
     // Delete wxFilesystemWatcher
     delete m_pFsWatcher;
+
+    SampleHive::cSerializer serializer;
+
+    if (serializer.DeserializeDemoMode())
+    {
+        if (wxFileExists("tempdb.db"))
+            if (wxRemoveFile("tempdb.db"))
+                SH_LOG_WARN("Deleted temporary database file..");
+            else
+                SH_LOG_ERROR("Could not delete file..");
+        else
+            SH_LOG_DEBUG("File doesn't exists");
+    }
 }

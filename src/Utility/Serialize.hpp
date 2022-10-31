@@ -109,6 +109,10 @@ namespace SampleHive {
             void SerializeShowFileExtension(bool showExtension);
             bool DeserializeShowFileExtension() const;
 
+            // Enable double click to play
+            void SerializeDoubleClickToPlay(bool showExtension);
+            bool DeserializeDoubleClickToPlay() const;
+
             // Demo mode
             void SerializeDemoMode(bool showDemoMode);
             bool DeserializeDemoMode() const;
