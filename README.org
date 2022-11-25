@@ -49,13 +49,13 @@ SampleHive let's you manage your audio samples in a nice and simple way, just ad
 On Arch based distributions,
 
 #+begin_src
-sudo pacman -S wxgtk3 sqlite taglib yaml-cpp libsndfile spdlog
+sudo pacman -S wxgtk3 sqlite taglib yaml-cpp libsndfile spdlog aubio
 #+end_src
 
 On Debian, Ubuntu and distributions based the on two,
 
 #+begin_src
-sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0 libexif-dev libpango1.0-dev libsndfile1-dev libspdlog-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt install libwxbase3.0-dev libwxgtk-media3.0-gtk3-dev libwxgtk3.0-gtk3-dev wx3.0-headers libsqlite3-dev libyaml-cpp-dev libtagc0-dev libtag1-dev libtagc0 libexif-dev libpango1.0-dev libsndfile1-dev libspdlog-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev libaubio-dev
 #+end_src
 
 You might also need to install =git=, =cmake=, =meson= and =g++= as well, if you don't already have them installed in order to build SampleHive.
@@ -67,7 +67,7 @@ You might also need to install =git=, =cmake=, =meson= and =g++= as well, if you
 If you want to try out =SampleHive= on =Windows=, you can use the [[https://www.msys2.org/][MSYS2]] environment and [[https://osdn.net/projects/mingw/][MinGW]] compiler for =Windows=. After setting up =MSYS2= and =MinGW= install the following dependencies using the package manager =pacman=.
 
 #+begin_src
-pacman -S mingw-w64-x86_64-wxmsw3.1 mingw-w64-x86_64-sqlite mingw-w64-x86_64-taglib mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-libsndfile mingw-w64-x86_64-spdlog mingw-w64-x86_64-meson  mingw-w64-x86_64-cmake git
+pacman -S mingw-w64-x86_64-wxmsw3.1 mingw-w64-x86_64-sqlite mingw-w64-x86_64-taglib mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-libsndfile mingw-w64-x86_64-spdlog mingw-w64-x86_64-aubio mingw-w64-x86_64-meson mingw-w64-x86_64-cmake git
 #+end_src
 
 ** How to build SampleHive?
