@@ -266,16 +266,13 @@ endif
 snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
 snd = snd_subproject.dependency('sndfile')
 
-spdlog = dependency('spdlog', version: '>=1.9.2', required: false)
 
-if not spdlog.found()
-  spdlog_subproject = subproject('spdlog',
-                                 default_options: [
-                                   'default_library=static',
-                                   'compile_library=true',])
+spdlog_subproject = subproject('spdlog',
+                               default_options: [
+                                 'default_library=static',
+                                 'compile_library=true',])
 
-  spdlog = spdlog_subproject.get_variable('spdlog_dep')
-endif
+spdlog = spdlog_subproject.get_variable('spdlog_dep')
 
 aubio = dependency('aubio', version: '>=0.4.9', required: false)
 
