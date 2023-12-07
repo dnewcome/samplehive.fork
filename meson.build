@@ -263,16 +263,19 @@ if not yaml.found()
   yaml = yaml_subproject.dependency('yaml-cpp')
 endif
 
-snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
-snd = snd_subproject.dependency('sndfile')
+snd = dependency('sndfile', version: '>=1.2.0', required: false)
 
+if not snd.found()
+  snd_subproject = cmake.subproject('libsndfile', options: snd_opts)
+  snd = snd_subproject.dependency('sndfile')
+endif
 
-spdlog_subproject = subproject('spdlog',
-                               default_options: [
-                                 'default_library=static',
-                                 'compile_library=true',])
+spdlog = dependency('spdlog', version: '>=1.12.0', required: false)
 
-spdlog = spdlog_subproject.get_variable('spdlog_dep')
+if not spdlog.found()
+  spdlog_subproject = cmake.subproject('spdlog', options: spdlog_opts)
+  spdlog = spdlog_subproject.dependency('spdlog')
+endif
 
 aubio = dependency('aubio', version: '>=0.4.9', required: false)
 
