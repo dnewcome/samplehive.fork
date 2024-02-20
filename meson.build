@@ -141,6 +141,7 @@ yaml_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
                              'YAML_CPP_BUILD_TOOLS': 'ON'})
 
 snd_opts = cmake.subproject_options()
+spdlog_opts = cmake.subproject_options()
 
 snd_shared = ''
 
@@ -270,7 +271,7 @@ if not snd.found()
   snd = snd_subproject.dependency('sndfile')
 endif
 
-spdlog = dependency('spdlog', version: '>=1.12.0', required: false)
+spdlog = dependency('spdlog', version: '>=1.12.0', required: false, fallback: ['spdlog'])
 
 if not spdlog.found()
   spdlog_subproject = cmake.subproject('spdlog', options: spdlog_opts)
